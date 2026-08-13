@@ -1,0 +1,10 @@
+{
+  "name": "Grove",
+  "author": "Robbin Thijssen",
+  "version_number": "0.1.0",
+  "website_url": "",
+  "description": "Plant an ancient seed, feed it greydwarf blood, and a forest spirit answers.",
+  "dependencies": [
+    "denikson-BepInExPack_Valheim-5.4.2333"
+  ]
+}
