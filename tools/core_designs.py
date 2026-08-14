@@ -31,7 +31,7 @@ from vhbuild import (box, camera, clear_scene, disc, finish, limb, material,
                      reference_cube, render, ring, roots, stage_scene, taper, tint)
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-ASSETS = os.path.join(ROOT, "assets")
+ASSETS = os.path.join(ROOT, "assets", "variants")
 PREVIEWS = os.path.join(ASSETS, "previews")
 
 # The chest faces +y, which is where the camera stands.
@@ -110,6 +110,10 @@ def core_ember():
 
 
 CORES = (
+    ("grove_core_halo", core_halo),
+    ("grove_core_mote_ring", core_mote_ring),
+    ("grove_core_aureole", core_aureole),
+    ("grove_core_ember", core_ember),
     ("grove_core_heart", core_heart),
 )
 

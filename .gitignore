@@ -12,6 +12,13 @@ obj/
 # Recreate by copying the BepInEx tree from any existing profile.
 testprofile/
 
-# Renders, not assets. Regenerate with:
+# Renders, not assets. Regenerate with any of:
 #   blender --background --python tools/grove_designs.py
+#   blender --background --python tools/spirit_core.py
 assets/previews/
+assets/variants/previews/
+
+# Designs that lost. Kept in git because the reasoning in the scripts is worth
+# having, but not shipped - the build copies assets/*.obj beside the dll, and the
+# rejected creature bodies alone were 2.6MB of it.
+!assets/variants/

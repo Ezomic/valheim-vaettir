@@ -37,7 +37,7 @@ TILT = 4.0
 SHIFT = 0.008
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-ASSETS = os.path.join(ROOT, "assets")
+ASSETS = os.path.join(ROOT, "assets", "variants")
 PREVIEWS = os.path.join(ASSETS, "previews")
 
 COLLIDERS = []
