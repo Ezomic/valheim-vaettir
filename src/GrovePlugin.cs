@@ -10,11 +10,11 @@ namespace Grove
     // Soft, and only about load order: if Stow is present it loads first, so its post
     // exists to be repriced. Nothing here references Stow's assembly - the piece is
     // found by prefab name - so this mod loads and runs perfectly well without it.
-    [BepInDependency("robbin.valheim.stow", BepInDependency.DependencyFlags.SoftDependency)]
+    [BepInDependency("ezomic.valheim.stow", BepInDependency.DependencyFlags.SoftDependency)]
     public class GrovePlugin : BaseUnityPlugin
     {
-        public const string PluginGuid = "robbin.valheim.grove";
-        public const string PluginName = "Grove";
+        public const string PluginGuid = "ezomic.valheim.vaettir";
+        public const string PluginName = "Vaettir";
         public const string PluginVersion = "0.1.0";
         public const string PluginAuthor = "Robbin Thijssen";
 
