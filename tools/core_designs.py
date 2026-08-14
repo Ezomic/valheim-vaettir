@@ -3,21 +3,20 @@ Four glowing cores for the forest spirit, on the same body, for comparison.
 
     blender --background --python tools/core_designs.py
 
-The problem being solved is not "make it glow" - it is "make it glow without reading
-as Mistlands". Mistlands owns lit green in this game, and it owns it three ways at
-once:
+The brief is a Mistlands-spirit *kind* of thing, not a rejection of it. An earlier
+pass here got that backwards: it treated every resemblance as a fault and buried the
+light behind carved wood, which produced four lit knotholes and no spirit at all.
 
-  * COLD colour   - wisps and Dvergr lanterns are teal and pale green-white
-  * SOFT edge     - diffuse haze and particles, no boundary you could point at
-  * NO MATERIAL   - light floating free, or hung in a lamp; nothing around it
+So these keep what makes a wisp a wisp - soft, floating, luminous, obviously not
+solid - and differ on three axes instead:
 
-So all four of these are warm amber rather than teal, all four are hard-edged
-geometry rather than haze, and all four have wood *in front of* the light rather than
-light in front of wood. That last one matters most: a wisp is a light with nothing
-around it, and every one of these is a hole in something with light behind it.
+  * WARM    - gold rather than the teal and pale green-white Mistlands owns
+  * BIG     - a wisp is a fist-sized mote; this is a hand-span ring inside a body
+  * HOUSED  - a wisp belongs to nothing, and this belongs to something that grew
 
-Amber also earns its place in the fiction. The thing grew on greydwarf blood in a
-black forest, and what glows warm in a tree is sap.
+Bloom is doing as much work here as geometry. An emissive surface with hard edges
+reads as painted plastic; light spilling past its own boundary is most of what makes
+a thing look like a spirit rather than a lamp.
 """
 
 import os
@@ -29,7 +28,7 @@ import bpy
 import math
 
 from vhbuild import (box, camera, clear_scene, disc, finish, limb, material,
-                     reference_cube, render, roots, stage_scene, taper, tint)
+                     reference_cube, render, ring, roots, stage_scene, taper, tint)
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ASSETS = os.path.join(ROOT, "assets")
@@ -42,75 +41,63 @@ FRONT = 0.17
 
 # --------------------------------------------------------------------------- cores
 
-def core_knot():
+def core_halo():
     """
-    Growth rings. A cut branch end set into the chest, glowing between the rings.
+    A ring of light hanging free inside the chest cavity, touching nothing.
 
-    The strongest anti-Mistlands move available, because concentric rings are a thing
-    wood does and a thing light does not. No wisp has structure inside it; this is
-    almost entirely structure, with the glow only in the gaps.
+    The closest to a wisp, and deliberately so - it floats, it has no housing, it is
+    obviously not solid. What makes it ours is that it is a *ring* the size of a hand
+    rather than a mote the size of a fist, and that it hangs inside a body.
     """
-    disc(0.185, 0.05, (0.0, FRONT - 0.03, CHEST), "bark", sides=13)
-    disc(0.150, 0.05, (0.0, FRONT + 0.005, CHEST), "core", sides=13)
-    disc(0.112, 0.05, (0.0, FRONT + 0.015, CHEST), "bark", sides=11)
-    disc(0.076, 0.05, (0.0, FRONT + 0.025, CHEST), "core", sides=11)
-    disc(0.034, 0.05, (0.0, FRONT + 0.035, CHEST), "bark", sides=9)
+    ring(0.150, 0.026, (0.0, 0.02, CHEST), "core")
 
 
-def core_ring():
+def core_mote_ring():
     """
-    An annulus: glow around a dark hollow centre.
+    One soft mote with smaller ones held in a ring around it.
 
-    Reads as a socket or a wreath rather than as an orb. The hollow is what does the
-    work - a wisp is bright in the middle, and this is dark exactly there.
+    A wisp does not come in formation. Several, arranged, reads as something keeping
+    them rather than as something that happens to be glowing - which is the whole
+    difference between a light and a spirit that has one.
     """
-    disc(0.195, 0.06, (0.0, FRONT - 0.03, CHEST), "bark", sides=13)
-    disc(0.160, 0.05, (0.0, FRONT + 0.005, CHEST), "core", sides=13)
-    disc(0.095, 0.07, (0.0, FRONT + 0.02, CHEST), "bark", sides=11)
+    taper(0.075, 0.075, 0.15, (0.0, 0.02, CHEST), "core", sides=11, tilt=1.0)
+
+    for i in range(7):
+        rad = math.radians(360.0 / 7.0 * i + 12.0)
+        taper(0.030, 0.030, 0.06,
+              (math.cos(rad) * 0.165, 0.02 + math.sin(rad) * 0.03,
+               CHEST + math.sin(rad) * 0.165), "core", sides=7, tilt=1.0)
 
 
-def core_well():
+def core_aureole():
     """
-    A bored socket with the light at the bottom of it.
+    A disc of light behind the whole ribcage, wider than the body opening.
 
-    The only one with real depth: a proud bark rim throws the inside into shadow, so
-    the glow is only fully visible head-on and dims as you walk around it. Nothing
-    floating can do that, because depth needs something solid to be deep *in*.
+    The light is not in the creature, the creature is standing in front of the light.
+    Reads as the biggest and least contained of the four, and the ribs crossing it
+    are what stop it being a floodlight.
     """
-    taper(0.20, 0.185, 0.16, (0.0, FRONT - 0.02, CHEST), "bark", sides=13, rot_x=90.0)
-    disc(0.135, 0.04, (0.0, FRONT - 0.075, CHEST), "core", sides=13)
-
-    # Two bars across the mouth. They break the circle into arcs, which is the
-    # difference between a lit hole and a headlamp.
-    for angle in (24, 108):
-        box((0.34, 0.05, 0.045), (0.0, FRONT + 0.03, CHEST), "bark",
-            rot_x=90.0, rot_y=angle, tilt=1.0)
+    disc(0.235, 0.025, (0.0, -0.10, CHEST), "core", sides=17)
+    disc(0.300, 0.020, (0.0, -0.15, CHEST), "core", sides=17)
 
 
-def core_cracked():
+def core_ember():
     """
-    A closed bark disc split by radial cracks, lit from behind.
+    A small bright heart with a faint ring drifting out around it.
 
-    The most restrained: almost no glowing area at all, just lines of it. If the
-    others read as too much light this is the answer, and it is the one that best
-    says "there is something inside this creature" rather than "this creature has a
-    lamp on it".
+    The most restrained: nearly all of the read comes from bloom rather than from
+    surface area. If the others are too much light, this is the answer - and at
+    distance it is the one that most looks like something alive breathing.
     """
-    disc(0.155, 0.06, (0.0, FRONT - 0.005, CHEST), "core", sides=13)
-    disc(0.190, 0.05, (0.0, FRONT - 0.035, CHEST), "bark", sides=13)
-
-    # Spokes laid across the face of the disc. rot_y spins them within the plane of
-    # the disc once rot_x has stood it up, so each one is a crack at its own angle.
-    for angle in (8, 62, 128, 196, 254, 312):
-        box((0.34, 0.05, 0.05), (0.0, FRONT + 0.012, CHEST), "bark",
-            rot_x=90.0, rot_y=angle, tilt=1.0)
+    taper(0.055, 0.055, 0.11, (0.0, 0.03, CHEST), "core", sides=9, tilt=1.0)
+    ring(0.185, 0.012, (0.0, -0.02, CHEST), "core", minor=5)
 
 
 CORES = (
-    ("grove_core_knot", core_knot),
-    ("grove_core_ring", core_ring),
-    ("grove_core_well", core_well),
-    ("grove_core_cracked", core_cracked),
+    ("grove_core_halo", core_halo),
+    ("grove_core_mote_ring", core_mote_ring),
+    ("grove_core_aureole", core_aureole),
+    ("grove_core_ember", core_ember),
 )
 
 
@@ -170,7 +157,7 @@ def main():
 
     # And one at the distance it will actually be met, to check the glow still reads.
     clear_scene()
-    warden(core_knot)
+    warden(core_halo)
     finish("far")
     tint()
     stage_scene()

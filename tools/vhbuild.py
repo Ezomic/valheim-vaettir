@@ -40,8 +40,9 @@ TINTS = {
     "stone": (0.44, 0.43, 0.40, 1.0),
     "seed":  (0.34, 0.28, 0.16, 1.0),
 
-    # Amber, not the Mistlands teal. See the note in the core designs.
-    "core":  (0.96, 0.56, 0.16, 1.0),
+    # Warm gold. Mistlands owns teal and pale green-white, so the family resemblance
+    # to a wisp is kept and the colour is where it parts company.
+    "core":  (1.00, 0.74, 0.30, 1.0),
 }
 
 EMISSIVE = ("core",)
@@ -133,6 +134,28 @@ def disc(radius, thickness, location, mat, sides=13, rot_x=90.0, tilt=1.0):
     """A flat round plate facing along +y by default, for anything set into a chest."""
     return taper(radius, radius, thickness, location, mat, sides=sides,
                  rot_x=rot_x, tilt=tilt)
+
+
+def ring(radius, thickness, location, mat, major=18, minor=7, rot_x=90.0, tilt=1.0):
+    """
+    A real torus, facing along +y by default.
+
+    Faked first as a bright disc with a dark disc in front of it, which does not
+    survive bloom: the halation from the bright ring washes straight over the dark
+    centre and closes the hole back up. A ring has to actually have nothing in the
+    middle of it.
+    """
+    (jx, jy, jz), (dx, dy, dz) = wobble(tilt)
+
+    bpy.ops.mesh.primitive_torus_add(
+        location=(location[0] + dx, location[1] + dy, location[2] + dz),
+        major_radius=radius, minor_radius=thickness,
+        major_segments=major, minor_segments=minor,
+        rotation=(math.radians(rot_x + jx), math.radians(jy), math.radians(jz)))
+
+    obj = bpy.context.active_object
+    obj.data.materials.append(material(mat))
+    return obj
 
 
 def shell(bottom, top, height, location, mat, sides=9, rot_x=0.0):
@@ -352,9 +375,42 @@ def camera(at, aim, lens=42):
     bpy.context.scene.camera = cam
 
 
+def bloom_setup(size=8, threshold=0.75):
+    """
+    Soft halation around anything emissive.
+
+    EEVEE Next dropped the old bloom checkbox, so this goes through the compositor
+    instead. It is not decoration: an emissive surface with hard edges reads as
+    painted plastic, and the entire difference between "a lit disc" and "a spirit"
+    is light spilling past its own boundary.
+    """
+    scene = bpy.context.scene
+    scene.use_nodes = True
+
+    tree = scene.node_tree
+    tree.nodes.clear()
+
+    layers = tree.nodes.new("CompositorNodeRLayers")
+    glare = tree.nodes.new("CompositorNodeGlare")
+    output = tree.nodes.new("CompositorNodeComposite")
+
+    # Fog glow rather than streaks: streaks read as a lens, and there is no camera in
+    # the fiction. Fog glow is just light in air, which is what this is.
+    glare.glare_type = "FOG_GLOW"
+    glare.quality = "HIGH"
+    glare.size = size
+    glare.threshold = threshold
+
+    tree.links.new(layers.outputs["Image"], glare.inputs["Image"])
+    tree.links.new(glare.outputs["Image"], output.inputs["Image"])
+
+
 def render(out_png, width=620, height=580, bloom=True):
     scene = bpy.context.scene
     scene.render.engine = "BLENDER_EEVEE_NEXT"
+
+    if bloom:
+        bloom_setup()
 
     # Standard, not AgX. Blender 4.x defaults to AgX, which rolls bright values off
     # towards white - so an amber core at any useful emission strength rendered as a
