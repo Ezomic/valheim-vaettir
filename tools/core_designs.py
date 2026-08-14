@@ -52,6 +52,22 @@ def core_halo():
     ring(0.150, 0.026, (0.0, 0.02, CHEST), "core")
 
 
+def core_heart():
+    """
+    The mote ring with the ring taken off it: one soft mass and nothing else.
+
+    The motes were the weakest part of that design - small cylinders seen end-on,
+    which under bloom read as rounded squares arranged like a control panel. What was
+    working was the middle: a single soft body of light sitting in the cavity, lit
+    enough to spill onto the bark around it.
+
+    Slightly taller than wide, because a sphere reads as an object and a soft upright
+    mass reads as something contained - which is the difference between the creature
+    carrying a light and the creature being lit from inside.
+    """
+    taper(0.082, 0.082, 0.20, (0.0, 0.02, CHEST), "core", sides=13, tilt=1.0)
+
+
 def core_mote_ring():
     """
     One soft mote with smaller ones held in a ring around it.
@@ -94,10 +110,7 @@ def core_ember():
 
 
 CORES = (
-    ("grove_core_halo", core_halo),
-    ("grove_core_mote_ring", core_mote_ring),
-    ("grove_core_aureole", core_aureole),
-    ("grove_core_ember", core_ember),
+    ("grove_core_heart", core_heart),
 )
 
 

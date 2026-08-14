@@ -136,6 +136,31 @@ def disc(radius, thickness, location, mat, sides=13, rot_x=90.0, tilt=1.0):
                  rot_x=rot_x, tilt=tilt)
 
 
+def orb(radius, location, mat, subdivisions=2, stretch=1.0, tilt=1.0):
+    """
+    A faceted low-poly sphere.
+
+    Cylinders were standing in for these and it does not work: a cylinder has flat
+    caps and straight sides, so however brightly it glows it reads as a can or a
+    lantern. Roundness is what makes a light read as a living thing rather than as
+    an object someone made.
+
+    An icosphere rather than a UV sphere - even triangles all over, no pole pinching,
+    and at two subdivisions it is 80 faces and visibly faceted, which suits the game.
+    """
+    (jx, jy, jz), (dx, dy, dz) = wobble(tilt)
+
+    bpy.ops.mesh.primitive_ico_sphere_add(
+        subdivisions=subdivisions, radius=radius,
+        location=(location[0] + dx, location[1] + dy, location[2] + dz))
+
+    obj = bpy.context.active_object
+    obj.scale = (1.0, 1.0, stretch)
+    obj.rotation_euler = (math.radians(jx), math.radians(jy), math.radians(jz))
+    obj.data.materials.append(material(mat))
+    return obj
+
+
 def ring(radius, thickness, location, mat, major=18, minor=7, rot_x=90.0, tilt=1.0):
     """
     A real torus, facing along +y by default.
