@@ -100,6 +100,28 @@ def spirit_ring_only():
     spirit_ring()
 
 
+def spirit_hoop_only():
+    """
+    The hoop with no beads on it.
+
+    Split off because a mote baked into the ring mesh can never drift along it. Seven
+    beads placed at runtime can each carry their own rate; seven beads welded into a
+    torus are a texture.
+    """
+    ring(ORBIT, 0.010, (0.0, 0.0, 0.0), "core", minor=5, tilt=0.0)
+
+
+def spirit_mote_only():
+    """
+    One bead, at the origin.
+
+    At the origin rather than in place, because the runtime positions it - a mesh
+    that arrives pre-offset would need that offset subtracted again by every caller,
+    which is the sort of thing that is wrong once and then wrong forever.
+    """
+    orb(0.040, (0.0, 0.0, 0.0), "core", subdivisions=1, tilt=0.0)
+
+
 # Two meshes, not one. The mass is an upright spheroid, so tumbling the whole model
 # would roll it end over end like an egg - and a rolling light has no up, which
 # removes the one thing making it read as standing there rather than falling. The
@@ -108,6 +130,8 @@ DESIGNS = (
     ("grove_spirit_core", spirit_core),
     ("grove_spirit_heart", spirit_heart_only),
     ("grove_spirit_ring", spirit_ring_only),
+    ("grove_spirit_hoop", spirit_hoop_only),
+    ("grove_spirit_mote", spirit_mote_only),
     ("grove_spirit_core_plain", spirit_core_plain),
 )
 
