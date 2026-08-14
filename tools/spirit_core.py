@@ -31,6 +31,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import bpy
 import math
 
+from mathutils import Euler, Vector
+
 from vhbuild import (camera, clear_scene, collide, export, finish, orb,
                      reference_cube, render, ring, stage_scene, tint, write_col)
 
@@ -55,21 +57,30 @@ def heart(scale=1.0):
     orb(0.104 * scale, (0.0, 0.0, HOVER), "core", subdivisions=2, stretch=1.55)
 
 
-def spirit_core():
-    """The fourth design's core at creature scale, motes and all."""
-    heart()
+ORBIT = 0.34
 
-    # Held in an arrangement, not scattered. A ring of motes is the one thing here
-    # that says something is keeping them - a wisp does not come in formation.
+
+def spirit_ring():
+    """
+    The ring and the motes threaded on it. Exported on its own so it can turn.
+
+    Every mote sits exactly on the ring: same radius, and y=0 so it is in the ring's
+    own plane. The first version put them on a 0.34 by 0.30 ellipse and pushed them
+    6cm out of plane as well, so the line passed near each bead instead of through
+    it - which reads as beads floating beside a hoop rather than as beads on one.
+    """
     for i in range(7):
         rad = math.radians(360.0 / 7.0 * i + 12.0)
-        orb(0.040, (math.cos(rad) * 0.34, math.sin(rad) * 0.06,
-                    HOVER + math.sin(rad) * 0.30), "core", subdivisions=1)
+        orb(0.040, (math.cos(rad) * ORBIT, 0.0, HOVER + math.sin(rad) * ORBIT),
+            "core", subdivisions=1, tilt=0.0)
 
-    # A faint ring tying them together, so the motes read as orbiting rather than as
-    # crumbs that happen to be nearby.
-    ring(0.34, 0.010, (0.0, 0.0, HOVER), "core", minor=5)
+    ring(ORBIT, 0.010, (0.0, 0.0, HOVER), "core", minor=5, tilt=0.0)
 
+
+def spirit_core():
+    """Both halves together, for the preview and for anyone wanting one static mesh."""
+    heart()
+    spirit_ring()
     collide((0.0, 0.0, HOVER), (0.80, 0.80, 0.80))
 
 
@@ -79,8 +90,24 @@ def spirit_core_plain():
     collide((0.0, 0.0, HOVER), (0.60, 0.60, 0.70))
 
 
+def spirit_heart_only():
+    """The mass on its own, so it can stay upright while the ring turns around it."""
+    heart()
+    collide((0.0, 0.0, HOVER), (0.80, 0.80, 0.80))
+
+
+def spirit_ring_only():
+    spirit_ring()
+
+
+# Two meshes, not one. The mass is an upright spheroid, so tumbling the whole model
+# would roll it end over end like an egg - and a rolling light has no up, which
+# removes the one thing making it read as standing there rather than falling. The
+# ring is what turns; the mass stays.
 DESIGNS = (
     ("grove_spirit_core", spirit_core),
+    ("grove_spirit_heart", spirit_heart_only),
+    ("grove_spirit_ring", spirit_ring_only),
     ("grove_spirit_core_plain", spirit_core_plain),
 )
 
@@ -114,6 +141,40 @@ def main():
     camera((-5.20, 7.40, 2.20), (0.0, 0.0, HOVER), lens=46)
     render(os.path.join(PREVIEWS, "grove_spirit_core_far.png"), width=760, height=520)
     print("DESIGN_OK grove_spirit_core_far")
+
+    # Four points through the tumble. A ring turning on all three axes passes through
+    # every orientation including edge-on, where it is a bright line and the motes
+    # bunch up - so it has to be checked at more than the one angle that flatters it.
+    clear_scene()
+    poses = ((0.0, 0.0, 0.0), (52.0, 18.0, 24.0), (86.0, 40.0, 12.0), (28.0, 74.0, 58.0))
+
+    for index, (rx, ry, rz) in enumerate(poses):
+        offset = (1.5 - index) * 0.95
+
+        before = set(bpy.data.objects)
+        heart()
+        for obj in set(bpy.data.objects) - before:
+            obj.location.x += offset
+
+        before = set(bpy.data.objects)
+        spirit_ring()
+        for obj in set(bpy.data.objects) - before:
+            pivot = Vector((0.0, 0.0, HOVER))
+            turn = Euler((math.radians(rx), math.radians(ry), math.radians(rz)), "XYZ")
+
+            local = obj.location - pivot
+            local.rotate(turn)
+            obj.location = pivot + local + Vector((offset, 0.0, 0.0))
+
+            spin = obj.rotation_euler.to_matrix()
+            obj.rotation_euler = (turn.to_matrix() @ spin).to_euler()
+
+    finish("spin")
+    tint()
+    stage_scene()
+    camera((-0.10, 6.30, 1.45), (0.0, 0.0, HOVER), lens=52)
+    render(os.path.join(PREVIEWS, "grove_spirit_spin.png"), width=940, height=420)
+    print("DESIGN_OK grove_spirit_spin")
 
 
 main()
