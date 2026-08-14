@@ -253,7 +253,7 @@ namespace Grove
         // ------------------------------------------------------------------ registering
 
         /// <summary>
-        /// Adds the prefab to both places ZNetScene looks. m_prefabs alone is not enough
+        /// Adds the prefab to both places ZNetScene looks. M_prefabs alone is not enough
         /// once Awake has already run, because the lookup dictionary it feeds is built
         /// there and never rebuilt.
         /// </summary>
