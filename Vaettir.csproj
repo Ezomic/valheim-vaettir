@@ -2,13 +2,13 @@
 
   <PropertyGroup>
     <TargetFramework>net462</TargetFramework>
-    <AssemblyName>Grove</AssemblyName>
-    <RootNamespace>Grove</RootNamespace>
+    <AssemblyName>Vaettir</AssemblyName>
+    <RootNamespace>Vaettir</RootNamespace>
     <LangVersion>latest</LangVersion>
     <Version>0.1.0</Version>
     <Authors>Robbin Thijssen</Authors>
     <Company>Thijssen Software</Company>
-    <Product>Grove</Product>
+    <Product>Vaettir</Product>
     <Description>Plant an ancient seed, feed it greydwarf blood, and a forest spirit answers.</Description>
     <Copyright>Copyright (c) 2026 Robbin Thijssen</Copyright>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
@@ -22,7 +22,7 @@
     <ManagedDir>$(ValheimDir)\valheim_Data\Managed</ManagedDir>
     <ProfileDir Condition="'$(ProfileDir)' == ''">$(MSBuildProjectDirectory)\testprofile</ProfileDir>
     <BepInExCore>$(ProfileDir)\BepInEx\core</BepInExCore>
-    <DeployDir>$(ProfileDir)\BepInEx\plugins\Grove</DeployDir>
+    <DeployDir>$(ProfileDir)\BepInEx\plugins\Vaettir</DeployDir>
   </PropertyGroup>
 
   <ItemGroup>
