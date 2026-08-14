@@ -1,5 +1,7 @@
+using System.Collections.Generic;
 using BepInEx;
 using BepInEx.Logging;
+using HarmonyLib;
 
 namespace Grove
 {
@@ -14,14 +16,39 @@ namespace Grove
 
         internal static ManualLogSource Log;
 
+        private static readonly HashSet<string> Said = new HashSet<string>();
+
+        private Harmony _harmony;
         private bool _diagnosticsDone;
+
+        /// <summary>
+        /// Warns once rather than every frame.
+        ///
+        /// Registration is retried until it takes, so anything that complains inside it
+        /// complains sixty times a second - which buries the log it was written to help
+        /// with.
+        /// </summary>
+        internal static void LogOnce(string message)
+        {
+            if (Log == null || !Said.Add(message)) return;
+            Log.LogWarning(message);
+        }
 
         private void Awake()
         {
             Log = Logger;
             GroveConfig.Bind(Config);
 
+            _harmony = new Harmony(PluginGuid);
+            _harmony.PatchAll(typeof(BloodFeed));
+            _harmony.PatchAll(typeof(GrovePatches));
+
             Log.LogInfo(PluginName + " " + PluginVersion + " by " + PluginAuthor + " - ready.");
+        }
+
+        private void OnDestroy()
+        {
+            if (_harmony != null) _harmony.UnpatchSelf();
         }
 
         /// <summary>
@@ -35,6 +62,7 @@ namespace Grove
         private void Update()
         {
             SpiritPrefab.Register();
+            SaplingPrefab.Register();
 
             if (_diagnosticsDone || ZNetScene.instance == null) return;
             _diagnosticsDone = true;
@@ -44,6 +72,28 @@ namespace Grove
 
             if (GroveConfig.DumpMaterials.Value)
                 SpiritPrefab.DumpMaterials();
+        }
+    }
+
+    internal static class GrovePatches
+    {
+        /// <summary>
+        /// A new world may have different mods loaded, so borrowed materials are not
+        /// kept across one. Both entry points, because a local world comes through
+        /// Awake and a server hands its item list over through CopyOtherDB.
+        /// </summary>
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(ObjectDB), "Awake")]
+        private static void ForgetSkins()
+        {
+            Skins.Invalidate();
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(ObjectDB), nameof(ObjectDB.CopyOtherDB))]
+        private static void ForgetSkinsFromServer()
+        {
+            Skins.Invalidate();
         }
     }
 }

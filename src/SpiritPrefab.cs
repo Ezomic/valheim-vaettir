@@ -164,6 +164,11 @@ namespace Grove
             for (var i = 0; i < skins.Length; i++) skins[i] = skin;
             renderer.sharedMaterials = skins;
 
+            // Into the borrowed material's slice of its atlas. Valheim's textures are
+            // sheets, so UVs running 0..1 sample the whole thing and pick up whatever
+            // the neighbouring tiles are.
+            Skins.Remap(model.Mesh, model.Groups);
+
             // Nothing here should darken anything. The creature is a light source, and
             // a light that casts its own geometry across the ground in seven directions
             // looks like a bug.
@@ -190,33 +195,17 @@ namespace Grove
         {
             if (_glow != null) return _glow;
 
-            foreach (var raw in (GroveConfig.GlowDonors.Value ?? "").Split(','))
-            {
-                var name = raw.Trim();
-                if (name.Length == 0) continue;
+            _glow = Skins.For("core");
+            if (_glow != null) return _glow;
 
-                var donor = PropIndex.Find(name);
-                if (donor == null) continue;
-
-                foreach (var renderer in donor.GetComponentsInChildren<MeshRenderer>(true))
-                {
-                    var material = renderer.sharedMaterial;
-                    if (material == null || material.shader == null) continue;
-                    if (!material.HasProperty("_MainTex")
-                        || material.GetTexture("_MainTex") == null) continue;
-
-                    _glow = material;
-                    GrovePlugin.Log.LogInfo(
-                        "Spirit glow borrowed from " + name + ": " + material.name
-                        + " (shader " + material.shader.name + ").");
-                    return _glow;
-                }
-            }
-
+            // Any material at all, rather than none. A wrong-looking spirit is one
+            // config line away from fixed; an invisible one looks exactly like a
+            // prefab that failed to register, and that is an hour of looking in the
+            // wrong place.
             GrovePlugin.Log.LogWarning(
-                "None of the GlowDonors resolved. Falling back to any material at all - "
-                + "the spirit will be visible but will not glow. Turn on DumpMaterials "
-                + "to find a donor worth naming.");
+                "No GlowDonor resolved - falling back to any material. The spirit will "
+                + "be visible but will not glow. Turn on DumpMaterials to find a donor "
+                + "worth naming.");
 
             foreach (var renderer in Resources.FindObjectsOfTypeAll<MeshRenderer>())
             {
