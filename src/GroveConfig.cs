@@ -10,6 +10,13 @@ namespace Grove
 
         public static ConfigEntry<float> SpiritRise;
 
+        public static ConfigEntry<string> FadeEffect;
+
+        public static ConfigEntry<string> HeartwoodName;
+        public static ConfigEntry<string> HeartwoodDonor;
+        public static ConfigEntry<int> HeartwoodStack;
+        public static ConfigEntry<int> HeartwoodGiven;
+
         public static ConfigEntry<string> SaplingName;
         public static ConfigEntry<string> SaplingCost;
         public static ConfigEntry<string> SaplingDonor;
@@ -40,6 +47,31 @@ namespace Grove
 
             SpiritRise = config.Bind("Spirit", "SpiritRise", 0.4f,
                 "How far above the sapling the spirit appears.");
+
+            FadeEffect = config.Bind("Spirit", "FadeEffect", "vfx_prayer",
+                "A vanilla effect played where the spirit stood when it goes. Blank for "
+                + "none. Named rather than built because a particle system authored here "
+                + "would look like a mod and the game's own does not - but which effect "
+                + "is right is a question for the game, so a name that does not resolve "
+                + "costs the moment its flourish rather than breaking it.");
+
+            // ---------------------------------------------------------- heartwood
+
+            HeartwoodName = config.Bind("Heartwood", "HeartwoodName", "Heartwood",
+                "What the material is called.");
+
+            HeartwoodDonor = config.Bind("Heartwood", "HeartwoodDonor", "SurtlingCore",
+                "The vanilla item it is cloned from, for its ItemDrop, Rigidbody, "
+                + "colliders and float-in-water behaviour. Only the mesh, the name and "
+                + "the icon change.");
+
+            HeartwoodStack = config.Bind("Heartwood", "HeartwoodStack", 10,
+                "How many fit in a slot.");
+
+            HeartwoodGiven = config.Bind("Heartwood", "HeartwoodGiven", 1,
+                "How much one spirit hands over. One by default: the whole chain exists "
+                + "to make a single stowing post cost something real, and handing over "
+                + "five would make the second through fifth free.");
 
             // ---------------------------------------------------------- the sapling
 

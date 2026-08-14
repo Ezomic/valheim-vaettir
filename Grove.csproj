@@ -42,6 +42,10 @@
     <Reference Include="UnityEngine.UI"><HintPath>$(ManagedDir)\UnityEngine.UI.dll</HintPath><Private>false</Private></Reference>
     <Reference Include="UnityEngine.UIModule"><HintPath>$(ManagedDir)\UnityEngine.UIModule.dll</HintPath><Private>false</Private></Reference>
     <Reference Include="Unity.TextMeshPro"><HintPath>$(ManagedDir)\Unity.TextMeshPro.dll</HintPath><Private>false</Private></Reference>
+    <!-- UnityEngine.ImageConversionModule is deliberately NOT referenced. It targets
+         netstandard 2.1 and this builds against net462, so referencing it fails with
+         CS1705. Texture2D.LoadImage is reached by reflection instead - see
+         HeartwoodPrefab.LoadIcon. -->
     <Reference Include="BepInEx"><HintPath>$(BepInExCore)\BepInEx.dll</HintPath><Private>false</Private></Reference>
     <Reference Include="0Harmony"><HintPath>$(BepInExCore)\0Harmony.dll</HintPath><Private>false</Private></Reference>
   </ItemGroup>
@@ -52,7 +56,7 @@
     <!-- The mesh and its collider sidecar live beside the dll and are read at runtime,
          which is what keeps this a single DLL plus text files rather than an asset bundle. -->
     <ItemGroup>
-      <GroveAssets Include="$(MSBuildProjectDirectory)\assets\*.obj;$(MSBuildProjectDirectory)\assets\*.col" />
+      <GroveAssets Include="$(MSBuildProjectDirectory)\assets\*.obj;$(MSBuildProjectDirectory)\assets\*.col;$(MSBuildProjectDirectory)\assets\*.png" />
     </ItemGroup>
     <Copy SourceFiles="@(GroveAssets)" DestinationFolder="$(DeployDir)" ContinueOnError="true" />
   </Target>

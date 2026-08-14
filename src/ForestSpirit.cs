@@ -19,7 +19,7 @@ namespace Grove
     /// was the right answer - a mod with no Unity editor can author motion like this
     /// and cannot author an animation controller.
     /// </summary>
-    internal class ForestSpirit : MonoBehaviour
+    internal class ForestSpirit : MonoBehaviour, Hoverable, Interactable
     {
         // --------------------------------------------------------------- tunables
 
@@ -259,6 +259,101 @@ namespace Grove
                 _block.SetColor(EmissionColour, colour);
                 renderer.SetPropertyBlock(_block);
             }
+        }
+
+        // --------------------------------------------------------------- communing
+
+        public string GetHoverName()
+        {
+            return GroveConfig.SpiritName.Value;
+        }
+
+        public string GetHoverText()
+        {
+            return Localization.instance.Localize(
+                GetHoverName() + "\n[<color=yellow><b>$KEY_Use</b></color>] commune");
+        }
+
+        /// <summary>
+        /// You speak to it, it gives you what it grew into, and it goes.
+        ///
+        /// One press, not a fight. The whole chain up to here was violent - an hour of
+        /// killing greydwarfs to feed a seed - and having it end in one more killing
+        /// would make the spirit just another thing in the forest with loot in it.
+        ///
+        /// Nothing is destroyed until the item is actually in your pack. A full
+        /// inventory has to be a refusal rather than a loss, because there is no way
+        /// to get another one without growing another seed.
+        /// </summary>
+        public bool Interact(Humanoid user, bool hold, bool alt)
+        {
+            if (hold) return false;
+
+            var player = user as Player;
+            if (player == null) return false;
+
+            var nview = GetComponentInParent<ZNetView>();
+            if (nview == null || !nview.IsValid()) return false;
+
+            var amount = Mathf.Max(1, GroveConfig.HeartwoodGiven.Value);
+
+            var inventory = player.GetInventory();
+            var prefab = ObjectDB.instance != null
+                ? ObjectDB.instance.GetItemPrefab(HeartwoodPrefab.Name)
+                : null;
+
+            if (prefab == null)
+            {
+                GrovePlugin.LogOnce(HeartwoodPrefab.Name + " is not registered - the "
+                                    + "spirit has nothing to give.");
+                return true;
+            }
+
+            var drop = prefab.GetComponent<ItemDrop>();
+            if (drop == null) return true;
+
+            if (!inventory.CanAddItem(drop.m_itemData, amount))
+            {
+                user.Message(MessageHud.MessageType.Center, "$inventory_full");
+                return true;
+            }
+
+            inventory.AddItem(HeartwoodPrefab.Name, amount, 1, 0, 0L, "");
+
+            user.Message(MessageHud.MessageType.Center, Localization.instance.Localize(
+                "The " + GetHoverName().ToLowerInvariant() + " gives up its heart."));
+
+            Fade(nview);
+            return true;
+        }
+
+        public bool UseItem(Humanoid user, ItemDrop.ItemData item)
+        {
+            return false;
+        }
+
+        /// <summary>
+        /// Goes out rather than pops.
+        ///
+        /// Ownership is claimed first because whoever communed is not necessarily who
+        /// owns the zone, and Destroy on a ZDO you do not own is ignored - the spirit
+        /// would hand over its heartwood and then still be standing there, ready to
+        /// hand over another.
+        /// </summary>
+        private void Fade(ZNetView nview)
+        {
+            var effect = GroveConfig.FadeEffect.Value;
+            if (!string.IsNullOrEmpty(effect) && ZNetScene.instance != null)
+            {
+                var prefab = ZNetScene.instance.GetPrefab(effect);
+                if (prefab != null)
+                    Instantiate(prefab, transform.position, Quaternion.identity);
+                else
+                    GrovePlugin.LogOnce("Fade effect '" + effect + "' does not exist.");
+            }
+
+            nview.ClaimOwnership();
+            nview.Destroy();
         }
     }
 }

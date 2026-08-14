@@ -61,6 +61,10 @@ namespace Grove
         /// </summary>
         private void Update()
         {
+            // Heartwood first: the sapling's cost and the spirit's gift both name it,
+            // and an item that is not in ObjectDB yet is an item that silently is not
+            // there.
+            HeartwoodPrefab.Register();
             SpiritPrefab.Register();
             SaplingPrefab.Register();
 
