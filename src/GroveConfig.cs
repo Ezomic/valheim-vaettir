@@ -29,6 +29,9 @@ namespace Grove
         public static ConfigEntry<bool> Messages;
         public static ConfigEntry<bool> Verbose;
 
+        public static ConfigEntry<bool> CoupleToStow;
+        public static ConfigEntry<string> StowPostCost;
+
         public static ConfigEntry<string> GlowDonors;
         public static ConfigEntry<bool> DumpMaterials;
         public static ConfigEntry<string> LookForPrefabs;
@@ -120,6 +123,20 @@ namespace Grove
 
             Verbose = config.Bind("Diagnostics", "Verbose", false,
                 "Log every feed.");
+
+            // ---------------------------------------------------------- stow
+
+            CoupleToStow = config.Bind("Stow", "CoupleToStow", true,
+                "If the Stow mod is installed, make its stowing post cost heartwood. "
+                + "Off leaves Stow's own recipe alone. Nothing here touches Stow when it "
+                + "is absent, and Stow is never told about this mod - it stays a mod that "
+                + "works on its own and still builds its post out of wood and fine wood.");
+
+            StowPostCost = config.Bind("Stow", "StowPostCost", "GroveHeartwood:1",
+                "What is *added* to the stowing post's cost, as Item:Amount. Added rather "
+                + "than replacing, because the rest of that recipe is Stow's setting and "
+                + "someone may have changed it deliberately. An ingredient already there "
+                + "is raised to whichever amount is higher rather than counted twice.");
 
             // ---------------------------------------------------------- surfaces
 

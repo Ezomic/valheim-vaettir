@@ -7,6 +7,10 @@ namespace Grove
 {
     [BepInPlugin(PluginGuid, PluginName, PluginVersion)]
     [BepInProcess("valheim.exe")]
+    // Soft, and only about load order: if Stow is present it loads first, so its post
+    // exists to be repriced. Nothing here references Stow's assembly - the piece is
+    // found by prefab name - so this mod loads and runs perfectly well without it.
+    [BepInDependency("robbin.valheim.stow", BepInDependency.DependencyFlags.SoftDependency)]
     public class GrovePlugin : BaseUnityPlugin
     {
         public const string PluginGuid = "robbin.valheim.grove";
@@ -68,6 +72,11 @@ namespace Grove
             SpiritPrefab.Register();
             SaplingPrefab.Register();
 
+            // Last, and retried like the rest: Stow builds its post on its own schedule,
+            // so there is no moment to hook - the piece simply appears in ZNetScene at
+            // some point and this notices.
+            StowCoupling.Apply();
+
             if (_diagnosticsDone || ZNetScene.instance == null) return;
             _diagnosticsDone = true;
 
@@ -91,6 +100,11 @@ namespace Grove
         private static void ForgetSkins()
         {
             Skins.Invalidate();
+
+            // The post is rebuilt with a fresh recipe on a new world, so the coupling
+            // has to be reapplied - otherwise loading a second world after the first
+            // leaves the post back at its unmodified cost.
+            StowCoupling.Invalidate();
         }
 
         [HarmonyPostfix]
@@ -98,6 +112,7 @@ namespace Grove
         private static void ForgetSkinsFromServer()
         {
             Skins.Invalidate();
+            StowCoupling.Invalidate();
         }
     }
 }
