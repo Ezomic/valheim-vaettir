@@ -143,8 +143,17 @@ namespace Grove
             foreach (var pickable in clone.GetComponentsInChildren<Pickable>(true))
                 Object.DestroyImmediate(pickable);
 
+            // Null-checked because destroying a renderer's GameObject takes its children with
+            // it, and GetComponentsInChildren returns parents before descendants - so a
+            // renderer deeper in the same branch is already gone by the time the loop reaches
+            // it, and asking a destroyed Component for its gameObject throws. This surfaced as
+            // an NRE every frame on a dedicated server, where the donor's hierarchy is nested
+            // differently, but the bug was always here.
             foreach (var renderer in clone.GetComponentsInChildren<MeshRenderer>(true))
+            {
+                if (renderer == null) continue;
                 Object.DestroyImmediate(renderer.gameObject);
+            }
         }
 
         private static void Dress(GameObject clone)

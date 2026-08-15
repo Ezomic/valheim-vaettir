@@ -144,8 +144,14 @@ namespace Grove
 
         private static void Visual(GameObject clone, ModelData model)
         {
+            // Null-checked: destroying a renderer's GameObject takes its children with it, and
+            // GetComponentsInChildren lists parents first, so a nested renderer is already
+            // destroyed when the loop reaches it and asking it for its gameObject throws.
             foreach (var renderer in clone.GetComponentsInChildren<MeshRenderer>(true))
+            {
+                if (renderer == null) continue;
                 Object.DestroyImmediate(renderer.gameObject);
+            }
 
             var visual = new GameObject("heartwood_visual");
             visual.transform.SetParent(clone.transform, false);

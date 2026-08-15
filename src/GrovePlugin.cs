@@ -6,7 +6,10 @@ using HarmonyLib;
 namespace Grove
 {
     [BepInPlugin(PluginGuid, PluginName, PluginVersion)]
-    [BepInProcess("valheim.exe")]
+    // No BepInProcess. It is a whitelist, and a dedicated server runs valheim_server.exe.
+    // The spirit and its pieces are registered prefabs, and ZNetScene discards any ZDO whose
+    // prefab name does not resolve - so a server without it destroys them all, silently.
+    //
     // Soft, and only about load order: if Stow is present it loads first, so its post
     // exists to be repriced. Nothing here references Stow's assembly - the piece is
     // found by prefab name - so this mod loads and runs perfectly well without it.
