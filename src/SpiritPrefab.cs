@@ -87,6 +87,10 @@ namespace Grove
 
             // Built inside a disabled holder with init suppressed, so the ZNetView
             // cannot try to register itself on the network while it is half-assembled.
+            //
+            // Reach() is what makes it touchable at all - see below. Building the
+            // creature from scratch rather than cloning one is right, and this is the
+            // bill for it: a clone would have arrived with a collider.
             var previous = ZNetView.m_forceDisableInit;
             ZNetView.m_forceDisableInit = true;
 
@@ -131,6 +135,8 @@ namespace Grove
                         Mathf.Sin(radians) * ForestSpirit.Orbit, 0f);
                 }
 
+                Reach(root);
+
                 var spirit = root.AddComponent<ForestSpirit>();
                 spirit.Heart = heartGo.transform;
                 spirit.Hoop = hoopGo.transform;
@@ -145,6 +151,47 @@ namespace Grove
                 + hoop.Mesh.vertexCount + ", " + GroveConfig.MoteCount.Value + " motes.");
 
             return root;
+        }
+
+        /// <summary>
+        /// Gives it something a raycast can hit, which is the whole of being touchable.
+        ///
+        /// Found by playing: the spirit grew, stood there, glowed, and could not be
+        /// spoken to at all - no hover text, no prompt, nothing. Player.FindHoverObject
+        /// raycasts against m_interactMask and asks whatever collider it hit for a
+        /// Hoverable. With no collider there is no hit, so a component implementing
+        /// Hoverable and Interactable is never consulted and nothing is logged, because
+        /// from the game's side nothing happened. Building the creature from scratch
+        /// rather than cloning one is still right; this is the bill for it, since a
+        /// clone would have arrived carrying a collider.
+        ///
+        /// On the root, not on a child, and that is load-bearing: FindHoverObject calls
+        /// GetComponent&lt;Hoverable&gt; on the collider's own GameObject, while Interact
+        /// uses GetComponentInParent. A collider one level down would therefore have
+        /// produced the worst symptom available - a thing you can use but that never
+        /// tells you it is there.
+        ///
+        /// The kinematic Rigidbody is not decoration. The spirit bobs, so the root moves
+        /// every frame, and moving a collider with no Rigidbody attached moves a *static*
+        /// collider - which makes Unity rebuild the static physics tree each time.
+        /// </summary>
+        private static void Reach(GameObject root)
+        {
+            // Sized to the hoop rather than to the whole silhouette. A sphere that
+            // swallowed the outermost bead would be a metre of invisible wall around a
+            // thing the size of a lantern.
+            var sphere = root.AddComponent<SphereCollider>();
+            sphere.radius = ForestSpirit.Orbit + 0.16f;
+            sphere.isTrigger = false;
+
+            var body = root.AddComponent<Rigidbody>();
+            body.isKinematic = true;
+            body.useGravity = false;
+
+            // Default is one of the layers in Player.m_interactMask. Set rather than
+            // left to chance: a new GameObject happening to default to a layer that
+            // works is luck, and the failure it produces is this same silent one.
+            root.layer = LayerMask.NameToLayer("Default");
         }
 
         private static GameObject Part(Transform parent, string name, ModelData model,

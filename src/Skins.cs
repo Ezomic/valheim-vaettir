@@ -19,6 +19,16 @@ namespace Grove
     /// </summary>
     internal static class Skins
     {
+        /// <summary>
+        /// The one group that has to glow, and the property that decides whether it can.
+        ///
+        /// Named here rather than spelled twice: the same string is what
+        /// ForestSpirit.Pulse writes to, and a material chosen without it is a material
+        /// the breathing silently does nothing on.
+        /// </summary>
+        private const string GlowGroup = "core";
+        private const string Emission = "_EmissionColor";
+
         /// <summary>Prefabs to lift each group's material from, best first.</summary>
         private static readonly Dictionary<string, string[]> Donors =
             new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase)
@@ -58,6 +68,34 @@ namespace Grove
             Material cached;
             if (Cache.TryGetValue(group, out cached)) return cached;
 
+            // The glow group is asked twice: once demanding a material that actually
+            // emits, and only then falling back to any material at all.
+            //
+            // One pass was not enough, and the failure was invisible. Taking the first
+            // material with an albedo off fire_pit gave the spirit its stone ring -
+            // Custom/StaticRock, no _EmissionColor - so ForestSpirit.Pulse wrote its
+            // breathing into a property nothing read, and the spirit came out a grey
+            // pebble lit by its own point light. It looked like the light was working,
+            // because it was; it was the only thing working.
+            //
+            // The dump found what the list was already walking past: fire_pit carries
+            // fireplace_ash_glowing, a Standard shader with real emission and an albedo,
+            // two renderers further in.
+            if (group == GlowGroup)
+            {
+                var lit = Pick(group, true);
+                if (lit != null) return lit;
+            }
+
+            return Pick(group, false);
+        }
+
+        /// <summary>
+        /// One walk through the donors. With mustEmit, only materials whose shader
+        /// exposes _EmissionColor are accepted.
+        /// </summary>
+        private static Material Pick(string group, bool mustEmit)
+        {
             foreach (var name in DonorsFor(group))
             {
                 // Via PropIndex rather than ZNetScene directly: many dressing prefabs
@@ -75,15 +113,23 @@ namespace Grove
                     if (!material.HasProperty("_MainTex")
                         || material.GetTexture("_MainTex") == null) continue;
 
+                    if (mustEmit && !material.HasProperty(Emission)) continue;
+
                     Cache[group] = material;
                     Atlas[group] = UvRegion(renderer);
 
                     GrovePlugin.Log.LogInfo(string.Format(
-                        "'{0}' skinned with {1} from {2} (shader {3}), atlas {4}.",
-                        group, material.name, name, material.shader.name, Atlas[group]));
+                        "'{0}' skinned with {1} from {2} (shader {3}){4}, atlas {5}.",
+                        group, material.name, name, material.shader.name,
+                        mustEmit ? " [emissive]" : "", Atlas[group]));
                     return material;
                 }
             }
+
+            // Only a failure on the second pass. The first is allowed to come up empty -
+            // that is what the second is for - and warning about it would report a
+            // working fallback as a fault.
+            if (mustEmit) return null;
 
             GrovePlugin.Log.LogWarning("No material found for group '" + group + "'.");
             Cache[group] = null;
