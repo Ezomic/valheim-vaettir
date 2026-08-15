@@ -1,6 +1,15 @@
 """
 Heartwood: the thing the spirit gives you, and its inventory icon.
 
+**Superseded by heartwood_designs.py. Running this overwrites the shipped mesh
+and icon with the old design.**
+
+The split billet below was built when the heartwood was the spirit's *heart*,
+taken out of it. It is now the spirit's *home*, which wants something closed and
+occupied rather than opened and emptied - and at 48 pixels this one read as two
+brown blobs either side of a pale card. Kept because everything it says about
+icon legibility still holds and was learned the hard way.
+
     blender --background --python tools/item_designs.py
 
 Named for the dense wood at the centre of a trunk, which is what it looks like -

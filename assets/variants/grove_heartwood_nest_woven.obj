@@ -1,6 +1,6 @@
 # Blender 4.5.10 LTS
 # www.blender.org
-mtllib grove_heartwood.mtl
+mtllib grove_heartwood_nest_woven.mtl
 o grove_heartwood_nest_woven
 v 0.008066 -0.059008 0.005999
 v -0.034259 -0.024390 -0.024743

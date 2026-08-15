@@ -33,12 +33,23 @@ import math
 
 from mathutils import Vector
 
-from vhbuild import (box, clear_scene, export, finish, orb, render, shell,
+from vhbuild import (box, clear_scene, export, finish, orb, render, ring, shell,
                      taper, tint)
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-ASSETS = os.path.join(ROOT, "assets", "variants")
+SHIPPED = os.path.join(ROOT, "assets")
+ASSETS = os.path.join(SHIPPED, "variants")
 PREVIEWS = os.path.join(ASSETS, "previews")
+
+# The one that ships, under the names HeartwoodPrefab looks for. Everything else
+# stays in variants, which the build does not copy.
+#
+# This supersedes item_designs.py, which built the split billet back when the
+# heartwood was the spirit's heart rather than its home. That script is kept for
+# its reasoning about icon legibility, all of which still holds.
+WINNER = "nest_woven"
+SHIPPED_MESH = "grove_heartwood"
+SHIPPED_ICON = "grove_heartwood_icon.png"
 
 
 # --------------------------------------------------------------------------- shapes
@@ -85,23 +96,94 @@ def pod():
             rot_x=math.sin(angle) * 5.0, rot_y=-math.cos(angle) * 5.0)
 
 
-def nest():
+def band(radius, thickness, rot, mat="bark", major=13, minor=5):
     """
-    Bark strands wrapped over a light, with the glow escaping between the wraps.
+    One wrap round the mass, as a real torus rotated onto an arbitrary axis.
 
-    The most "housed" of the four - something has been wrapped up and put away.
-    Four bands, not eight: at icon size a tight weave becomes a solid ball and the
-    whole idea disappears.
+    ring() takes only rot_x, and a set of bands sharing one axis is a stack of
+    hoops rather than a weave, so the euler is set afterwards. Straight boxes were
+    the first attempt at this and they are the reason the old nest failed: a
+    straight box laid across a sphere is a stick balanced on a ball, and four of
+    them are four sticks. A torus is the only shape that reads as going *round*
+    something.
     """
-    orb(0.092, (0.0, 0.0, 0.0), "core", subdivisions=2, stretch=1.05)
+    obj = ring(radius, thickness, (0.0, 0.0, 0.0), mat, major=major, minor=minor)
+    obj.rotation_euler = (math.radians(rot[0]), math.radians(rot[1]),
+                          math.radians(rot[2]))
+    return obj
 
-    for i, tilt in enumerate((0.0, 52.0, 104.0, 148.0)):
-        box((0.230, 0.048, 0.030), (0.0, 0.0, 0.0), "bark",
-            rot_x=tilt, rot_y=14.0 * (i - 1.5), rot_z=22.0 * i)
 
-    # Two ends left loose, so it reads as wrapped rather than as banded.
-    box((0.090, 0.040, 0.026), (0.104, -0.030, 0.068), "bark", rot_y=38.0)
-    box((0.076, 0.036, 0.024), (-0.098, 0.026, -0.062), "bark", rot_y=-30.0)
+def nest_wrap():
+    """
+    Bound: a small light with four fat bands wrapped round and over it.
+
+    The fix for the first nest, which put a 0.092 core inside 0.048 bands - the
+    glow was two thirds of the silhouette and the wrapping was trim on it, so it
+    read as a glowing ball with debris stuck to it. Here the mass is 0.062 and the
+    bands are 0.030 thick on a 0.104 radius, which puts the wood outside the light
+    on every axis and lets the glow show only where the bands do not cover.
+    """
+    orb(0.062, (0.0, 0.0, 0.0), "core", subdivisions=2, stretch=1.06)
+
+    for rot in ((90.0, 0.0, 0.0), (90.0, 0.0, 58.0),
+                (64.0, 34.0, 116.0), (112.0, -28.0, 24.0)):
+        band(0.104, 0.030, rot)
+
+    # Two ends left loose and pointing out, which is what separates "wrapped" from
+    # "banded" - a parcel has tails, a barrel has hoops.
+    taper(0.030, 0.012, 0.110, (0.108, -0.026, 0.062), "bark", sides=5, rot_y=52.0)
+    taper(0.026, 0.010, 0.096, (-0.104, 0.030, -0.058), "bark", sides=5, rot_y=-44.0)
+
+
+def nest_woven():
+    """
+    Rougher: six thinner wraps at scattered angles, more twig than binding.
+
+    Nearer the word "nest" than nest_wrap is - this is material heaped and tangled
+    rather than deliberately tied. Six is the ceiling: at eight the gaps close and
+    it becomes a dark ball with no light in it at all, which is the failure mode at
+    the opposite end from the first attempt.
+    """
+    orb(0.058, (0.0, 0.0, 0.0), "core", subdivisions=2, stretch=1.10)
+
+    for rot in ((90.0, 0.0, 0.0), (78.0, 18.0, 44.0), (104.0, -22.0, 88.0),
+                (62.0, 40.0, 132.0), (118.0, -36.0, 20.0), (86.0, 12.0, 158.0)):
+        band(0.100 + (rot[2] % 17.0) * 0.0009, 0.019, rot, major=11, minor=5)
+
+    for x, y, z, yaw in ((0.104, -0.024, 0.058, 48.0), (-0.098, 0.032, -0.052, -40.0),
+                         (0.030, 0.100, -0.070, 14.0)):
+        taper(0.024, 0.009, 0.100, (x, y, z), "bark", sides=5, rot_y=yaw)
+
+
+def nest_cup():
+    """
+    An actual nest: a woven bowl with the light sitting down in it.
+
+    The literal reading of the word, and the only one where the glow is on top
+    rather than inside - which makes it the most legible of the three at inventory
+    size, because the bright part is unobstructed. The cost is that it is a bowl
+    with something in it rather than something housed, so it says "carried" where
+    the other two say "kept".
+    """
+    # The bowl: three bands of decreasing radius stacked and squashed, so the walls
+    # lean inwards the way a woven nest does.
+    for i, (radius, height) in enumerate(((0.116, -0.060), (0.104, -0.020),
+                                          (0.096, 0.014))):
+        obj = ring(radius, 0.026, (0.0, 0.0, height), "bark", major=13, minor=5,
+                   rot_x=0.0)
+        obj.scale = (1.0, 1.0, 0.62)
+        obj.rotation_euler = (0.0, 0.0, math.radians(24.0 * i))
+
+    # A base, so it is a bowl rather than three hoops with a gap under them.
+    orb(0.092, (0.0, 0.0, -0.078), "bark", subdivisions=2, stretch=0.46)
+
+    # The occupant, sitting in the cup and proud of the rim.
+    orb(0.072, (0.0, 0.0, 0.046), "core", subdivisions=2, stretch=1.12)
+
+    # Two twigs standing off the rim, so the silhouette has something above the
+    # light instead of ending flat at it.
+    taper(0.022, 0.008, 0.092, (0.086, -0.020, 0.070), "bark", sides=5, rot_y=34.0)
+    taper(0.020, 0.008, 0.078, (-0.078, 0.034, 0.062), "bark", sides=5, rot_y=-28.0)
 
 
 def lantern():
@@ -128,10 +210,14 @@ def lantern():
             rot_y=side * -14.0)
 
 
+# The nest won, so this pass is three of it. The others stay so the pick can be
+# judged against what it beat rather than against nothing.
 DESIGNS = (
+    ("nest_wrap", nest_wrap),
+    ("nest_woven", nest_woven),
+    ("nest_cup", nest_cup),
     ("knot", knot),
     ("pod", pod),
-    ("nest", nest),
     ("lantern", lantern),
 )
 
@@ -196,12 +282,18 @@ def icon_scene(obj):
 
 def build(label, maker):
     name = "grove_heartwood_" + label
+    winner = label == WINNER
 
     clear_scene()
     maker()
     obj = finish(name)
     export(obj, name, ASSETS)
     tris = len(obj.data.polygons)
+
+    # The winner is exported a second time under the shipping name, so the item you
+    # hold and the picture in the slot are the same geometry and cannot drift apart.
+    if winner:
+        export(obj, SHIPPED_MESH, SHIPPED)
 
     clear_scene()
     maker()
@@ -216,7 +308,12 @@ def build(label, maker):
     render(os.path.join(PREVIEWS, name + "_large.png"), width=512, height=512,
            bloom=False)
 
-    print("DESIGN_OK %s tris=%d" % (name, tris))
+    # 128, not 64. Valheim scales icons down and a sharp source survives that better
+    # than one rendered at the size it will be shown at.
+    if winner:
+        render(os.path.join(SHIPPED, SHIPPED_ICON), width=128, height=128, bloom=False)
+
+    print("DESIGN_OK %s tris=%d%s" % (name, tris, " [SHIPPED]" if winner else ""))
 
 
 def main():
