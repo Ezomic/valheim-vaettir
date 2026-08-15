@@ -157,13 +157,27 @@ namespace Grove
 
         private static void Visual(GameObject clone, ModelData model)
         {
-            // Null-checked: destroying a renderer's GameObject takes its children with it, and
-            // GetComponentsInChildren lists parents first, so a nested renderer is already
-            // destroyed when the loop reaches it and asking it for its gameObject throws.
+            // The components, not the GameObjects they sit on.
+            //
+            // This used to destroy renderer.gameObject outright, and on this donor the
+            // collider is on that same object - so stripping the donor's mesh took its
+            // collision with it, and a dropped heartwood fell through the floor. An
+            // ItemDrop carries a Rigidbody; with nothing to rest on it simply keeps
+            // going. Found by throwing one away.
+            //
+            // Removing two components leaves the hierarchy, the colliders and anything
+            // else the donor was carrying exactly where the ItemDrop expects them, and
+            // is strictly less destructive for no cost. The old approach was inherited
+            // from the pieces, where the donor's collider is elsewhere and taking the
+            // whole object is harmless - which is exactly why it was never noticed.
             foreach (var renderer in clone.GetComponentsInChildren<MeshRenderer>(true))
             {
                 if (renderer == null) continue;
-                Object.DestroyImmediate(renderer.gameObject);
+
+                var filter = renderer.GetComponent<MeshFilter>();
+                if (filter != null) Object.DestroyImmediate(filter);
+
+                Object.DestroyImmediate(renderer);
             }
 
             var visual = new GameObject("heartwood_visual");
@@ -174,6 +188,37 @@ namespace Grove
             var renderer2 = visual.AddComponent<MeshRenderer>();
             renderer2.sharedMaterials = Skins.Skin(model.Groups);
             Skins.Remap(model.Mesh, model.Groups);
+
+            Ground(clone, model);
+        }
+
+        /// <summary>
+        /// Makes sure it has something to land on.
+        ///
+        /// Insurance behind the fix above rather than the fix itself: the donor's own
+        /// collider should survive now that only components are stripped, and this
+        /// catches the case where a donor never had one. The failure it guards against
+        /// is unusually bad for an item - it falls through the world and is gone, with
+        /// no message and nothing to pick back up, and the only clue is that the thing
+        /// you dropped is not where you dropped it.
+        ///
+        /// Sized off the mesh rather than the donor, because the donor is a surtling
+        /// core and this is a nest half again as wide.
+        /// </summary>
+        private static void Ground(GameObject clone, ModelData model)
+        {
+            if (clone.GetComponentInChildren<Collider>(true) != null) return;
+            if (model.Mesh == null) return;
+
+            var bounds = model.Mesh.bounds;
+
+            var box = clone.AddComponent<BoxCollider>();
+            box.center = bounds.center;
+            box.size = bounds.size;
+
+            GrovePlugin.LogOnce("Donor " + GroveConfig.HeartwoodDonor.Value + " left no "
+                                + "collider on " + Name + " - added one from the mesh "
+                                + "bounds so it does not fall through the world.");
         }
 
         // ------------------------------------------------------------------ registering
