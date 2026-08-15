@@ -1,11 +1,13 @@
 using System.Collections.Generic;
 using BepInEx;
 using BepInEx.Logging;
+using Ezomic.Core;
 using HarmonyLib;
 
 namespace Grove
 {
     [BepInPlugin(PluginGuid, PluginName, PluginVersion)]
+    [BepInDependency("ezomic.valheim.core", BepInDependency.DependencyFlags.HardDependency)]
     // No BepInProcess. It is a whitelist, and a dedicated server runs valheim_server.exe.
     // The spirit and its pieces are registered prefabs, and ZNetScene discards any ZDO whose
     // prefab name does not resolve - so a server without it destroys them all, silently.
@@ -45,6 +47,11 @@ namespace Grove
         {
             Log = Logger;
             GroveConfig.Bind(Config);
+            // Everyone, not HostOnly. Both ends have to agree about this mod, and the
+            // disagreement is silent when they do not: a client that cannot resolve a prefab
+            // hash discards the ZDO rather than erroring - destroying what is already standing
+            // in the world - and item data that differs desyncs inventories.
+            Suite.Register(PluginGuid, PluginName, PluginVersion, Config);
 
             _harmony = new Harmony(PluginGuid);
             _harmony.PatchAll(typeof(BloodFeed));
