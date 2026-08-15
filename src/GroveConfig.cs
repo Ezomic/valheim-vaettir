@@ -87,11 +87,12 @@ namespace Grove
                 + "circle, and with several circles crossing that buys nothing while an "
                 + "even count divides more cleanly.");
 
-            RingCount = config.Bind("Spirit", "RingCount", 3,
-                "How many circles of beads. One is the original. Three crossed circles "
-                + "read as an atom, which is what the beads moving in step are for - "
-                + "several orbits, one motion. Four begins to lose the separation "
-                + "between rings and reads as a cloud instead.");
+            RingCount = config.Bind("Spirit", "RingCount", 2,
+                "How many circles of beads. One is the original single hoop. Two crossed "
+                + "circles is the default: it reads as an orbit rather than a swarm and "
+                + "keeps both rings separable, which three only just manages and four "
+                + "does not - at four the beads stop reading as being on circles at all "
+                + "and become a cloud.");
 
             ShowHoop = config.Bind("Spirit", "ShowHoop", false,
                 "Draw the torus the beads sit on. Off: the circle is implied by where "
