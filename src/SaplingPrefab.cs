@@ -113,6 +113,7 @@ namespace Grove
 
             Strip(clone);
             Dress(clone);
+            Fortify(clone);
 
             var stages = Visuals(clone, models);
 
@@ -172,6 +173,62 @@ namespace Grove
             // Not comfort, not a crafting station, and emphatically not something a
             // raid should target ahead of your walls.
             piece.m_targetNonPlayerBuilt = false;
+        }
+
+        /// <summary>
+        /// Real health, and nothing that rots it while you are away.
+        ///
+        /// The donor is a crop, so the clone inherits a crop's health - a few points -
+        /// and the first greydwarf that swung anywhere near it ended an hour of work
+        /// for an ancient seed that is not refunded. Found by playing: fifteen brutes
+        /// spawned beside a sapling and it was gone before any of them died, which
+        /// looked exactly like the feeding hook being broken because nothing logs when
+        /// there is no sapling left to feed.
+        ///
+        /// Which component carries that health is the donor's business and not ours -
+        /// WearNTear for anything built, Destructible for anything grown - so both are
+        /// handled and the log says which one was actually there.
+        /// </summary>
+        private static void Fortify(GameObject clone)
+        {
+            var health = Mathf.Max(1f, GroveConfig.SaplingHealth.Value);
+            var found = new List<string>();
+
+            foreach (var wear in clone.GetComponentsInChildren<WearNTear>(true))
+            {
+                if (wear == null) continue;
+
+                wear.m_health = health;
+
+                // A plant is not a building. Support wear collapses anything with
+                // nothing under it and roof wear rots anything standing in the rain,
+                // and this is a seed in open ground that has to survive an hour of you
+                // being somewhere else. Losing it to weather would read as a bug even
+                // though it is the donor's own behaviour.
+                wear.m_noSupportWear = true;
+                wear.m_noRoofWear = true;
+
+                found.Add("WearNTear");
+            }
+
+            foreach (var destructible in clone.GetComponentsInChildren<Destructible>(true))
+            {
+                if (destructible == null) continue;
+
+                destructible.m_health = health;
+                found.Add("Destructible");
+            }
+
+            if (found.Count == 0)
+            {
+                GrovePlugin.LogOnce(
+                    "The sapling donor carries neither WearNTear nor Destructible, so it "
+                    + "cannot be damaged and cannot be given health either.");
+                return;
+            }
+
+            GrovePlugin.Log.LogInfo("Sapling health set to " + health + " on "
+                                    + string.Join(" + ", found.ToArray()) + ".");
         }
 
         private static Transform[] Visuals(GameObject clone, ModelData[] models)

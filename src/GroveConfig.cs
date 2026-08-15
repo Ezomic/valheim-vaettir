@@ -24,6 +24,7 @@ namespace Grove
         public static ConfigEntry<string> SaplingCost;
         public static ConfigEntry<string> SaplingDonor;
         public static ConfigEntry<float> SaplingScale;
+        public static ConfigEntry<float> SaplingHealth;
         public static ConfigEntry<bool> NeedsCultivated;
 
         public static ConfigEntry<float> BloodNeeded;
@@ -125,6 +126,15 @@ namespace Grove
 
             SaplingScale = config.Bind("Sapling", "SaplingScale", 1f,
                 "Scale of the planted piece.");
+
+            SaplingHealth = config.Bind("Sapling", "SaplingHealth", 500f,
+                "How much punishment it takes before it is destroyed. The donor is a "
+                + "carrot and carries a carrot's health, which is a few points - so a "
+                + "single greydwarf swinging near it ended the whole ritual, and the "
+                + "seed is not refunded. Five hundred is roughly ten hits from a brute: "
+                + "it survives a fight happening around it and does not survive a mob "
+                + "left to work on it, which is the point. Defending it is meant to be "
+                + "the hard part of the hour, not a formality and not a coin flip.");
 
             NeedsCultivated = config.Bind("Sapling", "NeedsCultivated", false,
                 "Whether it must go in tilled soil. Off by default: an ancient seed "
