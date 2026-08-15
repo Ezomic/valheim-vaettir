@@ -37,9 +37,18 @@ namespace Grove
         public static float LightRange = 7f;
         public static Color LightColour = new Color(1f, 0.74f, 0.30f);
 
-        /// <summary>Degrees per second a mote slides along the hoop.</summary>
-        public static float DriftMin = 3f;
-        public static float DriftMax = 11f;
+        /// <summary>
+        /// Degrees per second every bead travels. One number, not a range.
+        ///
+        /// It used to be a range, and each bead drew its own rate and its own
+        /// direction out of it. On paper that is life; in front of you it is a swarm -
+        /// beads sliding past each other at different speeds read as insects around a
+        /// lamp, and the circle they are supposedly on stops being visible at all.
+        /// In step they read as one object turning, which is the difference between a
+        /// cloud of flies and an orrery. It matters more now the hoop is invisible,
+        /// because the beads moving together are the only thing left saying "circle".
+        /// </summary>
+        public static float DriftRate = 8f;
 
         /// <summary>It is fully awake at Near and fully asleep beyond Far.</summary>
         public static float NearRange = 4f;
@@ -53,9 +62,14 @@ namespace Grove
         public Transform Hoop;
         public Transform Heart;
 
-        private readonly List<Transform> _motes = new List<Transform>();
-        private readonly List<float> _moteAngle = new List<float>();
-        private readonly List<float> _moteRate = new List<float>();
+        /// <summary>
+        /// The rings, not the beads.
+        ///
+        /// Turning a ring turns everything on it, so one Rotate per ring replaces one
+        /// repositioning per bead - and it cannot drift out of step, because there is
+        /// no per-bead state left to drift.
+        /// </summary>
+        private readonly List<Transform> _rings = new List<Transform>();
 
         private Light _light;
         private Renderer[] _renderers;
@@ -96,7 +110,7 @@ namespace Grove
 
             _rest = transform.localPosition;
 
-            CollectMotes(random);
+            CollectRings();
             MakeLight();
 
             _renderers = GetComponentsInChildren<Renderer>(true);
@@ -109,24 +123,19 @@ namespace Grove
             return random.Next(2) == 0 ? -speed : speed;
         }
 
-        private void CollectMotes(System.Random random)
+        /// <summary>
+        /// Finds the rings the prefab built, each already tilted to its own plane.
+        ///
+        /// The beads are children of a ring rather than of this, and are never touched
+        /// again after they are placed - which is the point. Their positions on the
+        /// circle are fixed and the circle turns underneath them.
+        /// </summary>
+        private void CollectRings()
         {
             if (Hoop == null) return;
 
             foreach (Transform child in Hoop)
-            {
-                if (!child.name.StartsWith("mote")) continue;
-
-                _motes.Add(child);
-
-                // Read the angle it was placed at rather than assuming an even
-                // spacing, so drift starts from wherever the spawner put it.
-                _moteAngle.Add(Mathf.Atan2(child.localPosition.y, child.localPosition.x)
-                               * Mathf.Rad2Deg);
-
-                var rate = DriftMin + (float)random.NextDouble() * (DriftMax - DriftMin);
-                _moteRate.Add(random.Next(2) == 0 ? -rate : rate);
-            }
+                if (child.name.StartsWith("ring")) _rings.Add(child);
         }
 
         private void MakeLight()
@@ -201,25 +210,25 @@ namespace Grove
         }
 
         /// <summary>
-        /// Slides each mote along the hoop at its own rate.
+        /// Turns every ring at the same rate, about its own axis.
         ///
-        /// The hoop mesh comes out of Blender lying in its local XY plane - the torus
-        /// is built in Blender's XZ with its axis along +Y, and the exporter maps
-        /// Blender Y to Unity Z. So a mote rides (cos, sin, 0), and if that turns out
-        /// to be the wrong plane in game the symptom is unmistakable: the beads will
-        /// orbit through the hoop rather than along it.
+        /// Each ring is built in its local XY plane and then tilted, so its own local Z
+        /// is the axis its beads go round - which means one Rotate in local space
+        /// carries the beads along the circle no matter what angle that circle sits at.
+        /// Rotating in world space instead would swing every ring about the same axis
+        /// and tip the arrangement rather than turn it.
+        ///
+        /// Every ring gets the identical rate, so beads stay in step across rings as
+        /// well as within one. That is the whole look: several circles, one motion.
         /// </summary>
         private void Drift(float delta, float liveliness)
         {
-            for (var i = 0; i < _motes.Count; i++)
+            var step = DriftRate * liveliness * delta;
+
+            for (var i = 0; i < _rings.Count; i++)
             {
-                if (_motes[i] == null) continue;
-
-                _moteAngle[i] += _moteRate[i] * liveliness * delta;
-
-                var radians = _moteAngle[i] * Mathf.Deg2Rad;
-                _motes[i].localPosition = new Vector3(Mathf.Cos(radians) * Orbit,
-                                                      Mathf.Sin(radians) * Orbit, 0f);
+                if (_rings[i] == null) continue;
+                _rings[i].Rotate(0f, 0f, step, Space.Self);
             }
         }
 

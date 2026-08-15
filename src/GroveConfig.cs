@@ -10,6 +10,8 @@ namespace Grove
         public static ConfigEntry<string> SpiritName;
         public static ConfigEntry<float> SpiritScale;
         public static ConfigEntry<int> MoteCount;
+        public static ConfigEntry<int> RingCount;
+        public static ConfigEntry<bool> ShowHoop;
 
         public static ConfigEntry<float> SpiritRise;
 
@@ -79,9 +81,23 @@ namespace Grove
             SpiritScale = config.Bind("Spirit", "SpiritScale", 1f,
                 "Scale of the whole thing. The mesh is built knee-to-chest height.");
 
-            MoteCount = config.Bind("Spirit", "MoteCount", 7,
-                "How many beads ride the hoop. Seven is what the mesh was designed "
-                + "around; the hoop does not care, and neither does the drift.");
+            MoteCount = config.Bind("Spirit", "MoteCount", 6,
+                "How many beads ride each ring. Six rather than the original seven: "
+                + "seven was chosen so no two beads sat opposite each other on a single "
+                + "circle, and with several circles crossing that buys nothing while an "
+                + "even count divides more cleanly.");
+
+            RingCount = config.Bind("Spirit", "RingCount", 3,
+                "How many circles of beads. One is the original. Three crossed circles "
+                + "read as an atom, which is what the beads moving in step are for - "
+                + "several orbits, one motion. Four begins to lose the separation "
+                + "between rings and reads as a cloud instead.");
+
+            ShowHoop = config.Bind("Spirit", "ShowHoop", false,
+                "Draw the torus the beads sit on. Off: the circle is implied by where "
+                + "the beads are and by their moving together, which is a lighter and "
+                + "stranger thing than a visible ring - and with several rings crossing, "
+                + "the torus meshes turn the whole shape into a ball of wire.");
 
             SpiritRise = config.Bind("Spirit", "SpiritRise", 0.4f,
                 "How far above the sapling the spirit appears.");

@@ -116,24 +116,14 @@ namespace Grove
                 var glow = Glow();
 
                 var heartGo = Part(root.transform, "heart", heart, glow);
-                var hoopGo = Part(root.transform, "hoop", hoop, glow);
 
-                var motes = Mathf.Max(0, GroveConfig.MoteCount.Value);
-                for (var i = 0; i < motes; i++)
-                {
-                    var angle = 360f / motes * i + 12f;
-                    var radians = angle * Mathf.Deg2Rad;
+                // An empty carrier rather than the hoop mesh. It is what tumbles, and
+                // the rings hang under it - so the hoop being drawn or not is now just
+                // one more part rather than the thing the structure is built on.
+                var hoopGo = new GameObject("rings");
+                hoopGo.transform.SetParent(root.transform, false);
 
-                    var moteGo = Part(hoopGo.transform, "mote" + i, mote, glow);
-
-                    // The hoop mesh lies in its own local XY plane: the torus is built
-                    // in Blender's XZ with its axis along +Y, and the exporter maps
-                    // Blender Y to Unity Z. If that is wrong the symptom is
-                    // unmistakable - the beads will orbit through the hoop, not along it.
-                    moteGo.transform.localPosition = new Vector3(
-                        Mathf.Cos(radians) * ForestSpirit.Orbit,
-                        Mathf.Sin(radians) * ForestSpirit.Orbit, 0f);
-                }
+                Rings(hoopGo.transform, hoop, mote, glow);
 
                 Reach(root);
 
@@ -146,11 +136,60 @@ namespace Grove
                 ZNetView.m_forceDisableInit = previous;
             }
 
+            var rings = Mathf.Max(1, GroveConfig.RingCount.Value);
+            var beads = Mathf.Max(0, GroveConfig.MoteCount.Value);
+
             GrovePlugin.Log.LogInfo(
-                "Built " + Name + ": heart " + heart.Mesh.vertexCount + " verts, hoop "
-                + hoop.Mesh.vertexCount + ", " + GroveConfig.MoteCount.Value + " motes.");
+                "Built " + Name + ": heart " + heart.Mesh.vertexCount + " verts, "
+                + rings + " ring(s) of " + beads + " = " + (rings * beads) + " beads, "
+                + (GroveConfig.ShowHoop.Value ? "hoop drawn" : "hoop hidden") + ".");
 
             return root;
+        }
+
+        /// <summary>
+        /// The circles of beads, each in its own plane.
+        ///
+        /// Each ring is an empty transform holding its beads at fixed local positions
+        /// on a circle in its local XY plane, then tilted. That split is what lets the
+        /// drift be one Rotate per ring instead of a repositioning per bead, and it is
+        /// what keeps every bead in step - there is no per-bead state left to drift out
+        /// of sync.
+        ///
+        /// Rings share 180 degrees between them rather than 360, because a circle
+        /// rotated half a turn is the same circle: four rings at 0/90/180/270 would
+        /// draw two of them twice and look like two. And the first ring starts at 90
+        /// rather than 0, because a ring at zero tilt lies flat and a flat circle seen
+        /// from eye height is a row of beads with no circle in it at all.
+        /// </summary>
+        private static void Rings(Transform parent, ModelData hoop, ModelData mote,
+                                  Material glow)
+        {
+            var rings = Mathf.Max(1, GroveConfig.RingCount.Value);
+            var beads = Mathf.Max(0, GroveConfig.MoteCount.Value);
+
+            for (var r = 0; r < rings; r++)
+            {
+                var ring = new GameObject("ring" + r);
+                ring.transform.SetParent(parent, false);
+                ring.transform.localRotation =
+                    Quaternion.Euler(90f + 180f / rings * r, 0f, 0f);
+
+                if (GroveConfig.ShowHoop.Value)
+                    Part(ring.transform, "hoop", hoop, glow);
+
+                for (var i = 0; i < beads; i++)
+                {
+                    // Offset per ring so beads on crossing circles do not all arrive at
+                    // the same point at the same moment, which reads as a seam.
+                    var angle = (360f / beads * i + 12f * r) * Mathf.Deg2Rad;
+
+                    var beadGo = Part(ring.transform, "mote" + r + "_" + i, mote, glow);
+                    beadGo.transform.localPosition = new Vector3(
+                        Mathf.Cos(angle) * ForestSpirit.Orbit,
+                        Mathf.Sin(angle) * ForestSpirit.Orbit, 0f);
+                }
+            }
         }
 
         /// <summary>
