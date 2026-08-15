@@ -71,16 +71,20 @@ namespace Grove
             // The glow group is asked twice: once demanding a material that actually
             // emits, and only then falling back to any material at all.
             //
-            // One pass was not enough, and the failure was invisible. Taking the first
-            // material with an albedo off fire_pit gave the spirit its stone ring -
-            // Custom/StaticRock, no _EmissionColor - so ForestSpirit.Pulse wrote its
-            // breathing into a property nothing read, and the spirit came out a grey
-            // pebble lit by its own point light. It looked like the light was working,
-            // because it was; it was the only thing working.
+            // Insurance rather than a fix, and worth being honest about because the
+            // reasoning that produced it was wrong. The theory was that fire_pit's
+            // stone ring - Custom/StaticRock, the first material with an albedo and so
+            // the one this was picking - had no _EmissionColor, and that
+            // ForestSpirit.Pulse had therefore been writing its breathing into a
+            // property nothing read. DumpMaterials says otherwise:
             //
-            // The dump found what the list was already walking past: fire_pit carries
-            // fireplace_ash_glowing, a Standard shader with real emission and an albedo,
-            // two renderers further in.
+            //   donor fire_pit: stone shader=Custom/StaticRock emission=True albedo=True
+            //
+            // So the property was always there and this pass picks the very same
+            // material. It stays because the donor list is a guess about the game
+            // rather than a fact about it, and the day a first hit genuinely has no
+            // emission the symptom would be a spirit that does not breathe and nothing
+            // in the log to say why. It is not load-bearing today.
             if (group == GlowGroup)
             {
                 var lit = Pick(group, true);
