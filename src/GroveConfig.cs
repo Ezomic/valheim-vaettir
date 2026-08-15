@@ -25,6 +25,7 @@ namespace Grove
         public static ConfigEntry<string> SaplingDonor;
         public static ConfigEntry<float> SaplingScale;
         public static ConfigEntry<float> SaplingHealth;
+        public static ConfigEntry<string> SaplingIcon;
         public static ConfigEntry<bool> NeedsCultivated;
 
         public static ConfigEntry<float> BloodNeeded;
@@ -126,6 +127,14 @@ namespace Grove
 
             SaplingScale = config.Bind("Sapling", "SaplingScale", 1f,
                 "Scale of the planted piece.");
+
+            SaplingIcon = config.Bind("Sapling", "SaplingIcon", "grove_sapling_icon.png",
+                "The picture on the cultivator, read from beside the dll. Without one "
+                + "the piece keeps the donor's icon and the cultivator offers you a "
+                + "carrot. Rendered from stage one - the seed you actually place - "
+                + "because the grown stages are two metres of mostly trunk and at "
+                + "inventory size they come out as a brown stick. tools/sapling_icon.py "
+                + "renders the alternatives if you want a different one.");
 
             SaplingHealth = config.Bind("Sapling", "SaplingHealth", 500f,
                 "How much punishment it takes before it is destroyed. The donor is a "

@@ -166,6 +166,13 @@ namespace Grove
             piece.m_description = "It grows on what dies near it.";
             piece.m_resources = Requirements(GroveConfig.SaplingCost.Value);
 
+            // Without this the clone keeps the donor's picture and the cultivator
+            // offers you a carrot - the name, the description and the cost were all
+            // overridden here and the icon was simply forgotten. Left alone when the
+            // PNG is missing, because the donor's wrong icon still beats no icon.
+            var icon = Icons.Load(GroveConfig.SaplingIcon.Value, Name);
+            if (icon != null) piece.m_icon = icon;
+
             piece.m_groundPiece = true;
             piece.m_groundOnly = true;
             piece.m_cultivatedGroundOnly = GroveConfig.NeedsCultivated.Value;
@@ -216,6 +223,18 @@ namespace Grove
                 if (destructible == null) continue;
 
                 destructible.m_health = health;
+
+                // A timer that deletes it. Awake does InvokeRepeating("DestroyNow", m_ttl)
+                // for any non-zero ttl, so whatever the donor happened to carry would take
+                // the sapling away on its own schedule - and the symptom is bare ground
+                // with no attacker and no message, which is the worst kind of bug to chase.
+                destructible.m_ttl = 0f;
+
+                // Anything can hurt it. A non-zero tier fails the hit with a "too hard"
+                // popup, and a sapling that greydwarfs cannot damage is not the tough but
+                // breakable thing that was asked for - it is invulnerable with extra steps.
+                destructible.m_minToolTier = 0;
+
                 found.Add("Destructible");
             }
 

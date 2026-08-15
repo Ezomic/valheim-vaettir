@@ -115,7 +115,7 @@ namespace Grove
             shared.m_teleportable = true;
             shared.m_questItem = false;
 
-            var icon = LoadIcon(Path.Combine(directory, Icon));
+            var icon = Icons.Load(Icon, Name);
             if (icon != null) shared.m_icons = new[] { icon };
 
             drop.m_itemData.m_stack = 1;
@@ -161,86 +161,6 @@ namespace Grove
             var renderer2 = visual.AddComponent<MeshRenderer>();
             renderer2.sharedMaterials = Skins.Skin(model.Groups);
             Skins.Remap(model.Mesh, model.Groups);
-        }
-
-        /// <summary>
-        /// The icon, read off disk.
-        ///
-        /// Point filtering would be wrong here even though everything else in these
-        /// mods wants it: the source is 128px and the inventory draws it smaller, so
-        /// it is always being minified, and point-sampling a minified image is how you
-        /// get a shimmering mess as the slot moves.
-        /// </summary>
-        private static Sprite LoadIcon(string path)
-        {
-            if (!File.Exists(path))
-            {
-                GrovePlugin.Log.LogWarning(
-                    "No " + Icon + " beside the dll - " + Name + " will use the donor's "
-                    + "icon, which is someone else's picture.");
-                return null;
-            }
-
-            try
-            {
-                var texture = new Texture2D(2, 2, TextureFormat.RGBA32, false)
-                {
-                    filterMode = FilterMode.Bilinear,
-                    wrapMode = TextureWrapMode.Clamp
-                };
-
-                if (!LoadPng(texture, File.ReadAllBytes(path))) return null;
-
-                texture.name = Name + "_icon";
-                texture.hideFlags = HideFlags.HideAndDontSave;
-
-                return Sprite.Create(texture,
-                                     new Rect(0f, 0f, texture.width, texture.height),
-                                     new Vector2(0.5f, 0.5f));
-            }
-            catch (System.Exception e)
-            {
-                GrovePlugin.Log.LogError("Could not read " + Icon + ": " + e.Message);
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// Texture2D.LoadImage, by reflection.
-        ///
-        /// It lives in UnityEngine.ImageConversionModule, which targets netstandard 2.1
-        /// while this builds against net462 - referencing it outright fails the build
-        /// with CS1705. The method is present at runtime regardless, so reaching it
-        /// this way costs one lookup and removes the whole problem.
-        /// </summary>
-        private static bool LoadPng(Texture2D texture, byte[] data)
-        {
-            var type = AccessTools.TypeByName("UnityEngine.ImageConversion");
-            if (type == null)
-            {
-                GrovePlugin.Log.LogWarning("UnityEngine.ImageConversion is missing - "
-                                           + "cannot read the icon.");
-                return false;
-            }
-
-            var method = AccessTools.Method(type, "LoadImage",
-                                            new[] { typeof(Texture2D), typeof(byte[]) })
-                         ?? AccessTools.Method(type, "LoadImage",
-                                               new[] { typeof(Texture2D), typeof(byte[]),
-                                                       typeof(bool) });
-
-            if (method == null)
-            {
-                GrovePlugin.Log.LogWarning("No LoadImage overload found on "
-                                           + "UnityEngine.ImageConversion.");
-                return false;
-            }
-
-            var args = method.GetParameters().Length == 3
-                ? new object[] { texture, data, false }
-                : new object[] { texture, data };
-
-            return (bool)method.Invoke(null, args);
         }
 
         // ------------------------------------------------------------------ registering
