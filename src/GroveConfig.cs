@@ -1,9 +1,12 @@
 using BepInEx.Configuration;
+using UnityEngine;
 
 namespace Grove
 {
     internal static class GroveConfig
     {
+        public static ConfigEntry<bool> TestMode;
+
         public static ConfigEntry<string> SpiritName;
         public static ConfigEntry<float> SpiritScale;
         public static ConfigEntry<int> MoteCount;
@@ -36,8 +39,38 @@ namespace Grove
         public static ConfigEntry<bool> DumpMaterials;
         public static ConfigEntry<string> LookForPrefabs;
 
+        /// <summary>
+        /// Three greydwarfs, not forty.
+        ///
+        /// Sixty is the right price for the feature and completely wrong for checking
+        /// that it works at all: every pass over the sapling's stages, the spirit, the
+        /// commune and the heartwood costs an hour of killing first. A switch rather
+        /// than a number to edit and remember to put back - the number is the thing
+        /// most likely to be left at 3 and then played on.
+        /// </summary>
+        private const float TestBlood = 3f;
+
+        /// <summary>
+        /// What one sapling actually needs, honouring TestMode.
+        ///
+        /// Read live rather than cached: lowering this under a sapling that is already
+        /// part-fed leaves it over the line, and the next kill opens it. That is the
+        /// wanted behaviour for a test and harmless otherwise, since Feed is the only
+        /// caller that can open one.
+        /// </summary>
+        public static float BloodNeededNow()
+        {
+            return TestMode.Value ? TestBlood : Mathf.Max(1f, BloodNeeded.Value);
+        }
+
         public static void Bind(ConfigFile config)
         {
+            TestMode = config.Bind("Diagnostics", "TestMode", false,
+                "Drops what a sapling needs to three greydwarfs, so the whole chain - "
+                + "stages, spirit, commune, heartwood - can be walked in a minute "
+                + "instead of an hour. Announced in the log on startup so it is hard "
+                + "to leave on.");
+
             SpiritName = config.Bind("Spirit", "SpiritName", "Forest spirit",
                 "What it is called when you look at it.");
 

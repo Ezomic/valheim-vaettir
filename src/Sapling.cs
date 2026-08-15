@@ -63,7 +63,7 @@ namespace Grove
 
         public float Needed
         {
-            get { return Mathf.Max(1f, GroveConfig.BloodNeeded.Value); }
+            get { return GroveConfig.BloodNeededNow(); }
         }
 
         public float Progress

@@ -51,6 +51,10 @@ namespace Grove
             _harmony.PatchAll(typeof(GrovePatches));
 
             Log.LogInfo(PluginName + " " + PluginVersion + " by " + PluginAuthor + " - ready.");
+
+            if (GroveConfig.TestMode.Value)
+                Log.LogWarning("TEST MODE: a sapling needs three greydwarfs, not sixty. "
+                               + "Turn TestMode off in the config before playing for real.");
         }
 
         private void OnDestroy()
