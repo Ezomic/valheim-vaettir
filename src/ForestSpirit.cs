@@ -340,7 +340,7 @@ namespace Grove
                 "The " + GetHoverName().ToLowerInvariant()
                 + " folds itself into the heartwood."));
 
-            Fade(nview);
+            Part(nview);
             return true;
         }
 
@@ -361,16 +361,16 @@ namespace Grove
         /// would fold itself into one heartwood and then still be standing there,
         /// ready to do it again.
         /// </summary>
-        private void Fade(ZNetView nview)
+        private void Part(ZNetView nview)
         {
-            var effect = GroveConfig.FadeEffect.Value;
+            var effect = GroveConfig.PartingEffect.Value;
             if (!string.IsNullOrEmpty(effect) && ZNetScene.instance != null)
             {
                 var prefab = ZNetScene.instance.GetPrefab(effect);
                 if (prefab != null)
                     Instantiate(prefab, transform.position, Quaternion.identity);
                 else
-                    GrovePlugin.LogOnce("Fade effect '" + effect + "' does not exist.");
+                    GrovePlugin.LogOnce("Parting effect '" + effect + "' does not exist.");
             }
 
             nview.ClaimOwnership();

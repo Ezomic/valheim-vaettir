@@ -15,7 +15,7 @@ namespace Grove
 
         public static ConfigEntry<float> SpiritRise;
 
-        public static ConfigEntry<string> FadeEffect;
+        public static ConfigEntry<string> PartingEffect;
 
         public static ConfigEntry<string> HeartwoodName;
         public static ConfigEntry<string> HeartwoodDonor;
@@ -103,12 +103,21 @@ namespace Grove
             SpiritRise = config.Bind("Spirit", "SpiritRise", 0.4f,
                 "How far above the sapling the spirit appears.");
 
-            FadeEffect = config.Bind("Spirit", "FadeEffect", "vfx_prayer",
-                "A vanilla effect played where the spirit stood when it goes. Blank for "
-                + "none. Named rather than built because a particle system authored here "
+            PartingEffect = config.Bind("Spirit", "PartingEffect", "",
+                "A vanilla effect played once, where the spirit stood, at the moment it "
+                + "folds into the heartwood and goes. Blank for none.\n"
+                + "Not the glow: the spirit's breathing is a light and an emission "
+                + "colour driven in code, always on, and nothing to do with this "
+                + "setting. This was called FadeEffect and that name cost a "
+                + "conversation, because the spirit visibly fades in and out on its own "
+                + "and the two are unrelated.\n"
+                + "Named rather than built, because a particle system authored here "
                 + "would look like a mod and the game's own does not - but which effect "
-                + "is right is a question for the game, so a name that does not resolve "
-                + "costs the moment its flourish rather than breaking it.");
+                + "is right is a question for the game rather than a guess made here, so "
+                + "a name that does not resolve costs the moment its flourish and does "
+                + "not break it. Empty by default until a name is confirmed loaded: "
+                + "vfx_prayer was the guess and it does not exist, which is a warning "
+                + "in the log on every commune and nothing on screen.");
 
             // ---------------------------------------------------------- heartwood
 
