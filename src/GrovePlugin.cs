@@ -31,6 +31,58 @@ namespace Grove
         private bool _diagnosticsDone;
 
         /// <summary>
+        /// One thing that has to be retried until it takes, and whether it has given up.
+        /// </summary>
+        private sealed class Step
+        {
+            public string Name;
+            public System.Func<bool> Run;
+            public bool Abandoned;
+        }
+
+        private Step[] _steps;
+
+        /// <summary>
+        /// Runs one registration step, and stops running it for good if it ever throws.
+        ///
+        /// Retrying every frame is right for a step that is merely not ready yet - that is
+        /// the whole design below. It is badly wrong for one that is broken, because the
+        /// throw comes back every frame with it. That is not hypothetical: a null deref in
+        /// SaplingPrefab.Strip, since fixed, wrote 46,457 identical stack traces in a
+        /// single session and a 50MB log, and the frame cost of that was a far worse
+        /// symptom than the missing sapling it was reporting.
+        ///
+        /// So a step that throws is abandoned rather than retried. The mod comes up short
+        /// one prefab and says so once, which is a thing you can read and act on.
+        /// </summary>
+        /// <summary>
+        /// StowCoupling.Apply returns nothing, and a Step wants a bool. It is never "done"
+        /// in the sense the others are anyway - the post can appear at any point - so it
+        /// reports false and simply keeps being called.
+        /// </summary>
+        private static bool StowApply()
+        {
+            StowCoupling.Apply();
+            return false;
+        }
+
+        private void Run(Step step)
+        {
+            if (step.Abandoned) return;
+
+            try
+            {
+                step.Run();
+            }
+            catch (System.Exception e)
+            {
+                step.Abandoned = true;
+                Log.LogError(step.Name + " could not be registered and will not be retried "
+                             + "again this session. " + e);
+            }
+        }
+
+        /// <summary>
         /// Warns once rather than every frame.
         ///
         /// Registration is retried until it takes, so anything that complains inside it
@@ -57,6 +109,15 @@ namespace Grove
             _harmony.PatchAll(typeof(BloodFeed));
             _harmony.PatchAll(typeof(GrovePatches));
 
+            // Built once rather than per frame, so Update allocates nothing to iterate.
+            _steps = new[]
+            {
+                new Step { Name = "Heartwood", Run = HeartwoodPrefab.Register },
+                new Step { Name = "Forest spirit", Run = SpiritPrefab.Register },
+                new Step { Name = "Ancient sapling", Run = SaplingPrefab.Register },
+                new Step { Name = "Stow coupling", Run = StowApply },
+            };
+
             Log.LogInfo(PluginName + " " + PluginVersion + " by " + PluginAuthor + " - ready.");
 
             if (GroveConfig.TestMode.Value)
@@ -79,17 +140,12 @@ namespace Grove
         /// </summary>
         private void Update()
         {
-            // Heartwood first: the sapling's cost and the spirit's gift both name it,
-            // and an item that is not in ObjectDB yet is an item that silently is not
-            // there.
-            HeartwoodPrefab.Register();
-            SpiritPrefab.Register();
-            SaplingPrefab.Register();
-
-            // Last, and retried like the rest: Stow builds its post on its own schedule,
-            // so there is no moment to hook - the piece simply appears in ZNetScene at
-            // some point and this notices.
-            StowCoupling.Apply();
+            // Ordered, and the order matters: Heartwood first, because the sapling's cost
+            // and the spirit's gift both name it, and an item that is not in ObjectDB yet
+            // is an item that silently is not there. Stow last, because it builds its post
+            // on its own schedule - the piece simply appears in ZNetScene at some point
+            // and this notices.
+            foreach (var step in _steps) Run(step);
 
             if (_diagnosticsDone || ZNetScene.instance == null) return;
             _diagnosticsDone = true;
