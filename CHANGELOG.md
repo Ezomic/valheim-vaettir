@@ -3,9 +3,11 @@
 Notable changes to Vaettir. Format follows [Keep a Changelog](https://keepachangelog.com),
 and the mod uses [semantic versioning](https://semver.org).
 
-## [0.1.0] — 2026-08-16
+## [1.0.0] — 2026-08-16
 
-First release.
+First release. The chain has been played end to end in a real world: planted, fed on
+greydwarf deaths through all four stages, opened into a spirit, communed with, and the
+heartwood carried away and dropped.
 
 ### The sapling
 
@@ -42,5 +44,19 @@ First release.
 
 ### Known limits
 
-- **Untested in a real session.** It builds and compiles, and the chain can be walked with
-  `TestMode` rather than by killing forty greydwarfs, but it has not been played through.
+- Exercised in single-player. Each spirit and sapling is driven by whoever owns its ZDO, so
+  co-op should be fine, but **dedicated-server use is untested**.
+- `TestMode` walks the whole chain without killing forty greydwarfs, which is how most of it
+  was exercised before the full run.
+
+### Late fixes
+
+- **A dropped heartwood no longer falls through the floor.** Stripping the donor's mesh
+  destroyed the whole renderer object, and on a surtling core the collider lives on that same
+  object — so the strip took the collision with it, and an ItemDrop with a Rigidbody and
+  nothing to rest on simply keeps going. Found by throwing one away.
+- `FadeEffect` is now `PartingEffect` and defaults to blank. The old name read as the control
+  for the spirit's visible glow, which is something else entirely, and its old default named
+  a prefab that does not exist — so it bought a warning on every commune and nothing on
+  screen. Renamed before release rather than after, when it would have stranded the key in
+  other people's configs.
