@@ -66,18 +66,6 @@ namespace Grove
             return false;
         }
 
-        /// <summary>
-        /// Same shape as StowApply, and for the same reason. The visitor's arrival is a
-        /// standing question rather than a one-off - the answer changes the moment you
-        /// house your first spirit - so it reports false and keeps being asked. It rate
-        /// limits itself internally and goes quiet once the visitor is here.
-        /// </summary>
-        private static bool TraderCheck()
-        {
-            TraderArrival.Check();
-            return false;
-        }
-
         private void Run(Step step)
         {
             if (step.Abandoned) return;
@@ -127,9 +115,7 @@ namespace Grove
                 new Step { Name = "Heartwood", Run = HeartwoodPrefab.Register },
                 new Step { Name = "Forest spirit", Run = SpiritPrefab.Register },
                 new Step { Name = "Ancient sapling", Run = SaplingPrefab.Register },
-                new Step { Name = "Visitor", Run = TraderPrefab.Register },
                 new Step { Name = "Stow coupling", Run = StowApply },
-                new Step { Name = "Visitor arrival", Run = TraderCheck },
             };
 
             Log.LogInfo(PluginName + " " + PluginVersion + " by " + PluginAuthor + " - ready.");
@@ -185,11 +171,6 @@ namespace Grove
         {
             Skins.Invalidate();
 
-            // And the visitor is asked about again. Its arrival is per world - a new
-            // world has its own bed, its own global keys and no visitor yet - so the
-            // "already done" from the last one would keep it away for good.
-            TraderArrival.Invalidate();
-
             // The post is rebuilt with a fresh recipe on a new world, so the coupling
             // has to be reapplied - otherwise loading a second world after the first
             // leaves the post back at its unmodified cost.
@@ -202,7 +183,6 @@ namespace Grove
         {
             Skins.Invalidate();
             StowCoupling.Invalidate();
-            TraderArrival.Invalidate();
         }
     }
 }

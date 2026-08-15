@@ -34,12 +34,6 @@ namespace Grove
         public static ConfigEntry<bool> Messages;
         public static ConfigEntry<bool> Verbose;
 
-        public static ConfigEntry<bool> TraderEnabled;
-        public static ConfigEntry<string> TraderName;
-        public static ConfigEntry<string> TraderDonor;
-        public static ConfigEntry<string> TraderStock;
-        public static ConfigEntry<float> TraderDistance;
-
         public static ConfigEntry<bool> CoupleToStow;
         public static ConfigEntry<string> StowPostCost;
 
@@ -184,37 +178,6 @@ namespace Grove
 
             Verbose = config.Bind("Diagnostics", "Verbose", false,
                 "Log every feed.");
-
-            // ---------------------------------------------------------- the visitor
-
-            TraderEnabled = config.Bind("Trader", "TraderEnabled", true,
-                "Once you have housed a spirit, a vaettr comes to your bed and stays. "
-                + "It arrives when the area around your bed next loads, so you find it "
-                + "rather than watch it appear.");
-
-            TraderName = config.Bind("Trader", "TraderName", "The visitor",
-                "What it is called when you look at it.");
-
-            TraderDonor = config.Bind("Trader", "TraderDonor", "Haldor",
-                "The vanilla NPC it is cloned from, for its rig, its idle and talk "
-                + "animations, its Trader component and the whole store window. None of "
-                + "that can be hand-built: there is no Unity editor here and therefore "
-                + "no animation controller, which is the same wall the creature mods "
-                + "hit.");
-
-            TraderStock = config.Bind("Trader", "TraderStock", "AncientSeed:1:80",
-                "What it sells, as Prefab:Stack:PriceInCoins, comma separated. Ancient "
-                + "seeds by default, and deliberately only those: the chain needs a "
-                + "second source of seeds or it can be run exactly as many times as the "
-                + "world happened to scatter them, and a spirit that housed itself with "
-                + "you selling you the means to grow another is the one piece of stock "
-                + "that is about something. Heartwood is not sold at any price - buying "
-                + "one would make the sapling, the hour of greydwarfs and the whole "
-                + "ritual optional.");
-
-            TraderDistance = config.Bind("Trader", "TraderDistance", 8f,
-                "How far from the bed it settles, in metres. Far enough not to stand in "
-                + "your doorway, near enough to be obviously yours.");
 
             // ---------------------------------------------------------- stow
 

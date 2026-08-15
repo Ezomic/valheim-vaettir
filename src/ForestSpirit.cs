@@ -327,11 +327,6 @@ namespace Grove
 
             inventory.AddItem(HeartwoodPrefab.Name, amount, 1, 0, 0L, "");
 
-            // The world remembers that someone has housed one. This is what brings the
-            // visitor, and it is set here rather than anywhere else because this is the
-            // only moment a heartwood comes into existence.
-            TraderArrival.RememberHoused();
-
             user.Message(MessageHud.MessageType.Center, Localization.instance.Localize(
                 "The " + GetHoverName().ToLowerInvariant()
                 + " folds itself into the heartwood."));
