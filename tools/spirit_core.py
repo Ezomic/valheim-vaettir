@@ -45,16 +45,19 @@ PREVIEWS = os.path.join(ASSETS, "previews")
 HOVER = 1.15
 
 
-def heart(scale=1.0):
+def heart(scale=1.0, height=HOVER):
     """
     The mass itself. Slightly taller than wide.
 
     A sphere reads as an object - a ball, a fruit, something you could pick up. An
     upright soft mass reads as a presence, which is the whole difference between the
     spirit being a thing and the spirit being a someone.
+
+    height exists because the single-mesh previews want it lifted to chest and the
+    part meshes must not be. See spirit_heart_only.
     """
-    orb(0.150 * scale, (0.0, 0.0, HOVER), "core", subdivisions=2, stretch=1.30)
-    orb(0.104 * scale, (0.0, 0.0, HOVER), "core", subdivisions=2, stretch=1.55)
+    orb(0.150 * scale, (0.0, 0.0, height), "core", subdivisions=2, stretch=1.30)
+    orb(0.104 * scale, (0.0, 0.0, height), "core", subdivisions=2, stretch=1.55)
 
 
 ORBIT = 0.34
@@ -91,9 +94,22 @@ def spirit_core_plain():
 
 
 def spirit_heart_only():
-    """The mass on its own, so it can stay upright while the ring turns around it."""
-    heart()
-    collide((0.0, 0.0, HOVER), (0.80, 0.80, 0.80))
+    """
+    The mass on its own, so it can stay upright while the ring turns around it.
+
+    **At the origin**, for exactly the reason spirit_mote_only gives. It was not, and
+    the bill arrived in the first play session: the heart was exported still carrying
+    HOVER, so its mesh centre sat 1.155m up while the hoop and the motes sat at 0.
+    Both are parented to the same root at the same local position, so the spirit came
+    out as a ring of beads with its own heart floating a metre and a bit over the top
+    of it, which read as two unrelated objects rather than as one creature.
+
+    Measured, not eyeballed - the .obj vertex bounds say centre y 1.155 against the
+    hoop's 0.005. The rule was already written down one function below and had simply
+    not been applied here.
+    """
+    heart(height=0.0)
+    collide((0.0, 0.0, 0.0), (0.80, 0.80, 0.80))
 
 
 def spirit_ring_only():
