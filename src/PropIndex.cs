@@ -64,10 +64,25 @@ namespace Grove
         /// every asset that exists rather than every asset that is loaded - Stoker's first
         /// candidate list came off the manifest and two of sixteen names resolved.
         /// </summary>
+        /// <summary>Noise when hunting a material donor. Not noise when hunting an effect.</summary>
+        private static readonly string[] Chaff =
+            { "destruction", "broken", "lod", "vfx", "sfx" };
+
         public static void Search(string keywords)
         {
             if (string.IsNullOrEmpty(keywords)) return;
             if (_index == null) BuildIndex();
+
+            // Both lists. The index only holds prefabs with a MeshRenderer, which is
+            // right for its own job and useless for anything made of particles - so a
+            // search for vfx_ came back with nothing at all, from a game that is full
+            // of them. ZNetScene's list is what "loaded prefab" actually means.
+            var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var key in _index.Keys) names.Add(key);
+
+            if (ZNetScene.instance != null)
+                foreach (var prefab in ZNetScene.instance.m_prefabs)
+                    if (prefab != null) names.Add(prefab.name);
 
             foreach (var raw in keywords.Split(','))
             {
@@ -75,17 +90,24 @@ namespace Grove
                 if (word.Length == 0) continue;
 
                 var hits = new List<string>();
-                foreach (var pair in _index)
+                foreach (var name in names)
                 {
-                    if (pair.Key.IndexOf(word, StringComparison.OrdinalIgnoreCase) < 0) continue;
+                    if (name.IndexOf(word, StringComparison.OrdinalIgnoreCase) < 0) continue;
 
-                    // Broken and destruction variants are the same prop in pieces.
-                    var lower = pair.Key.ToLowerInvariant();
-                    if (lower.Contains("destruction") || lower.Contains("broken")
-                        || lower.Contains("lod") || lower.Contains("vfx")
-                        || lower.Contains("sfx")) continue;
+                    // Broken and destruction variants are the same prop in pieces - but
+                    // only chaff when they are not what was asked for. This filter used
+                    // to be unconditional, so a search for 'vfx_' threw away every hit
+                    // it found on the grounds that it contained 'vfx'.
+                    var lower = name.ToLowerInvariant();
+                    var asked = word.ToLowerInvariant();
 
-                    hits.Add(pair.Key);
+                    var junk = false;
+                    foreach (var chaff in Chaff)
+                        if (lower.Contains(chaff) && !asked.Contains(chaff)) junk = true;
+
+                    if (junk) continue;
+
+                    hits.Add(name);
                 }
 
                 hits.Sort();
