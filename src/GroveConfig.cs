@@ -107,9 +107,12 @@ namespace Grove
                 "How many fit in a slot.");
 
             HeartwoodGiven = config.Bind("Heartwood", "HeartwoodGiven", 1,
-                "How much one spirit hands over. One by default: the whole chain exists "
-                + "to make a single stowing post cost something real, and handing over "
-                + "five would make the second through fifth free.");
+                "How many a spirit folds itself into. One, and really only one: the "
+                + "heartwood is where the spirit lives, so a spirit that produced five "
+                + "of them would have five homes and be in none of them. It is also "
+                + "the economy - the whole chain exists to make a single stowing post "
+                + "cost something real, and five would make the rest free - but the "
+                + "story is the harder constraint of the two.");
 
             // ---------------------------------------------------------- the sapling
 
@@ -179,7 +182,10 @@ namespace Grove
             // ---------------------------------------------------------- stow
 
             CoupleToStow = config.Bind("Stow", "CoupleToStow", true,
-                "If the Stow mod is installed, make its stowing post cost heartwood. "
+                "If the Stow mod is installed, make its stowing post cost heartwood - "
+                + "which is to say, make the post the place the spirit ends up living. "
+                + "That is where the sorting comes from, and it is why the post is "
+                + "worth an hour of greydwarfs when a chest is worth ten wood. "
                 + "Off leaves Stow's own recipe alone. Nothing here touches Stow when it "
                 + "is absent, and Stow is never told about this mod - it stays a mod that "
                 + "works on its own and still builds its post out of wood and fine wood.");

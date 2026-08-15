@@ -6,7 +6,16 @@ using UnityEngine;
 namespace Grove
 {
     /// <summary>
-    /// Heartwood: what the spirit hands over, and what the stowing post is built from.
+    /// Heartwood: where the spirit goes, and what the stowing post is built from.
+    ///
+    /// Not a trophy and not a drop. The spirit does not die and hand over a piece of
+    /// itself - it folds itself into this and you carry it, and building with it is
+    /// how you put it somewhere. That reading costs nothing mechanically and fixes
+    /// the one sour note in the chain: an hour of killing greydwarfs ending in you
+    /// taking the heart out of the thing it summoned made the spirit another thing in
+    /// the forest with loot in it, which is exactly what Interact was written to
+    /// avoid. A home is the only version where the violence buys something that is
+    /// not more violence.
     ///
     /// Cloned from a vanilla material item rather than assembled, because an item needs
     /// a great deal of machinery that has nothing to do with what it looks like - a
@@ -108,7 +117,11 @@ namespace Grove
             var shared = drop.m_itemData.m_shared;
 
             shared.m_name = GroveConfig.HeartwoodName.Value;
-            shared.m_description = "Still warm. Something was living in it.";
+            // Reads as occupied rather than as salvage. "Still warm, something was
+            // living in it" was the old line and it described a carcass - past tense,
+            // and the spirit already gone. It is not gone. It is in there.
+            shared.m_description = "Warm, and heavier than wood should be. The spirit "
+                                   + "is folded up inside, waiting to be put somewhere.";
             shared.m_itemType = ItemDrop.ItemData.ItemType.Material;
             shared.m_maxStackSize = Mathf.Max(1, GroveConfig.HeartwoodStack.Value);
             shared.m_weight = 0.5f;

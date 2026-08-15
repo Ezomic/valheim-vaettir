@@ -4,7 +4,12 @@ using UnityEngine;
 namespace Grove
 {
     /// <summary>
-    /// Makes the stowing post cost heartwood.
+    /// Makes the stowing post cost heartwood - which is to say, gives the spirit
+    /// somewhere to live.
+    ///
+    /// The post is not built out of a spirit, it is built for one, and that is the
+    /// whole reason a post that sorts your chests is worth an hour of greydwarfs when
+    /// a chest is worth ten wood. Something is doing the sorting.
     ///
     /// The whole coupling lives on this side, and Stow is never told about Grove. That
     /// direction matters: Stow stays a mod that works on its own and still builds its
@@ -130,10 +135,12 @@ namespace Grove
                     m_resItem = drop,
                     m_amount = amount,
 
-                    // Recoverable, unlike the seed. The post is a building, and taking
-                    // a building down in Valheim gives its materials back - making this
-                    // the one piece in the game that eats what it is made of would read
-                    // as a bug rather than as a rule.
+                    // Recoverable, unlike the seed, and now for a reason rather than
+                    // only a convention. Taking the post down does not destroy
+                    // anything: the spirit's home is the heartwood, not the post, so
+                    // dismantling one hands the heartwood back and the spirit moves
+                    // with you. The seed is spent because it was planted; this never
+                    // is, because nothing was consumed to begin with.
                     m_recover = true
                 });
             }

@@ -3,7 +3,7 @@
   "author": "Robbin Thijssen",
   "version_number": "0.1.0",
   "website_url": "",
-  "description": "Plant an ancient seed, feed it greydwarf blood, and a forest spirit answers.",
+  "description": "Plant an ancient seed, feed it greydwarf blood, and a forest spirit answers. Give it somewhere to live.",
   "dependencies": [
     "denikson-BepInExPack_Valheim-5.4.2333"
   ]

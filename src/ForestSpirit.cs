@@ -275,11 +275,18 @@ namespace Grove
         }
 
         /// <summary>
-        /// You speak to it, it gives you what it grew into, and it goes.
+        /// You speak to it, and it folds itself into the heartwood for you to carry.
         ///
         /// One press, not a fight. The whole chain up to here was violent - an hour of
         /// killing greydwarfs to feed a seed - and having it end in one more killing
         /// would make the spirit just another thing in the forest with loot in it.
+        ///
+        /// So the heartwood is its home rather than its heart. Mechanically identical -
+        /// an item appears and the spirit stops standing there - but it is the whole
+        /// difference between harvesting a thing and being trusted with one, and the
+        /// rest of the chain reads differently for it: the stowing post is not built
+        /// out of a spirit, it is built *for* one, and taking the post down gives the
+        /// heartwood back because you have not destroyed anything, only moved out.
         ///
         /// Nothing is destroyed until the item is actually in your pack. A full
         /// inventory has to be a refusal rather than a loss, because there is no way
@@ -321,7 +328,8 @@ namespace Grove
             inventory.AddItem(HeartwoodPrefab.Name, amount, 1, 0, 0L, "");
 
             user.Message(MessageHud.MessageType.Center, Localization.instance.Localize(
-                "The " + GetHoverName().ToLowerInvariant() + " gives up its heart."));
+                "The " + GetHoverName().ToLowerInvariant()
+                + " folds itself into the heartwood."));
 
             Fade(nview);
             return true;
@@ -333,12 +341,16 @@ namespace Grove
         }
 
         /// <summary>
-        /// Goes out rather than pops.
+        /// Goes in rather than out, and certainly rather than pops.
+        ///
+        /// The effect is played where it stood because something did happen there, but
+        /// what happened is that it left with you - so this is a departure, not a
+        /// death, and nothing about it should read as one.
         ///
         /// Ownership is claimed first because whoever communed is not necessarily who
         /// owns the zone, and Destroy on a ZDO you do not own is ignored - the spirit
-        /// would hand over its heartwood and then still be standing there, ready to
-        /// hand over another.
+        /// would fold itself into one heartwood and then still be standing there,
+        /// ready to do it again.
         /// </summary>
         private void Fade(ZNetView nview)
         {
