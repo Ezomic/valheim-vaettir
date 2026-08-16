@@ -100,6 +100,35 @@ the settings you already have. Only the DLL it lives in moved.
 nails. That option is kept deliberately: wanting the sorting without the ritual is a
 reasonable thing to want, and it used to be answered by not installing a second mod.
 
+## Sowing a rank at a time
+
+Sow a whole row of seeds in one click, as many as your Farming skill has earned. At level 0
+it does nothing at all — one click, one seed, exactly as vanilla. The second seed arrives
+when the skill does, and the twentieth only near the top of it.
+
+```
+level    0   20   40   60   80  100
+seeds    1    5   10   15   20   20
+```
+
+There are already mods that put a grid over your field. They solve placement and hand you
+the whole thing from your first carrot. This gives you nothing you have not farmed for,
+which is the entire point: Valheim's Farming skill raises steadily and then pays out
+nothing.
+
+**This one is here for a worse reason than the rest of the mod, and it is worth saying so.**
+The stowing post belongs because it houses the spirit; the sapling and the spirit are one
+chain. Sowing by skill has no heartwood in it and no spirit — it was a separate mod called
+Furrow, and it is here because maintaining a package for four source files is not worth it,
+not because the fiction asked for it. Its plugin GUID and `ezomic.valheim.furrow.cfg` are
+unchanged, so it is still its own line in your mod list and its own settings file.
+
+The one place the two halves touch is a happy accident. Furrow decides what may be
+multi-sown by looking for a `Plant` component, and the ancient sapling has its `Plant`
+destroyed on purpose — that timer is the whole reason this mod has its own growth
+component. So one click never plants several ancient seeds, and no special case was needed
+to arrange that.
+
 ## Everything is a text file
 
 No asset bundle and no Unity editor. The models are `.obj` files read at runtime, the

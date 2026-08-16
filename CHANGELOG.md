@@ -64,6 +64,19 @@ heartwood carried away and dropped.
   the carrier is the size it has always been on screen. Set it to 1 for a full-size spirit.
 - `CoupleToStow` still turns the heartwood off and puts the post back to wood and nails.
 
+### Sowing by skill — Furrow, folded in
+
+- **Sow a rank of seeds per click**, scaled by Farming: nothing at level 0, twenty near the
+  top. `MaxSeeds` and `MaxAtLevel` are the two numbers; the count between them is
+  `floor(1 + (MaxSeeds - 1) * min(level / MaxAtLevel, 1))`.
+- Folded in for maintenance rather than for fiction, and the README says so. Four source
+  files, no assets, no prefabs — so unlike Stow there was never anything here that a
+  missing DLL could destroy.
+- Keeps its plugin GUID and `ezomic.valheim.furrow.cfg`.
+- **No special case was needed for the ancient sapling.** Furrow gates multi-sowing on a
+  `Plant` component and the sapling has its `Plant` destroyed deliberately, so one click
+  cannot plant several ancient seeds.
+
 ### Not in this release
 
 - **The visitor and the market**, both cut from v1 and shelved unshipped rather than half
