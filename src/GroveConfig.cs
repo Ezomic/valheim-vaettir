@@ -181,9 +181,16 @@ namespace Grove
 
             // ---------------------------------------------------------- feeding
 
-            BloodNeeded = config.Bind("Sapling", "BloodNeeded", 60f,
-                "How much death it takes. With the default weights that is about forty "
-                + "greydwarfs, or rather fewer if you go and find a nest.");
+            BloodNeeded = config.Bind("Sapling", "BloodNeeded", 30f,
+                "How much death it takes. With the default weights that is about thirty "
+                + "greydwarfs, or rather fewer if you go and find a nest - elites are "
+                + "worth four and shamans three.\n"
+                + "Thirty, so that one greydwarf raid arriving on a planted sapling is "
+                + "enough to finish it on its own. Sixty was two or three evenings of "
+                + "going out to look for kills, which made the sapling a chore you "
+                + "topped up. A raid turning up at a grove you planted is the best "
+                + "thing that happens in this whole chain - the forest coming to you "
+                + "instead - and it should be the payoff rather than a fifth of one.");
 
             FeedRange = config.Bind("Sapling", "FeedRange", 24f,
                 "How close a kill must be to count. Only the nearest sapling is fed - "

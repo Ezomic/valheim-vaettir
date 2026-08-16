@@ -3,8 +3,8 @@
 Something grows where you have killed enough. Speak to it once, and it comes home with you.
 
 Plant an ancient seed in the Black Forest. It does not grow on time — it grows on death,
-and only on the deaths of greydwarfs, and only within sight of it. About forty of them and
-it opens into a forest spirit. Press use once and the spirit folds itself into a piece of
+and only on the deaths of greydwarfs, and only within sight of it. About thirty of them and
+it opens into a forest spirit — one raid, if the forest comes to you. Press use once and the spirit folds itself into a piece of
 heartwood for you to carry, and you go and build it somewhere to live.
 
 ## Why a seed that ignores time
@@ -64,7 +64,7 @@ Read as a home, the rest of the chain falls into place without a line of code ch
 | | |
 | --- | --- |
 | Plant | One ancient seed, not refunded |
-| Feed | ~40 greydwarfs, or fewer at a nest — elites are worth four, shamans three |
+| Feed | ~30 greydwarfs, or fewer at a nest — elites are worth four, shamans three |
 | Range | Kills count within 24m, and only the nearest sapling is fed |
 | Yield | One heartwood |
 
@@ -121,8 +121,58 @@ it is the setting most likely to be left on by accident.
 
 ## What is not in it yet
 
-v1 is one chain and nothing beside it: plant, feed, commune, carry it home. Two pieces were
-built and then cut back out rather than shipped half-finished, and they are the roadmap.
+v1 is one chain and nothing beside it: plant, feed, commune, carry it home.
+
+### The warden post
+
+Right now a spirit has exactly one place to live, which means the choice this document
+spends a whole section arguing for — a home built *for* a spirit rather than out of one —
+is not yet a choice at all. There is one option. The warden post is the second, and having
+two is the point of building it.
+
+A spirit housed in a warden post stops things spawning around it, the way a workbench does.
+Deliberately the same mechanism and not a new one: Valheim asks
+`EffectArea.IsPointInsideArea(point, PlayerBase)` before it places anything, so a post
+carrying that area suppresses spawns without patching a single method, and keeps working
+through game updates for free. That is the seam the rest of this mod rides and there is no
+reason to leave it here.
+
+**The point being that you no longer have to litter your land with workbenches.** That is
+vanilla's answer to keeping spawns off ground you have claimed, and it is a miserable one:
+a bench every twenty metres, each wanting a roof so it does not rot, each a crafting station
+you never wanted there, the whole lot shoved into bushes and hidden under floors. Everybody
+does it. Nobody thinks it is good. It solves a real problem by cluttering the world you
+solved it for. One post covers what a scatter of benches covers, and asks to be looked at
+rather than hidden.
+
+That is also what keeps this narrow rather than generous. It would be easy, and much worse,
+to ship a setting that suppresses spawns near anything the player built. This costs an hour
+of greydwarfs and a spirit, per post, in one place. You get quiet ground exactly where you
+were willing to earn it and nowhere else.
+
+**It upgrades on death, the way the sapling grew on death.** The post is fed by the same
+kills at the same weights through the same code that feeds a sapling, so no second currency
+is invented and no second list is maintained — clear greydwarfs around your grove and its
+reach widens, stop and it stays where it is. The mod has exactly one verb and this is that
+verb again, pointed at a different thing.
+
+Three tiers, each costing more death than the last. The numbers are not settled, and the
+first thing to measure is the vanilla workbench's own radius: the bottom tier has to be
+worth more than the bench it replaces, or there is no reason to prefer it on the first day
+you build one.
+
+The rest follows rules already here. It costs the heartwood, so a spirit in a warden post is
+a spirit not in a stowing post — that is the decision, and it is the first one this mod has
+ever asked for. Taking the post down gives the heartwood back, because you have moved out
+rather than destroyed a home.
+
+Open question: whether the feeding survives being taken down and put back up. Carrying it
+makes the post movable, which is kind. Losing it makes where you first put it matter, which
+is more in keeping with everything else here.
+
+### Shelved, not deleted
+
+Two pieces were built and then cut back out rather than shipped half-finished.
 
 - **A vaettr visitor.** Once you have housed a spirit, someone comes to your door selling
   ancient seeds — so a second grove is a thing the first one earned you, rather than a

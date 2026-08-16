@@ -12,8 +12,9 @@ heartwood carried away and dropped.
 ### The sapling
 
 - **Plant an ancient seed in the Black Forest.** It does not grow on time — it grows on
-  death, and only on the deaths of greydwarfs, and only within sight of it. About forty of
-  them and it opens.
+  death, and only on the deaths of greydwarfs, and only within sight of it. About thirty of
+  them and it opens — one greydwarf raid, if the forest comes to you, which is the best
+  thing that happens in the chain and so is priced to be enough on its own.
 - **Greydwarfs specifically, not "forest creatures".** An early version used the game's own
   `ForestMonsters` faction and swept up trolls, boars and the Elder, which turned clearing
   out a nest into killing anything anywhere near here. Greylings are on the list at zero, so
