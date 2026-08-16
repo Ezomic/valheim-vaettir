@@ -97,6 +97,18 @@ four things reading one number, which is how awake it is. It notices you coming.
 
 `tools/` holds the Blender scripts that produce every model, including the ones that lost.
 
+
+## Core is optional
+
+Vaettir installs and runs on its own. [Core](https://github.com/Ezomic/valheim-core) is a
+**soft** dependency: present, it is used; absent, nothing here is degraded. Installing
+Vaettir from Thunderstore no longer installs Core with it.
+
+What Core adds is the **version gate** — a handshake that compares mod versions and build
+ids on connect and refuses a client that does not match. Without it nothing refuses a client that lacks the mod, and this registers prefabs into `ZNetScene`: a client that cannot resolve one **discards the ZDO rather than erroring**, destroying what is already standing in the world.
+
+Solo, none of that applies and Core is not needed at all.
+
 ## Configuration
 
 `BepInEx/config/ezomic.valheim.vaettir.cfg`. BepInEx writes that file on first run, and
