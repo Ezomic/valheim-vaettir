@@ -22,3 +22,7 @@ assets/variants/previews/
 # having, but not shipped - the build copies assets/*.obj beside the dll, and the
 # rejected creature bodies alone were 2.6MB of it.
 !assets/variants/
+
+# Thunderstore packaging: staging folder and the zips tcli writes.
+package/
+build/
