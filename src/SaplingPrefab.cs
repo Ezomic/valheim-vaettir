@@ -30,7 +30,6 @@ namespace Grove
 
         private static GameObject _prefab;
         private static GameObject _holder;
-        private static bool _addedToCultivator;
 
         public static bool Ready
         {
@@ -40,8 +39,8 @@ namespace Grove
         /// <summary>Idempotent, and safe to call every frame until it takes.</summary>
         public static bool Register()
         {
-            if (Ready && _addedToCultivator) return true;
             if (ZNetScene.instance == null || ObjectDB.instance == null) return false;
+            if (Ready && InCultivator()) return true;
 
             if (_prefab == null)
             {
@@ -51,7 +50,7 @@ namespace Grove
 
             AddToScene();
             AddToCultivator();
-            return Ready && _addedToCultivator;
+            return Ready && InCultivator();
         }
 
         // ------------------------------------------------------------------ building
@@ -344,20 +343,46 @@ namespace Grove
         /// would go looking for it under furniture, and the cultivator is already the
         /// tool you are holding when you think "I want to plant this".
         /// </summary>
-        private static void AddToCultivator()
+        /// <summary>
+        /// The cultivator's piece table, for the ObjectDB that exists now.
+        ///
+        /// Asked of the table rather than remembered in a static bool. ObjectDB is rebuilt
+        /// per world, so the Cultivator from the last one is a different object with a
+        /// different list - and a flag that says "already done" then keeps the sapling out
+        /// of the menu for the whole of the second world. Stow lost a built piece to the
+        /// same mistake in its harsher form, where the stale flag was on the ZNetScene
+        /// registration and every ZDO of the prefab was discarded.
+        /// </summary>
+        private static bool InCultivator()
         {
-            if (_addedToCultivator || _prefab == null) return;
+            var table = CultivatorPieces();
+            return table != null && _prefab != null && table.m_pieces.Contains(_prefab);
+        }
+
+        private static PieceTable CultivatorPieces()
+        {
+            if (ObjectDB.instance == null) return null;
 
             var tool = ObjectDB.instance.GetItemPrefab("Cultivator");
             var drop = tool != null ? tool.GetComponent<ItemDrop>() : null;
-            if (drop == null || drop.m_itemData == null || drop.m_itemData.m_shared == null) return;
+            if (drop == null || drop.m_itemData == null || drop.m_itemData.m_shared == null)
+                return null;
 
             var table = drop.m_itemData.m_shared.m_buildPieces;
-            if (table == null || table.m_pieces == null) return;
+            return table != null && table.m_pieces != null ? table : null;
+        }
 
-            if (!table.m_pieces.Contains(_prefab)) table.m_pieces.Add(_prefab);
-            _addedToCultivator = true;
+        private static void AddToCultivator()
+        {
+            if (_prefab == null) return;
 
+            var table = CultivatorPieces();
+            if (table == null || table.m_pieces.Contains(_prefab)) return;
+
+            table.m_pieces.Add(_prefab);
+
+            // Logged on the add, not on the call: this is retried every frame and an
+            // already-satisfied retry would write a line per frame.
             GrovePlugin.Log.LogInfo("Ancient sapling added to the cultivator.");
         }
     }
