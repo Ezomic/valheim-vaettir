@@ -38,6 +38,7 @@ from vhbuild import (camera, clear_scene, collide, export, finish, orb,
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ASSETS = os.path.join(ROOT, "assets")
+VARIANTS = os.path.join(ASSETS, "variants")
 PREVIEWS = os.path.join(ASSETS, "previews")
 
 # How high it floats. Chest height on a player, so communing with it is eye to eye
@@ -151,6 +152,13 @@ DESIGNS = (
     ("grove_spirit_core_plain", spirit_core_plain),
 )
 
+# Only these three are loaded at runtime - SpiritPrefab names them and nothing else.
+# The rest are the single-mesh preview and the design variants, and they were going
+# into assets/ alongside them, which the build copies wholesale: grove_spirit_core
+# and grove_spirit_ring alone are 357KB of a 412KB download that no player's game
+# ever opens. They go to variants/, which is not copied.
+SHIPPED = ("grove_spirit_heart", "grove_spirit_hoop", "grove_spirit_mote")
+
 
 def main():
     os.makedirs(PREVIEWS, exist_ok=True)
@@ -160,8 +168,9 @@ def main():
         build()
         obj = finish(name)
 
-        export(obj, name, ASSETS)
-        write_col(os.path.join(ASSETS, name + ".col"))
+        out = ASSETS if name in SHIPPED else VARIANTS
+        export(obj, name, out)
+        write_col(os.path.join(out, name + ".col"))
 
         tint()
         stage_scene()
