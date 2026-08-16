@@ -148,11 +148,18 @@ def curl():
 
     # The shoot. Four segments and four sides: the arc is the silhouette and the
     # roundness of it is not, which is the same economy vanilla applies.
-    limb((0.0, 0.015, 0.255), 0.34, 4, 0.030, 0.013, 12.0, 90.0, 26.0, "bark",
-         sides=4)
+    tip = limb((0.0, 0.015, 0.255), 0.34, 4, 0.030, 0.013, 12.0, 90.0, 26.0, "bark",
+               sides=4)
 
-    # The tip, lit. Kept coarse for the same reason as the body.
-    orb(0.038, (0.205, 0.025, 0.360), "core", subdivisions=1)
+    # The lit tip, placed on the end limb() actually reached rather than where the
+    # arithmetic said it would.
+    #
+    # It was hand-placed, and it was wrong: limb advances by 92% of each step for the
+    # overlap and jitters every segment, so the real tip is nowhere near the closed
+    # form. From eye height the gap hid behind the arc; front on in the icon it was
+    # an amber bead floating beside a stick. limb returns its tip for exactly this,
+    # and a computed position cannot drift when the curve is retuned.
+    orb(0.038, tip, "core", subdivisions=1)
 
 
 def ring():

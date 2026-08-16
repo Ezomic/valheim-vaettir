@@ -43,6 +43,10 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ASSETS = os.path.join(ROOT, "assets")
 PREVIEWS = os.path.join(ASSETS, "previews")
 
+# Where the cultivator's picture goes, under the name SaplingIcon defaults to.
+SHIPPED = ASSETS
+SHIPPED_ICON = "grove_sapling_icon.png"
+
 # Which stages are worth offering. Stage 2 is left out on purpose: it is stage 3
 # with less on it, and two candidates sharing an outline means there is only one
 # candidate.
@@ -194,7 +198,20 @@ def build(label, number, crop=1.0):
     # better than one rendered at the size it will be shown at.
     out = os.path.join(PREVIEWS, "sapling_icon_%s.png" % label)
     render(out, width=128, height=128, bloom=False)
-    print("DESIGN_OK sapling_icon_%s" % label)
+
+    # Stage one is the shipped icon, written straight to the name the mod loads.
+    #
+    # It used to be copied across by hand, and it drifted the moment the model was
+    # redesigned: the cultivator went on showing a fat seed on a green mound for a
+    # piece that had become a narrow upright with no mound at all. Rendering it here
+    # means the picture is always of the mesh currently in assets, because that is
+    # the file this script imports.
+    if label == "stage1":
+        render(os.path.join(SHIPPED, SHIPPED_ICON), width=128, height=128,
+               bloom=False)
+
+    print("DESIGN_OK sapling_icon_%s%s"
+          % (label, " [SHIPPED]" if label == "stage1" else ""))
 
     # And a big one, purely to look at. The 128 is the real thing; this is so a
     # silhouette can be judged without squinting at a thumbnail.
