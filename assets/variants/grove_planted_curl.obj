@@ -1,6 +1,6 @@
 # Blender 4.5.10 LTS
 # www.blender.org
-mtllib grove_sapling_1.mtl
+mtllib grove_planted_curl.mtl
 o grove_planted_curl
 v -0.200117 0.003399 -0.161121
 v -0.208556 0.015287 -0.151403

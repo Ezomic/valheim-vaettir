@@ -1,6 +1,13 @@
 """
 The four sapling stages and the forest spirit, built and rendered.
 
+**stage_one here is superseded by planted_designs.py.** Running this script
+overwrites grove_sapling_1 with the old design, which stood a 5x5x24cm emissive
+box upright out of the seed and therefore read as a candle on a mound. The
+replacement buries the seed and arcs one lit shoot over it. Stages two, three and
+four and the shared mound are still owned here; re-run planted_designs.py after
+this one if you ever need to rebuild the set.
+
     blender --background --python tools/grove_designs.py
 
 Hand-built. Nothing vanilla is grafted on: material names here are group names only,

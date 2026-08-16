@@ -66,6 +66,47 @@ namespace Grove
             return false;
         }
 
+        /// <summary>
+        /// Registers everything right now, rather than on the next frame.
+        ///
+        /// This exists because a heartwood was deleted out of a saved inventory, and
+        /// the game did it quite correctly. Inventory.AddItem, which is what a load
+        /// runs for every stack, does:
+        ///
+        ///     GameObject itemPrefab = ObjectDB.instance.GetItemPrefab(name);
+        ///     if (itemPrefab == null) { ZLog.Log("Failed to find item prefab " + name);
+        ///                               return false; }
+        ///
+        /// An item it cannot resolve is skipped, not errored - and the next save writes
+        /// the inventory back without it. There is no recovering from that.
+        ///
+        /// Registering from Update was therefore a race the whole time: our first frame
+        /// against the player's inventory load. It won almost every time, which is the
+        /// worst way for a race to behave, because it looks like it cannot happen right
+        /// up until somebody loses something.
+        ///
+        /// So registration is driven from ObjectDB.Awake and ZNetScene.Awake as well.
+        /// Both singletons come up during scene load and well before any player spawns,
+        /// and each Register is idempotent and refuses until both exist - so whichever
+        /// of the two lands second is the one that does the work. Update stays as the
+        /// backstop for anything that arrives later still.
+        /// </summary>
+        internal static void RegisterNow()
+        {
+            if (Log == null) return;
+
+            try
+            {
+                HeartwoodPrefab.Register();
+                SpiritPrefab.Register();
+                SaplingPrefab.Register();
+            }
+            catch (System.Exception e)
+            {
+                Log.LogError("Early registration failed; Update will retry. " + e);
+            }
+        }
+
         private void Run(Step step)
         {
             if (step.Abandoned) return;
@@ -175,6 +216,26 @@ namespace Grove
             // has to be reapplied - otherwise loading a second world after the first
             // leaves the post back at its unmodified cost.
             StowCoupling.Invalidate();
+
+            // And the item goes back in immediately, not next frame. The first Awake of
+            // a session fires against a stub ObjectDB with no items in it, where this
+            // does nothing and correctly says so by refusing; the real one is the call
+            // that matters, and it lands before any inventory is read.
+            GrovePlugin.RegisterNow();
+        }
+
+        /// <summary>
+        /// The other half of the same guarantee.
+        ///
+        /// ObjectDB.Awake and ZNetScene.Awake both run during scene load and neither is
+        /// ordered against the other, while registration needs both singletons. So both
+        /// are hooked and whichever runs second does the work.
+        /// </summary>
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(ZNetScene), "Awake")]
+        private static void SceneReady()
+        {
+            GrovePlugin.RegisterNow();
         }
 
         [HarmonyPostfix]
@@ -183,6 +244,7 @@ namespace Grove
         {
             Skins.Invalidate();
             StowCoupling.Invalidate();
+            GrovePlugin.RegisterNow();
         }
     }
 }
