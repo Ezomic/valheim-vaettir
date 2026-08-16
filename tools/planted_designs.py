@@ -126,22 +126,33 @@ def curl():
     The only one with a hook in its outline, which makes it the most recognisable
     at a distance and across the four stages - the later ones are all uprights, so
     a curve here reads as "earliest" without needing to be smallest.
+
+    **No mound.** The moss disc read as a green plate laid on the grass rather than
+    as disturbed earth - it is a flat octagon of a colour the ground already is,
+    which is the worst of both. The seed beds straight into the terrain instead,
+    which is what a planted thing does anyway.
     """
-    mound()
+    # Built to the numbers off sapling_seedcarrot rather than to taste. Vanilla's
+    # planted seed is 0.10m wide and 0.39m tall - narrow and upright, and its mesh
+    # is called "pinecone" - where this was a fat 0.25m sphere. A ball on the ground
+    # was never going to sit beside a row of crops.
+    #
+    # Seven sides, not a subdivided sphere. Vanilla spends 48 triangles on that body
+    # and this was spending several hundred on a smooth one; the smoothness is most
+    # of what read as modded, because nothing else in the game at this size is round.
+    taper(0.072, 0.030, 0.34, (0.0, 0.0, 0.150), "seed", sides=7, rot_x=4.0)
 
-    # The seed itself, sunk into the mound so only its shoulder shows.
-    orb(0.125, (0.0, 0.0, 0.075), "seed", subdivisions=2, stretch=0.85)
+    # A collar where it leaves the ground, so it is bedded rather than stood on the
+    # surface. One part, because vanilla's whole seed is one part.
+    taper(0.092, 0.070, 0.075, (0.0, 0.0, 0.030), "seed", sides=7)
 
-    # The shoot. Low pitch and a hard curve is an arc; a high pitch is a stick
-    # lying over - which is the lesson the market's root arches paid for.
-    limb((0.0, 0.02, 0.115), 0.42, 5, 0.038, 0.016, 12.0, 90.0, 26.0, "bark")
+    # The shoot. Four segments and four sides: the arc is the silhouette and the
+    # roundness of it is not, which is the same economy vanilla applies.
+    limb((0.0, 0.015, 0.255), 0.34, 4, 0.030, 0.013, 12.0, 90.0, 26.0, "bark",
+         sides=4)
 
-    # The tip, lit, hanging over the mound where the curl points back down.
-    orb(0.042, (0.235, 0.03, 0.245), "core", subdivisions=1)
-
-    # One small root breaking the surface, so the seed reads as gripping rather
-    # than as set down.
-    limb((-0.10, -0.05, 0.055), 0.16, 3, 0.026, 0.010, 62.0, 200.0, 14.0, "bark")
+    # The tip, lit. Kept coarse for the same reason as the body.
+    orb(0.038, (0.205, 0.025, 0.360), "core", subdivisions=1)
 
 
 def ring():
