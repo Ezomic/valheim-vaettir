@@ -42,7 +42,27 @@ heartwood carried away and dropped.
   home rather than a heart: the spirit does not die and hand over a piece of itself.
 - **Build the heartwood somewhere** and you have housed it. A woven nest with the light kept
   inside.
-- Stow's stowing post costs heartwood, so the two mods meet if you have both.
+- The stowing post costs heartwood, which is what the whole chain is paying for.
+
+### The stowing post — Stow, folded in
+
+- **Stow is no longer a separate mod.** It ships in this assembly. Its post has a socket in
+  the model for a heartwood it could not obtain alone, and the spirit that carries your
+  items is born at that heartwood and returns to it — so standing alone it was a post with
+  a hole in it and a spirit with no origin.
+- **One spirit, not two.** Each mod used to generate its own from its own Blender script,
+  and they had drifted before anyone restyled anything: one ring of seven beads at a 0.21
+  orbit against two crossed rings of six at 0.34, separately jittered. The same character
+  was visibly two creatures depending on which mod drew it. There is one source now,
+  `tools/spirit_core.py`, and `Carrier.Orbit` follows the mesh rather than taste.
+- **Nothing you have built is affected.** The piece is still `stow_post` to the byte —
+  ZNetScene discards any ZDO whose prefab name stops resolving, so a rename would have
+  destroyed every post standing in every world, silently. Stow keeps its plugin GUID and
+  its own `ezomic.valheim.stow.cfg`, so it stays its own entry in the mod list and reads
+  the settings you already have. Only the DLL moved.
+- `CarrierScale` defaults to 0.62, which is the ratio between the two old spirit meshes, so
+  the carrier is the size it has always been on screen. Set it to 1 for a full-size spirit.
+- `CoupleToStow` still turns the heartwood off and puts the post back to wood and nails.
 
 ### Not in this release
 

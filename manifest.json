@@ -3,7 +3,7 @@
   "author": "Robbin Thijssen",
   "version_number": "1.0.0",
   "website_url": "https://github.com/Ezomic/valheim-vaettir",
-  "description": "Plant an ancient seed, feed it greydwarf blood, and a forest spirit answers. Give it somewhere to live.",
+  "description": "Plant an ancient seed, feed it greydwarf blood, and a forest spirit answers. Build it a home and it sorts your chests. Includes Stow.",
   "dependencies": [
     "denikson-BepInExPack_Valheim-5.4.2333"
   ]

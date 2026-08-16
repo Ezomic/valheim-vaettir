@@ -17,10 +17,20 @@ namespace Grove
     // The spirit and its pieces are registered prefabs, and ZNetScene discards any ZDO whose
     // prefab name does not resolve - so a server without it destroys them all, silently.
     //
-    // Soft, and only about load order: if Stow is present it loads first, so its post
-    // exists to be repriced. Nothing here references Stow's assembly - the piece is
-    // found by prefab name - so this mod loads and runs perfectly well without it.
-    [BepInDependency("ezomic.valheim.stow", BepInDependency.DependencyFlags.SoftDependency)]
+    // Stow used to be declared here as a soft dependency, for load order: if it was present
+    // it loaded first, so its post existed to be repriced. It is not a separate mod any
+    // more - StowPlugin ships in this assembly - and BepInEx still orders the two plugin
+    // classes, so the declaration bought nothing and read as though an absent third-party
+    // mod were still involved.
+    //
+    // StowCoupling is deliberately left as it was, finding the post by prefab name rather
+    // than by reference. It costs nothing now that the piece is guaranteed present, and the
+    // lookup is what keeps CoupleToStow meaningful: someone who wants the sorting post at
+    // its wood-and-nails price still turns the heartwood off and gets it.
+    // The GUID by reference rather than as a literal, which is one thing the merge buys:
+    // it is the same assembly now, so a rename over there is a compile error here instead
+    // of a silent no-op.
+    [BepInDependency(Stow.StowPlugin.PluginGuid, BepInDependency.DependencyFlags.SoftDependency)]
     public class GrovePlugin : BaseUnityPlugin
     {
         public const string PluginGuid = "ezomic.valheim.vaettir";

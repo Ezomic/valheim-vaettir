@@ -71,18 +71,34 @@ Read as a home, the rest of the chain falls into place without a line of code ch
 Everything above is configurable, including which creatures count and what each is worth.
 A mod that adds a new greydwarf can be added to the list without touching this one.
 
-## With Stow
+## The stowing post
 
-If [Stow](https://github.com/Ezomic/valheim-stow) is installed, its stowing post gains
-heartwood in its recipe — which is to say, the post becomes the place the spirit lives.
+Drop things into the stowing post, close it, and a spirit carries them to the chests that
+asked for them. That post is the home the whole chain is building toward, and it ships here.
 
-The coupling lives entirely on this side. Stow is never told about Vaettir, is not
-referenced as an assembly, and is found by prefab name, so Stow remains a mod that works on
-its own and still builds its post out of wood and fine wood. Installing Vaettir is what
-raises the price. The heartwood is *added* to that recipe rather than replacing it, because
-the rest of it is Stow's setting and someone may have changed it deliberately.
+**Stow used to be a separate mod.** It was folded in because it was never really separate.
+Its post has a socket in the model for a heartwood it could not obtain on its own, and the
+spirit that does the carrying is born at that heartwood and returns to it — so Stow standing
+alone was a post with a hole in it and a spirit with no origin. It built and ran; it did not
+cohere.
 
-Turn it off with `CoupleToStow` and Stow's recipe is left alone.
+The copy proved the point. Each mod generated its own spirit from its own Blender script,
+and they had already drifted before anyone restyled anything: one ring of seven beads at a
+0.21 orbit against two crossed rings of six at 0.34, separately jittered. The same
+character — raised at your sapling, folded into the heartwood, coming back out to move a
+crate — was visibly two different creatures depending on which mod happened to draw it.
+There is one spirit now, from one script, and it is the same one throughout.
+
+What did not change is anything that would cost you something. The piece is still
+`stow_post` down to the byte, because ZNetScene keys on the prefab name and **discards any
+ZDO whose name no longer resolves** — a rename would have silently destroyed every post
+already standing in every world. Stow keeps its own plugin GUID and its own
+`ezomic.valheim.stow.cfg`, so it still appears as its own entry in the mod list and reads
+the settings you already have. Only the DLL it lives in moved.
+
+`CoupleToStow` still turns the heartwood off, and the post goes back to costing wood and
+nails. That option is kept deliberately: wanting the sorting without the ritual is a
+reasonable thing to want, and it used to be answered by not installing a second mod.
 
 ## Everything is a text file
 
