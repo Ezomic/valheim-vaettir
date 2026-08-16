@@ -9,7 +9,7 @@ namespace = "Ezomic"
 name = "Vaettir"
 versionNumber = "1.0.0"
 description = "Plant an ancient seed, feed it greydwarf blood, and a forest spirit answers. Give it somewhere to live."
-websiteUrl = ""
+websiteUrl = "https://github.com/Ezomic/valheim-vaettir"
 containsNsfwContent = false
 
 [package.dependencies]
