@@ -107,6 +107,28 @@ does nothing on a machine that has already run the mod. Edit the cfg.
 chain can be walked in a minute. It announces itself in the log on every startup, because
 it is the setting most likely to be left on by accident.
 
+## What is not in it yet
+
+v1 is one chain and nothing beside it: plant, feed, commune, carry it home. Two pieces were
+built and then cut back out rather than shipped half-finished, and they are the roadmap.
+
+- **A vaettr visitor.** Once you have housed a spirit, someone comes to your door selling
+  ancient seeds — so a second grove is a thing the first one earned you, rather than a
+  second wander through the Black Forest hoping for a seed. It is whole on the `visitor`
+  branch. Vanilla's `Trader` turns out to be a dialogue system gated on global keys and not
+  merely a shop, and these mods write global keys everywhere, so a visitor that reacts to
+  what you have already done elsewhere is mostly configuration rather than code. That is
+  what makes it worth finishing instead of deleting.
+- **Somewhere to station them.** Eight market models are in `assets/variants/`, which the
+  build deliberately does not copy, so they cost nothing while they wait.
+
+Neither is scheduled. Both are on this list because shelving something without saying so is
+how it gets rebuilt from scratch a year later.
+
+The version stays at **1.0.0** until the mod actually ships. Fixes land under that number
+rather than inflating it before anybody has it. Core compares build fingerprints rather than
+version strings, so a stable number costs nothing in compatibility — see below.
+
 ## Multiplayer
 
 The mod is required at both ends and registers with Core's version gate at
