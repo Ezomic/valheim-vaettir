@@ -19,6 +19,24 @@ namespace Grove
     {
         private const string ZBlood = "groveBlood";
 
+        // --------------------------------------------------------------- stirring
+
+        /// <summary>Degrees of lean at full. Small: this is a seed in the ground breathing,
+        /// not a plant in a gale, and anything past a few degrees reads as a physics bug.</summary>
+        public static float SwayDegrees = 3.2f;
+
+        /// <summary>Seconds for one sway. Slow enough that it is noticed rather than
+        /// watched.</summary>
+        public static float SwayPeriod = 5.6f;
+
+        /// <summary>Seconds for one breath, deliberately not a multiple of the sway.</summary>
+        public static float BreathPeriod = 3.7f;
+
+        /// <summary>How much it swells at full, as a fraction.</summary>
+        public static float BreathDepth = 0.035f;
+
+        private float _stirPhase;
+
         /// <summary>Every sapling currently loaded, so a death can find the nearest.</summary>
         public static readonly List<Sapling> All = new List<Sapling>();
 
@@ -223,6 +241,83 @@ namespace Grove
             // Cheap, and it catches the case that matters: another player fed it, so
             // the count changed under us without Feed ever running on this client.
             Show();
+            Stir();
+        }
+
+        // ------------------------------------------------------------------ stirring
+
+        /// <summary>Base pose of each stage, so the animation is applied to it rather than
+        /// accumulating on top of itself.</summary>
+        private Quaternion[] _restRotation;
+        private Vector3[] _restScale;
+
+        /// <summary>
+        /// The planted seed moves, and how much it moves is how close it is to opening.
+        ///
+        /// Same idea as the spirit, which drives everything it does off one number. Here the
+        /// number is Progress, so a seed nobody has fed is almost still and a full one is
+        /// visibly restless. That makes the thing readable across a clearing without a hover:
+        /// you can tell at a glance whether the sapling you planted this evening has had a
+        /// good night, and it gives the last few kills something to look at.
+        ///
+        /// Driven from Time.time rather than accumulated deltaTime, so every client sees the
+        /// same phase and a sapling does not lurch when somebody walks into the zone.
+        ///
+        /// Two motions at periods that do not divide into each other, because a sway and a
+        /// breath on the same clock read as one stiff pulse rather than as something alive.
+        /// </summary>
+        private void Stir()
+        {
+            if (Stages == null || Stages.Length == 0) return;
+            if (_shown < 0 || _shown >= Stages.Length) return;
+
+            var stage = Stages[_shown];
+            if (stage == null) return;
+
+            Capture();
+
+            // Never fully still, even at zero. A seed that only starts moving once fed reads
+            // as broken until the first kill lands, and the floor is small enough that the
+            // difference between empty and full is still the thing you notice.
+            var life = Mathf.Lerp(0.25f, 1f, Progress);
+            var time = Time.time + _stirPhase;
+
+            var lean = Mathf.Sin(time * (Mathf.PI * 2f / SwayPeriod)) * SwayDegrees * life;
+            var roll = Mathf.Cos(time * (Mathf.PI * 2f / (SwayPeriod * 1.37f)))
+                       * SwayDegrees * 0.6f * life;
+
+            stage.localRotation = _restRotation[_shown] * Quaternion.Euler(lean, 0f, roll);
+
+            var breath = 1f + Mathf.Sin(time * (Mathf.PI * 2f / BreathPeriod))
+                              * BreathDepth * life;
+            stage.localScale = _restScale[_shown] * breath;
+        }
+
+        /// <summary>
+        /// Remembers the pose each stage was built with, once.
+        ///
+        /// Read lazily rather than in Awake because the stages are parented and posed by
+        /// SaplingPrefab after the component exists, so anything captured in Awake is the
+        /// pose before the model was put on.
+        /// </summary>
+        private void Capture()
+        {
+            if (_restRotation != null && _restRotation.Length == Stages.Length) return;
+
+            _restRotation = new Quaternion[Stages.Length];
+            _restScale = new Vector3[Stages.Length];
+
+            for (var i = 0; i < Stages.Length; i++)
+            {
+                _restRotation[i] = Stages[i] != null
+                    ? Stages[i].localRotation : Quaternion.identity;
+                _restScale[i] = Stages[i] != null ? Stages[i].localScale : Vector3.one;
+            }
+
+            // Seeded off the position so two saplings side by side are not in lockstep, and
+            // so the same one is in the same phase for everybody watching it.
+            var p = transform.position;
+            _stirPhase = Mathf.Abs(p.x * 12.9898f + p.z * 78.233f) % (Mathf.PI * 2f);
         }
 
         // ------------------------------------------------------------------ opening
