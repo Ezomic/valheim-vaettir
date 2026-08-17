@@ -155,8 +155,8 @@ namespace Grove
             var affordable = space;
             foreach (var need in cost)
             {
-                var have = player.GetInventory().CountItems(need.Key);
-                affordable = Mathf.Min(affordable, have / need.Value);
+                var have = player.GetInventory().CountItems(need.Shared);
+                affordable = Mathf.Min(affordable, have / need.Amount);
             }
 
             if (affordable <= 0)
@@ -171,7 +171,7 @@ namespace Grove
             _nview.ClaimOwnership();
 
             foreach (var need in cost)
-                player.GetInventory().RemoveItem(need.Key, need.Value * affordable);
+                player.GetInventory().RemoveItem(need.Shared, need.Amount * affordable);
 
             _nview.GetZDO().Set(ZQueue, Queue + affordable);
 
@@ -217,13 +217,40 @@ namespace Grove
         // ------------------------------------------------------------------ the recipe
 
         /// <summary>
+        /// One line of the recipe, carrying both names an ingredient has.
+        ///
+        /// They are not the same string and that mattered: config names a prefab, the way
+        /// every other cost in this mod does, but Inventory does not know prefabs. Both
+        /// CountItems and RemoveItem compare against <c>m_shared.m_name</c>, which is the
+        /// localisation token - "$item_bonefragments", not "BoneFragments".
+        /// </summary>
+        private sealed class Ingredient
+        {
+            /// <summary>What config called it, and what a warning should name.</summary>
+            public string Prefab;
+
+            /// <summary>What the inventory matches on.</summary>
+            public string Shared;
+
+            public int Amount;
+        }
+
+        /// <summary>
         /// What one batch costs, as Item:Amount. Parsed rather than hardcoded so the mill can
         /// be repriced, and so a name that does not resolve is a readable warning rather than
         /// a mill that silently refuses everything.
+        ///
+        /// Resolving each prefab to its shared name here is the whole fix for a mill that
+        /// told you it had nothing to grind while you stood in front of it holding a hundred
+        /// bone fragments. Counting by prefab name matches no item that has ever existed, so
+        /// the answer was always zero and the refusal always fired.
         /// </summary>
-        private static Dictionary<string, int> Cost()
+        private static List<Ingredient> Cost()
         {
-            var result = new Dictionary<string, int>();
+            var db = ObjectDB.instance;
+            if (db == null) return null;
+
+            var result = new List<Ingredient>();
 
             foreach (var part in GroveConfig.MillCost.Value.Split(','))
             {
@@ -239,7 +266,22 @@ namespace Grove
                     return null;
                 }
 
-                result[split[0].Trim()] = Mathf.Max(1, amount);
+                var name = split[0].Trim();
+                var prefab = db.GetItemPrefab(name);
+                var drop = prefab != null ? prefab.GetComponent<ItemDrop>() : null;
+
+                if (drop == null || drop.m_itemData == null || drop.m_itemData.m_shared == null)
+                {
+                    GrovePlugin.LogOnce("Mill ingredient '" + name + "' does not exist.");
+                    return null;
+                }
+
+                result.Add(new Ingredient
+                {
+                    Prefab = name,
+                    Shared = drop.m_itemData.m_shared.m_name,
+                    Amount = Mathf.Max(1, amount)
+                });
             }
 
             return result;
@@ -252,16 +294,7 @@ namespace Grove
 
             var parts = new List<string>();
             foreach (var need in cost)
-            {
-                var prefab = ObjectDB.instance != null
-                    ? ObjectDB.instance.GetItemPrefab(need.Key) : null;
-
-                var drop = prefab != null ? prefab.GetComponent<ItemDrop>() : null;
-                var label = drop != null && drop.m_itemData != null
-                    ? drop.m_itemData.m_shared.m_name : need.Key;
-
-                parts.Add(need.Value + "x " + Localization.instance.Localize(label));
-            }
+                parts.Add(need.Amount + "x " + Localization.instance.Localize(need.Shared));
 
             return string.Join(", ", parts.ToArray());
         }
