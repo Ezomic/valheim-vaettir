@@ -63,6 +63,10 @@ heartwood carried away and dropped.
 - `CarrierScale` defaults to 0.62, which is the ratio between the two old spirit meshes, so
   the carrier is the size it has always been on screen. Set it to 1 for a full-size spirit.
 - `CoupleToStow` still turns the heartwood off and puts the post back to wood and nails.
+- **Stow's own history is in `archive/stow.bundle`** — 39 commits in one file, clonable with
+  `git clone archive/stow.bundle`. Its README is merged into this repo's; the bundle is the
+  part that could not be, and it exists so the old GitHub repo can go without losing the
+  arguments behind decisions that are still load-bearing here.
 
 ### Sowing by skill — Furrow, folded in
 
@@ -76,6 +80,8 @@ heartwood carried away and dropped.
 - **No special case was needed for the ancient sapling.** Furrow gates multi-sowing on a
   `Plant` component and the sapling has its `Plant` destroyed deliberately, so one click
   cannot plant several ancient seeds.
+- **Furrow's own history is in `archive/furrow.bundle`** — 11 commits, same arrangement as
+  Stow's above.
 
 ### Not in this release
 

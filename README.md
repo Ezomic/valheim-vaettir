@@ -76,7 +76,175 @@ A mod that adds a new greydwarf can be added to the list without touching this o
 Drop things into the stowing post, close it, and a spirit carries them to the chests that
 asked for them. That post is the home the whole chain is building toward, and it ships here.
 
-**Stow used to be a separate mod.** It was folded in because it was never really separate.
+It costs 20 fine wood, 20 iron nails and one heartwood. The nails put it past the forge
+rather than in the first camp: a post that sorts a storage room should arrive when there is
+a storage room to sort.
+
+**It is a real container**, six slots by two, and that one decision removes most of the
+surface. There is no panel listing your pack to tick through, no selection to remember and
+no keybind — the interface is the chest window you already know, and "which items" is
+answered by which items you dropped in. It empties on **close** rather than continuously, so
+two half-stacks can be dropped in and merge; otherwise the first would be gone before you
+let go of the second. Anything with no home **stays in the post**, and the hover text says
+how many: a post holding six things is a post telling you six things need a chest.
+
+**The heartwood is visible in the piece**, housed at the top behind three walls with the
+front open, so its light is thrown forward and the post reads from across a room as a lit
+opening. That is also where the spirit comes from. None of that is hardcoded to the model:
+the runtime finds the `core` material group in whatever mesh the post is wearing, takes its
+centre, and hangs the light, the halo and the spirit's home on that point.
+
+### The spirit carries it, stack by stack
+
+Closing the post does not teleport its contents. The spirit rises off it, takes one stack,
+carries it to the chest that asked for it, drops it in, and comes back for the next. A full
+post takes a minute or two to clear and you can stand and watch it. It flies, in an arc,
+over whatever is in the way — a courier that walked would need to know about doorways,
+stairs and the chest being behind a pillar, and *it is a spirit* is a better answer to why
+it does not than any amount of pathfinding.
+
+**The stack never leaves the post until the trip lands.** The spirit carries a reservation
+and a picture of the item, not the item. That is not a detail, it is what makes the whole
+feature safe: a run is entirely in memory, so anything can end it — the zone unloads, you
+log out, the game is killed — and in every one of those cases the stack is still sitting in
+the post where you dropped it, because it was never anywhere else. The alternative is
+simpler by a dozen lines and loses a stack of black metal to a crash.
+
+Every trip re-decides on landing, because in the seconds a run takes a chest can fill up, be
+torn down, be warded, or be opened by somebody else. A post also resumes on its own, looking
+for work every few seconds, so quitting halfway through and coming back later carries on.
+
+**Everyone sees it, and it costs no networked prefab.** Registering a spirit with ZNetScene
+would mean a name frozen forever — rename it later and every one in every save is destroyed
+— and a spirit needs no persistence at all. So what travels is the *trip*: from, control,
+to, cargo, start and duration, published on the post's own ZDO. Every client computes the
+arc locally from the game's shared clock, which makes it one network write per leg rather
+than per frame, and smooth everywhere because nothing is interpolated across the wire.
+
+Turn `CarrierEnabled` off and the post moves everything the instant you close it. The
+sorting is identical either way; only the waiting changes.
+
+### Telling a chest what it holds
+
+Open the chest. The window has a **Holds…** button under the game's own Stack all, cloned
+from it so it carries the same skin, font, hover states and click sound rather than being a
+rectangle a mod drew.
+
+A chest holds *groups* — ore, fuel, seeds, building materials — and, where a group will not
+do, single items. Chests with a rule say so in their hover text, in gold.
+
+A rule can also **refuse**. Every group cell cycles ignored → holds → refused, and a search
+result is shift-clicked to refuse rather than hold, so "ore, but never tin" is two presses.
+Refusals are resolved before everything else, including before the contents fallback below,
+otherwise the one case you would reach for it in is the case it would not work. An exclusion
+subtracts but never *configures*: a chest whose only rule is "not tin" still matches on what
+it already holds, because flipping it to configured would quietly mean "and nothing else
+either".
+
+### Groups, not lists
+
+The groups are not written down anywhere in this mod. They are read off the game at runtime,
+from the seam that already defines each one:
+
+| Group | Is whatever… |
+| --- | --- |
+| Ore | any smelter accepts |
+| Bars & ingots | any smelter produces |
+| Fuel | burns in a smelter, kiln or fireplace |
+| Wood | a charcoal kiln eats |
+| Raw food | a cooking station accepts |
+| Cooked food | fills you up (`m_food`) |
+| Mead & potions | a fermenter turns out |
+| Seeds & crops | the cultivator can plant |
+| Building materials | the hammer asks for |
+| Trophies, ammo, fish, gear | the item says it is |
+
+So a mod that adds black metal ore, or a new crop, lands in the right group without this mod
+knowing it exists. Ticking "ore" is one press; naming eleven ores by hand is eleven presses
+and is wrong the moment there are twelve.
+
+Wood is the one that needs explaining. A charcoal kiln *is* a Smelter, so its wood-to-coal
+recipes had already made every log an "ore" — technically true and useless to someone
+deciding what a chest holds. Anything whose smelted output is a fuel is firewood, not ore.
+
+### Which chest wins
+
+Every item asks which chest wants it most, rather than every chest asking what it wants.
+Walking the chests is the obvious loop and it is the wrong one: whichever chest is asked
+first gets first refusal, so the answer would depend on the order chests happened to be
+found in. Asking the item makes the outcome a property of your rules.
+
+In order:
+
+1. a chest that names that exact item
+2. a chest that holds a group it belongs to
+3. a chest set to **anything else**
+4. a chest with **no rule at all** that already holds some
+
+Ties go to the nearer chest, and the most specific matches are placed first, so the chest
+that actually asked for a thing is filled before a catch-all eats the shelf space it needed.
+
+Tier 4 is what makes the mod useful the moment it is installed, before anything is
+configured. A *configured* chest never gets it: saying "this one holds ore" and then finding
+nails in it because nails happened to be in there already would make labelling a chest worse
+than not labelling it.
+
+### What it will not touch
+
+Wards, privacy locks, chests someone else has open, and chests on carts and ships are all
+skipped. A shortcut that quietly ignores a ward is a duplication exploit, not a convenience.
+Other posts are skipped too — a post is a sorting table, not a destination.
+
+### The post's own panel
+
+The same button that opens a chest's rule opens the post's settings, in two tabs.
+
+**Fetch** is stowing run backwards: name what this post should have, and spirits bring it in
+from the chests around it. It takes the same rule format, refusals included. A post asking
+for ore and a chest offering to hold ore are the same sentence pointed in opposite
+directions, so they get the same controls.
+
+**Tidy** moves items that are sitting in a chest whose rule actively refuses them. It only
+ever corrects a mistake: an item nobody refuses is left exactly where it is, however untidy
+it looks, so it cannot churn a room that is already right.
+
+**Presence** decides whether the spirit only appears when there is work, or lives at the
+heartwood and rests there between runs.
+
+All three are stored on the post's own ZDO rather than in config, so two posts in two rooms
+can be set differently, the settings travel to everyone on a server without any syncing of
+our own, and a post that is torn down takes them with it.
+
+Errands are done in order: stow, then fetch, then tidy. A post that spent its spirits
+tidying while a full post sat waiting would feel broken even though every trip was useful.
+
+### Where the rule lives
+
+On the chest's own ZDO, as a plain string like `@ore,@bars,Coal`.
+
+That is the only place it can live and still be true: it saves with the world rather than
+with a config file, it travels to everyone on a server without any syncing of our own, and a
+chest that gets torn down takes its rule with it. A config file keyed by position would have
+to guess at all three.
+
+### How the post is made
+
+Cloned from `piece_chest_wood`, because the clone is what carries the Container, Piece,
+WearNTear and placement rules that make it a real buildable chest. It is then given a
+**hand-modelled body** in place of the donor's own: four designs were built and rendered,
+and `PostModelFile` names which one it wears, so swapping it costs an edit rather than a
+rebuild.
+
+Nothing vanilla is grafted on. Only the *materials* are borrowed, group by group — the mesh
+is ours and the surfaces are the game's, so texel density and palette match by construction
+without the piece being a crate the game already has.
+
+`KeyStow` and `KeyConfigure` still exist in the config for anyone who would rather not build
+anything, both unbound.
+
+### Stow used to be a separate mod
+
+It was folded in because it was never really separate.
 Its post has a socket in the model for a heartwood it could not obtain on its own, and the
 spirit that does the carrying is born at that heartwood and returns to it — so Stow standing
 alone was a post with a hole in it and a spirit with no origin. It built and ran; it did not
@@ -115,6 +283,76 @@ There are already mods that put a grid over your field. They solve placement and
 the whole thing from your first carrot. This gives you nothing you have not farmed for,
 which is the entire point: Valheim's Farming skill raises steadily and then pays out
 nothing.
+
+Both numbers are config. `MaxSeeds` sets the ceiling, `MaxAtLevel` sets where it is reached,
+and the count between is `floor(1 + (MaxSeeds - 1) * min(level / MaxAtLevel, 1))`. Two
+numbers rather than a table of twenty thresholds, because a table that long is not something
+anyone edits, it is something they give up on.
+
+**Trees are configured separately.** A tree sapling is not a carrot with a different mesh —
+its `m_growRadius` is several times a crop's, so twenty saplings is a stand of forest per
+click, most of which lands somewhere it cannot grow. Trees get their own ceiling, defaulting
+to five. A sapling is detected as any plant that grows into something carrying a `TreeBase`,
+read off the component rather than a name list, so a modded sapling is covered the day it is
+added and a renamed vanilla one never falls through.
+
+**Two shapes**, switchable in game. *Row* lays the seeds in a line across your facing, so
+you sow a rank and step forward. *Circle* rings them around the seed under your cursor, with
+the radius derived from the count so neighbours always sit one spacing apart along the arc —
+three seeds make a tight triangle, twenty make a wide ring, and in neither case do two land
+on top of each other. Spacing is the plant's own `m_growRadius`, doubled: the same distance
+the game itself refuses to plant inside, so carrots pack tight, firs stand well apart, and
+no single number in config has to suit both.
+
+### What it does not do
+
+**It does not skip a rule.** Every extra seed is checked for no-build zones, other players'
+wards, biome, cultivated ground and space, against the game's own `HaveGrowSpace` logic with
+the same mask and the same radius. Anything that fails is quietly dropped rather than placed
+badly, so a click near the edge of a field sows the part of the rank that fits.
+
+Roof, heat and cold are deliberately **not** checked, because vanilla does not check them at
+placement either. They are growth statuses a planted seed reports for itself, and leaving
+them out is what makes a sown plant behave identically to a hand-planted one that was put
+somewhere shady.
+
+**It does not make seeds cheaper.** Twenty seeds costs twenty seeds, paid through the game's
+own `ConsumeResources`, and it stops early if the pack runs out. Nor is skill cheaper: each
+seed raises Farming once, exactly as if you had placed them one at a time. That does
+compound — more skill means more seeds per click, and more seeds per click means more skill
+— and the counter is simply that seeds are a real cost.
+
+### Keys
+
+All rebindable, defaults on the numpad, and only read while the cultivator is actually out.
+
+| Key | What it does |
+| --- | --- |
+| Numpad + | One more seed per click, up to what your level allows |
+| Numpad - | One fewer, down to one |
+| Numpad * | Switch between row and circle |
+
+The scroll wheel would be the obvious binding and is deliberately not used: vanilla already
+spends it rotating the placement ghost, and fighting it means the count changes whenever you
+meant to turn a sapling.
+
+### How it works
+
+One postfix, on `Player.TryPlacePiece`. The seed under your cursor is placed by vanilla,
+validated by vanilla, paid for by vanilla and credited by vanilla; everything added here is
+additional, and every extra seed goes in through `Player.PlacePiece`, the same call the game
+makes for a hand-placed one.
+
+The one place it cannot ride a vanilla seam is validation. `Player.UpdatePlacementGhost`
+works from a camera ray through `PieceRayTest`, so it can only ever answer for the point
+under the cursor, and there is no entry point that asks "is this arbitrary position valid".
+Those checks are therefore hand-written in `Sowing.CanSow`, each one mirroring the game's
+own: biome and cultivated ground read exactly as `Plant.UpdateHealth` reads them, and the
+space test is `Plant.HaveGrowSpace` with the same mask and the same radius.
+
+This half is client-side. Nothing in it changes a prefab, an item or a ZDO, so the server
+sees ordinary plants and needs to know nothing about it. A player without the mod simply
+plants one seed at a time.
 
 **This one is here for a worse reason than the rest of the mod, and it is worth saying so.**
 The stowing post belongs because it houses the spirit; the sapling and the spirit are one
