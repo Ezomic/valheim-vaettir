@@ -56,14 +56,6 @@ Stow is no longer a separate mod. Its post, its spirit and its sorting ship here
 - One setting still drops the heartwood from the recipe and puts the post back to wood and
   nails, for anyone who wants the sorting without the ritual.
 
-### Sowing a rank at a time
-
-Furrow is no longer a separate mod either. It keeps its own settings file.
-
-- Sow a rank of seeds per click, scaled by Farming: nothing at level 0, twenty near the top.
-- One click never plants several ancient seeds. The sapling has no growth timer, and a
-  growth timer is what sowing looks for before it multiplies anything.
-
 
 ### Requires
 
@@ -77,8 +69,8 @@ without Vaettir silently destroys everything already standing. Solo, none of tha
 Worth reading before treating any of this as done.
 
 - **The sapling's stirring** has never been seen running.
-- **The merge itself.** Stow and Furrow ship inside this now, and no world has been played
-  with the merged assembly. Each was working separately before it moved.
+- **The merge itself.** Stow ships inside this now, and no world has been played with the
+  merged assembly. It was working separately before it moved.
 - **Dedicated servers.** Everything here has been exercised in single-player. Each spirit,
   sapling and post is driven by whoever owns it, so co-op should be fine, and should is
   doing real work in that sentence.
@@ -103,3 +95,6 @@ shipped half finished.
 
 Stow and Furrow were separate repos before this. Their history is in `archive/`, one git
 bundle each, clonable with `git clone archive/stow.bundle`. See `archive/README.md`.
+
+Furrow's sowing is shelved for 1.1 and bonemeal with its mill for 1.2, each whole on its
+own branch.

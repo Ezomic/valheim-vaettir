@@ -35,7 +35,6 @@ down gives the heartwood back.
 | Sapling health | 500, about ten hits from a brute |
 | Yield | One heartwood per spirit, always |
 | Stowing post | 20 fine wood, 20 iron nails, 1 heartwood. 12 slots, 6 across by 2 down |
-| Sowing | Up to 20 seeds a click, or 5 for trees, reached at Farming 80 |
 
 Every number above is a config default and can be changed.
 
@@ -53,19 +52,18 @@ client whose build does not match, which matters here for a reason worth reading
 
 ## Configuration
 
-Three files under `BepInEx/config/`, written on first run:
+Two files under `BepInEx/config/`, written on first run:
 
 | File | Covers |
 | --- | --- |
 | `ezomic.valheim.vaettir.cfg` | The sapling, the spirit, the heartwood |
 | `ezomic.valheim.stow.cfg` | The stowing post, the carrying spirit, sorting |
-| `ezomic.valheim.furrow.cfg` | Sowing several seeds at once |
 
-Three files because the stowing post and the sowing used to be separate mods and keep their
-own settings, so an upgrade does not lose what you had.
+Two files because the stowing post used to be a separate mod and keeps its own settings,
+so an upgrade does not lose what you had.
 
 Almost everything is adjustable: what each creature is worth, how far a kill counts, the
-sapling's health, the post's size and recipe, the sowing curve, and the keys.
+sapling's health, and the post's size and recipe.
 
 BepInEx writes every entry on first run, and from then on the saved value beats any new
 default in code. Changing a default in a later version does nothing on a machine that has
@@ -151,31 +149,6 @@ The same button opens the post's own settings, in two tabs.
 Errands run in order: stow, then fetch, then tidy.
 
 
-### Sowing a rank at a time
-
-Sow a whole rank of seeds in one click, as many as your Farming skill has earned. At level 0
-it does nothing at all: one click, one seed, exactly as vanilla. Twenty is reached at Farming
-80, and trees have their own ceiling of five because a sapling needs several times a crop's
-room.
-
-Two shapes, switchable in game. Row lays the seeds in a line across your facing; circle rings
-them around the seed under your cursor.
-
-| Key | What it does |
-| --- | --- |
-| Numpad + | One more seed per click, up to what your level allows |
-| Numpad - | One fewer, down to one |
-| Numpad * | Switch between row and circle |
-
-Only read while the cultivator is out, and all rebindable. The scroll wheel is deliberately
-not used, because vanilla already spends it rotating the placement ghost.
-
-It does not skip a rule. Every extra seed is checked for no-build zones, other players'
-wards, biome, cultivated ground and space. Anything that fails is quietly dropped, so a click
-near the edge of a field sows the part of the rank that fits. It does not make seeds cheaper
-either: twenty seeds costs twenty seeds, and each one raises Farming exactly as if you had
-placed them by hand.
-
 ## Multiplayer
 
 The mod is needed at both ends. This is not caution. The sapling, the spirit, the heartwood
@@ -185,9 +158,6 @@ already standing in the world.
 
 Longhouse Core is what turns that into a refused connection instead of a loss. Without it
 nothing checks. Solo, none of it applies.
-
-The sowing half is client-side and needs nothing of anyone: a player without the mod simply
-plants one seed at a time.
 
 ## Design notes
 
@@ -277,15 +247,6 @@ concerned, so its wood-to-coal recipes had already made every log an "ore". Tech
 and useless to someone deciding what a chest holds. Anything whose smelted output is a fuel
 is firewood, not ore.
 
-### Why sowing is tied to the skill
-
-There are already mods that put a grid over your field. They solve placement and hand you the
-whole thing from your first carrot. This gives you nothing you have not farmed for, which is
-the entire point: Valheim's Farming skill raises steadily and then pays out nothing.
-
-Roof, heat and cold are deliberately not checked when sowing, because vanilla does not check
-them at placement either. Leaving them out is what makes a sown plant behave identically to a
-hand-planted one put somewhere shady.
 
 ## Technical notes
 
@@ -311,13 +272,13 @@ group, so the mesh is ours and the surfaces are the game's.
 
 `tools/` holds the Blender scripts that produce every model, including the ones that lost.
 
-### Upgrading from Stow or Furrow
+### Upgrading from Stow
 
-Both used to be separate mods and now ship inside this one, unchanged. Pieces keep their
-internal names, so posts already standing survive, and both keep their own settings files, so
-the rules and options you had are the ones you still have.
+Stow used to be a separate mod and now ships inside this one, unchanged. The post keeps its
+internal name, so posts already standing survive, and it keeps its own settings file, so the
+rules you had are the ones you still have.
 
-Delete `BepInEx/plugins/Stow` and `BepInEx/plugins/Furrow` if you are upgrading by hand. Two
-copies loaded at once is the one thing that will go wrong.
+Delete `BepInEx/plugins/Stow` if you are upgrading by hand. Two copies loaded at once is the
+one thing that will go wrong.
 
 Their history is in `archive/`, one git bundle each. See `archive/README.md`.
