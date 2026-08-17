@@ -1,6 +1,6 @@
 # Blender 4.5.10 LTS
 # www.blender.org
-mtllib grove_mill_edge.mtl
+mtllib grove_mill.mtl
 o grove_mill_edge
 v -0.676544 0.080908 0.005927
 v -0.676303 0.055630 0.006131

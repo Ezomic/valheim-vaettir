@@ -46,7 +46,7 @@ SHIPPED = os.path.join(ROOT, "assets")
 ASSETS = os.path.join(SHIPPED, "variants")
 PREVIEWS = os.path.join(ASSETS, "previews")
 
-WINNER = None
+WINNER = "edge"
 SHIPPED_MESH = "grove_mill"
 
 STONE = "stone"

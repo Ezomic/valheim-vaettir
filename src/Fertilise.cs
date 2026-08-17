@@ -69,7 +69,7 @@ namespace Grove
 
         [HarmonyPostfix]
         [HarmonyPatch(typeof(Player), nameof(Player.ConsumeItem))]
-        private static void Apply(ItemDrop.ItemData item, bool __result)
+        private static void Apply(Player __instance, ItemDrop.ItemData item, bool __result)
         {
             if (!__result || !IsBonemeal(item)) return;
 
@@ -78,6 +78,7 @@ namespace Grove
             if (target == null) return;
 
             Advance(target);
+            Credit(__instance);
 
             var radius = Mathf.Max(0f, GroveConfig.BonemealRadius.Value);
             if (radius <= 0f) return;
@@ -93,6 +94,29 @@ namespace Grove
                 if (other == null || other == target) continue;
                 Advance(other);
             }
+        }
+
+        /// <summary>
+        /// Raises Farming for working the soil.
+        ///
+        /// On the use rather than on the harvest, which is the only place it can go. Vanilla
+        /// raises the skill once inside Pickable.Interact, before it has worked out how much
+        /// the plant yields, so the doubled harvest arrives too late to be credited and no
+        /// amount of patching the drop changes that. Tending the crop is its own action, and
+        /// crediting that is both simpler and better fiction than paying for it at the pick.
+        ///
+        /// Once per use, not once per plant. With BonemealRadius turned up a single press can
+        /// feed a whole bed, and paying per plant there would make skill scale with the size
+        /// of your field rather than with the work.
+        /// </summary>
+        private static void Credit(Player player)
+        {
+            if (player == null) return;
+
+            var value = Mathf.Max(0f, GroveConfig.BonemealFarming.Value);
+            if (value <= 0f) return;
+
+            player.RaiseSkill(Skills.SkillType.Farming, value);
         }
 
         /// <summary>

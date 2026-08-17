@@ -32,6 +32,7 @@ namespace Grove
         public static ConfigEntry<string> BonemealStation;
         public static ConfigEntry<float> BonemealAdvance;
         public static ConfigEntry<float> BonemealHarvest;
+        public static ConfigEntry<float> BonemealFarming;
         public static ConfigEntry<float> BonemealRadius;
 
         public static ConfigEntry<string> SaplingName;
@@ -215,6 +216,20 @@ namespace Grove
                 + "farmed by standing over one carrot. It is also spent on picking, which "
                 + "matters for anything that respawns rather than being consumed.\n"
                 + "Set it to 1 to keep the speed and drop the bounty.");
+
+            BonemealFarming = config.Bind("Bonemeal", "BonemealFarming", 1f,
+                "Farming skill raised each time bonemeal is used. 1 is one ordinary skill "
+                + "action, the same unit the game credits for picking a crop.\n"
+                + "Credited on the use rather than on the harvest, and that is the only "
+                + "place it can go: vanilla raises the skill inside Pickable.Interact "
+                + "before it has worked out the yield, so the doubled harvest arrives too "
+                + "late to be paid for however the drop is patched. Tending the soil is its "
+                + "own action anyway.\n"
+                + "Once per use, not once per plant. With BonemealRadius turned up a single "
+                + "press can feed a whole bed, and paying per plant would make the skill "
+                + "scale with the size of your field rather than with the work.\n"
+                + "Zero turns it off. Worth knowing that it does compound a little, since "
+                + "Farming is also what decides how many seeds a click sows.");
 
             BonemealRadius = config.Bind("Bonemeal", "BonemealRadius", 0f,
                 "Metres around the plant you used it on that are fertilised too. Zero, so "
