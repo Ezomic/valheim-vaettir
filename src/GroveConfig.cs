@@ -35,6 +35,12 @@ namespace Grove
         public static ConfigEntry<float> BonemealFarming;
         public static ConfigEntry<float> BonemealRadius;
 
+        public static ConfigEntry<string> MillName;
+        public static ConfigEntry<string> MillCost;
+        public static ConfigEntry<int> MillYield;
+        public static ConfigEntry<float> MillSeconds;
+        public static ConfigEntry<int> MillCapacity;
+
         public static ConfigEntry<string> SaplingName;
         public static ConfigEntry<string> SaplingCost;
         public static ConfigEntry<string> SaplingDonor;
@@ -238,6 +244,31 @@ namespace Grove
                 + "single press advancing a whole field is a different and much larger mod. "
                 + "It exists because somebody farming at Furrow's twenty-seeds-a-click will "
                 + "want it, and would otherwise go and install something that does far more.");
+
+            // ---------------------------------------------------------- the mill
+
+            MillName = config.Bind("Mill", "MillName", "Bone mill",
+                "What it is called when you look at it.");
+
+            MillCost = config.Bind("Mill", "MillCost", "BoneFragments:2",
+                "What one batch costs, as Item:Amount. Two bones for one meal.\n"
+                + "Read live rather than baked in, so the mill can be repriced without a "
+                + "rebuild, and a name that does not resolve is a readable warning rather "
+                + "than a mill that silently refuses everything you offer it.");
+
+            MillYield = config.Bind("Mill", "MillYield", 1,
+                "How much bonemeal one batch produces.");
+
+            MillSeconds = config.Bind("Mill", "MillSeconds", 8f,
+                "Seconds to grind one batch.\n"
+                + "Time is the whole cost here beyond the bone. A mill that finished "
+                + "instantly would be a crafting recipe with an extra building step in "
+                + "front of it, which is worse than the workbench recipe it replaces.");
+
+            MillCapacity = config.Bind("Mill", "MillCapacity", 20,
+                "How many batches it will hold at once. One press loads as many as your "
+                + "pack can pay for and as many as will fit, so this is really how long it "
+                + "runs unattended before it wants you again.");
 
             // ---------------------------------------------------------- the sapling
 
