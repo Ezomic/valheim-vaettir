@@ -137,6 +137,18 @@ That last tier is what makes the mod useful before you have configured anything.
 have given a rule never gets it.
 
 
+## Multiplayer
+
+The mod is needed at both ends. This is not caution. The sapling, the spirit, the heartwood
+and the post are all registered pieces, and a client that cannot resolve one throws the
+object away rather than erroring, so a server without Vaettir silently destroys everything
+already standing in the world.
+
+Longhouse Core is what turns that into a refused connection instead of a loss. Without it
+nothing checks. Solo, none of it applies.
+
+## Design notes
+
 ### Why a seed that ignores time
 
 Valheim's plants are timers. You put a carrot in the ground and the world's clock does the
