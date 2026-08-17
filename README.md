@@ -5,13 +5,12 @@ that sorts your storage.
 
 ## Quick start
 
-1. Kill greydwarf brutes and shamans until one drops an **ancient seed**. This is vanilla
-   loot and needs nothing from this mod.
-2. Take out the **cultivator** and plant the seed somewhere greydwarfs will come. It goes in
-   bare ground; no tilled soil needed.
+1. Kill greydwarf brutes and shamans until one drops an **ancient seed**. Vanilla loot; it
+   needs nothing from this mod.
+2. Plant it with the **cultivator**, in bare ground, somewhere greydwarfs will come.
 3. Kill greydwarfs **within 24 metres of it**. It grows on those deaths and nothing else.
-   Roughly thirty ordinary ones, or fewer if you find a nest, since elites count as four and
-   shamans as three. A "Forest is moving" raid arriving on top of it can finish it alone.
+   Roughly thirty ordinary ones, and elites count as four and shamans as three, so a "Forest
+   is moving" raid arriving on top of it can finish it alone.
 4. **Defend it.** It has real health and can be destroyed, and the seed is not refunded. It
    tells you when something is hitting it.
 5. When it opens, a **forest spirit** rises out of it. Press use once and it folds itself
@@ -42,12 +41,11 @@ Every number above is a config default and can be changed.
 
 Install [BepInEx for Valheim](https://thunderstore.io/c/valheim/p/denikson/BepInExPack_Valheim/)
 (5.4.2333 is what this is built against), then put the `Vaettir` folder from the release into
-`BepInEx/plugins/`. The mod is a single DLL plus the `.obj`, `.png` and `.col` files that sit
-beside it, and it reads those at runtime, so they all have to stay in that folder together.
+`BepInEx/plugins/`. It is a single DLL plus the `.obj`, `.png` and `.col` files that sit
+beside it, read at runtime, so they all have to stay in that folder together.
 
 [Longhouse Core](https://github.com/Ezomic/valheim-core) is optional and not installed for
-you. Solo you do not need it at all. On a server it adds a version gate that turns away a
-client whose build does not match, which matters here for a reason worth reading in
+you. Solo you do not need it at all. On a server it matters, for the reason in
 [Multiplayer](#multiplayer).
 
 ## Configuration
@@ -59,27 +57,25 @@ Two files under `BepInEx/config/`, written on first run:
 | `ezomic.valheim.vaettir.cfg` | The sapling, the spirit, the heartwood |
 | `ezomic.valheim.stow.cfg` | The stowing post, the carrying spirit, sorting |
 
-Two files because the stowing post used to be a separate mod and keeps its own settings,
-so an upgrade does not lose what you had.
+Two files because the stowing post used to be a separate mod and keeps its own settings, so
+an upgrade does not lose what you had.
 
 Almost everything is adjustable: what each creature is worth, how far a kill counts, the
-sapling's health, and the post's size and recipe.
+sapling's health, and the post's size and recipe. BepInEx writes every entry on first run and
+from then on the saved value beats any new default in code, so changing a default in a later
+version does nothing on a machine that has already run the mod. Edit the cfg.
 
-BepInEx writes every entry on first run, and from then on the saved value beats any new
-default in code. Changing a default in a later version does nothing on a machine that has
-already run the mod, so edit the cfg.
-
-`TestMode` under `[Diagnostics]` drops a sapling's cost to three greydwarfs so the whole
-chain can be walked in a minute. It announces itself in the log on every startup, because it
-is the setting most likely to be left on by accident.
+`TestMode` under `[Diagnostics]` drops a sapling's cost to three greydwarfs so the whole chain
+can be walked in a minute. It announces itself in the log on every startup, because it is the
+setting most likely to be left on by accident.
 
 ## Mechanics
 
 ### The sapling
 
-It keeps a count, not a clock. Only the creatures on its list feed it, only kills within
-range count, and only the nearest sapling is fed, so a heap of them planted together does not
-all grow off the same work. Greylings are on the list at zero.
+It keeps a count, not a clock. Only the creatures on its list feed it, only kills within range
+count, and only the nearest sapling is fed, so a heap of them planted together does not all
+grow off the same work. Greylings are on the list at zero.
 
 It can be destroyed, and it says so when something is hitting it and when it is gone. Losing
 it costs the seed and the time.
@@ -103,8 +99,8 @@ other posts.
 
 ### Telling a chest what it holds
 
-A chest window has a **Holds…** button under the game's own Stack all. The post has no
-button of its own: it distributes to the chests around it, so the rules live on them. A chest holds
+A chest window has a **Holds…** button under the game's own Stack all. The post has no button
+of its own: it distributes to the chests around it, so the rules live on them. A chest holds
 groups, like ore, fuel, seeds or building materials, and where a group will not do, single
 items. Chests with a rule say so in their hover text, in gold.
 
@@ -131,136 +127,26 @@ knowing it exists.
 
 Every item asks which chest wants it most, in this order: a chest that names that exact item,
 then one that holds a group it belongs to, then one set to anything else, then one with no
-rule at all that already holds some. Ties go to the nearer chest.
-
-That last tier is what makes the mod useful before you have configured anything. A chest you
-have given a rule never gets it.
-
+rule at all that already holds some. Ties go to the nearer chest. That last tier is what makes
+the mod useful before you have configured anything, and a chest you have given a rule never
+gets it.
 
 ## Multiplayer
 
 The mod is needed at both ends. This is not caution. The sapling, the spirit, the heartwood
-and the post are all registered pieces, and a client that cannot resolve one throws the
-object away rather than erroring, so a server without Vaettir silently destroys everything
-already standing in the world.
+and the post are all registered pieces, and a client that cannot resolve one throws the object
+away rather than erroring, so a server without Vaettir silently destroys everything already
+standing in the world.
 
 Longhouse Core is what turns that into a refused connection instead of a loss. Without it
 nothing checks. Solo, none of it applies.
 
 ## Design notes
 
-### Why a seed that ignores time
+Why the seed counts kills instead of ticking a clock, why the heartwood is a home rather than
+a heart, and why the sorting rules live on the chest: [DESIGN.md](DESIGN.md).
 
-Valheim's plants are timers. You put a carrot in the ground and the world's clock does the
-rest, which is the right design for a carrot and an empty one for a ritual. A thing that
-happens whether or not you are there has not been earned by anybody.
-
-So the ancient sapling keeps a count instead of a clock. It is fed by kills near it, which
-makes the whole thing a place you have to keep coming back to and keep clearing out. The work
-is the point. Nothing about it happens while you are asleep.
-
-### Greydwarfs specifically, not "forest creatures"
-
-An early version used the game's own forest faction and it swept up trolls, boars and the
-Elder along with them, which turned a quest about clearing out a nest into "kill anything,
-anywhere near here". A named list is duller to write and much better to play.
-
-Greylings are on the list at zero, so it is visible that they were considered and refused.
-They are the free kill, and letting them count would make the whole thing a matter of
-standing still.
-
-### Why it can be destroyed
-
-Because you are being asked to fight for an hour beside it, and something you cannot lose is
-not something you are defending.
-
-Ten hits from a brute means a fight happening around it is survivable and a mob left to work
-on it is not. It tells you when something is hitting it and when it is gone, because losing
-an hour in silence is a mystery rather than a difficulty.
-
-The first version inherited the donor's health, which is a carrot's, and the first greydwarf
-that swung anywhere near one ended the ritual. That was found by playing.
-
-### The heartwood is a home, not a heart
-
-The spirit does not die and hand over a piece of itself. It folds itself into the heartwood
-and you carry it somewhere.
-
-This started as "it gives up its heart", which was wrong in a way that took a while to name.
-The whole chain up to that point is violent, an hour of killing to summon something, and
-ending it by taking the heart out of what you summoned makes the spirit one more thing in the
-forest with loot in it. One press instead of a fight was already trying to avoid that, and
-the item's own description was undoing it.
-
-Read as a home, the rest falls into place without a line of code changing. The stowing post
-is not built out of a spirit, it is built for one, which is the answer to why a post that
-sorts your chests is worth an hour of greydwarfs when a chest is worth ten wood. Something is
-doing the sorting. Taking the post down gives the heartwood back, because you have not
-destroyed a home, you have moved out. And one spirit makes exactly one heartwood, always,
-because a spirit with five homes is in none of them.
-
-### Why the spirit carries things instead of teleporting them
-
-Because you can stand and watch it, and because a courier that walked would need to know
-about doorways, stairs and the chest being behind a pillar. It is a spirit is a better answer
-to why it does not than any amount of pathfinding.
-
-The important part is that the stack never leaves the post until the trip lands. The spirit
-carries a reservation and a picture of the item, not the item. A run is entirely in memory,
-so anything can end it: the zone unloads, you log out, the game is killed. In every one of
-those cases the stack is still sitting in the post where you dropped it, because it was never
-anywhere else. The alternative is simpler by a dozen lines and loses a stack of black metal
-to a crash.
-
-### Why the rules live on the chest
-
-On the chest itself, as a plain string. That is the only place it can live and still be true:
-it saves with the world rather than with a config file, it travels to everyone on a server
-without any syncing of our own, and a chest that gets torn down takes its rule with it. A
-config file keyed by position would have to guess at all three.
-
-### Why every item asks, rather than every chest
-
-Walking the chests is the obvious loop and it is the wrong one. Whichever chest is asked
-first gets first refusal, so the answer would depend on the order chests happened to be found
-in. Asking the item makes the outcome a property of your rules.
-
-### Why groups are read from the game
-
-Ticking "ore" is one press. Naming eleven ores by hand is eleven presses and is wrong the
-moment there are twelve.
-
-Wood is the one that needs explaining. A charcoal kiln is a smelter as far as the game is
-concerned, so its wood-to-coal recipes had already made every log an "ore". Technically true
-and useless to someone deciding what a chest holds. Anything whose smelted output is a fuel
-is firewood, not ore.
-
-
-## Technical notes
-
-Everything is a text file. No asset bundle and no Unity editor: the models are `.obj` read at
-runtime, the icons are `.png` beside the dll, and the colliders are a text sidecar. The
-surfaces are borrowed off vanilla prefabs rather than authored, so they match the game by
-construction and survive its updates.
-
-That constraint is why the spirit has no body. A creature needs a rig and an animation
-controller and neither can be authored here, so the spirit is light and motion instead: four
-things reading one number, which is how awake it is.
-
-The carrying spirit costs no networked object. Registering one would mean a name frozen
-forever, and renaming it later destroys every one in every save, for something that needs no
-persistence at all. What travels instead is the trip: where from, where to, what is being
-carried, when it started and how long it takes. Every client draws the arc locally from the
-game's shared clock, which is one network write per leg rather than one per frame.
-
-The stowing post is cloned from the vanilla wood chest, which is what carries the container,
-the placement rules and the wear that make it a real buildable piece, and then given a
-hand-modelled body. Nothing vanilla is grafted on; only the materials are borrowed, group by
-group, so the mesh is ours and the surfaces are the game's.
-
-`tools/` holds the Blender scripts that produce every model, including the ones that lost.
-
-### Upgrading from Stow
+## Upgrading from Stow
 
 Stow used to be a separate mod and now ships inside this one, unchanged. The post keeps its
 internal name, so posts already standing survive, and it keeps its own settings file, so the
