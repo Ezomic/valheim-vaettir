@@ -5,14 +5,12 @@ and the mod uses [semantic versioning](https://semver.org).
 
 ## [0.6.0] - unreleased
 
-Not 1.0, and it was wrong to call it that. The number 1.0 says a thing is finished and
-public, and this has an animation nobody has seen and a merge nobody has played. It went to 1.0 when it was one
-chain that had been played end to end, and then three more features and two whole mods
-arrived on top of it.
+Not 1.0 yet. The number went there when this was one chain played end to end, and then
+features and whole mods arrived on top of it without it moving. Most of those are now cut
+back out and held for later releases, and what is left is close.
 
-What has been played, in a real world: the seed planted, fed on greydwarf deaths through
-all four stages, opened into a spirit, communed with, and the heartwood carried away and
-dropped. That part works. Everything added since is built and not proven.
+What has been played, in a real world: the seed planted, fed on greydwarf deaths through its
+growth, opened into a spirit, communed with, and the heartwood carried away and dropped.
 
 ### The sapling
 
@@ -27,9 +25,12 @@ dropped. That part works. Everything added since is built and not proven.
   lose is not defending it. Around ten hits from a brute: a fight happening nearby is
   survivable, a mob left to work on it is not. It says when something is chewing on it and
   when it is gone, because losing an hour in silence is a mystery rather than a difficulty.
-- Four growth stages, hand-built, with its own icon so the cultivator stops offering a
-  carrot. Built to the game's own measurements rather than to taste, because smoothness is
-  most of what reads as modded and nothing else in the game at that size is round.
+- One hand-built model, with its own icon so the cultivator stops offering a carrot. Built
+  to the game's own measurements rather than to taste, because smoothness is most of what
+  reads as modded and nothing else in the game at that size is round.
+- The sapling does not change shape as it fills, and the hover text is what tells you how
+  far along it is. Four staged models exist and work, and three of them were not good
+  enough to ship, so the staging is held for 1.1 rather than released and apologised for.
 
 ### The spirit and the heartwood
 
@@ -78,10 +79,15 @@ Worth reading before treating any of this as done.
   where it stood and ships blank, because a wrong name costs the moment its flourish rather
   than breaking anything.
 
-### Not in this release
+### Held for later releases
 
-The vaettr visitor and the market they were to stand in, both cut and shelved rather than
-shipped half finished.
+Cut rather than shipped unproven or unfinished, each kept whole on its own branch so
+continuing is a merge rather than a rebuild.
+
+- **1.1** - sowing a rank of seeds by Farming skill, and the sapling's staged growth. The
+  staging works and has been played; three of its four models were not good enough.
+- **1.2** - bonemeal, and the bone mill that grinds it.
+- **Unscheduled** - the vaettr visitor and the market they were to stand in.
 
 ### Late fixes
 
@@ -96,5 +102,3 @@ shipped half finished.
 Stow and Furrow were separate repos before this. Their history is in `archive/`, one git
 bundle each, clonable with `git clone archive/stow.bundle`. See `archive/README.md`.
 
-Furrow's sowing is shelved for 1.1 and bonemeal with its mill for 1.2, each whole on its
-own branch.

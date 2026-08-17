@@ -26,7 +26,21 @@ namespace Grove
         public const string Name = "grove_ancient_sapling";
 
         private const string StageMesh = "grove_sapling_{0}.obj";
-        private const int Stages = 4;
+
+        /// <summary>
+        /// How many growth models the sapling wears. One, for now.
+        ///
+        /// It was four, and the staging works: Show swaps them as the count crosses each
+        /// quarter, and the whole chain has been played through all of them. What is wrong is
+        /// the art. Stages two, three and four were not good enough to ship, so they are held
+        /// back for 1.1 rather than released and apologised for, and the machinery is left
+        /// exactly as it is. Putting them back is this number and three model files.
+        ///
+        /// The hover text still names four states - newly planted, rooting, swelling, ready
+        /// to open - because it reads the count rather than the model, and with one model it
+        /// is the only thing telling you the sapling is getting anywhere.
+        /// </summary>
+        private const int Stages = 1;
 
         private static GameObject _prefab;
         private static GameObject _holder;
