@@ -3,11 +3,17 @@
 Notable changes to Vaettir. Format follows [Keep a Changelog](https://keepachangelog.com),
 and the mod uses [semantic versioning](https://semver.org).
 
-## [1.0.0] - 2026-08-16
+## [0.6.0] - unreleased
 
-First release. The chain has been played end to end in a real world: planted, fed on
-greydwarf deaths through all four stages, opened into a spirit, communed with, and the
-heartwood carried away and dropped.
+Not 1.0, and it was wrong to call it that. The number 1.0 says a thing is finished and
+public, and this has a mill nobody has placed, bonemeal nobody has used, an animation
+nobody has seen and a three-mod merge nobody has played. It went to 1.0 when it was one
+chain that had been played end to end, and then three more features and two whole mods
+arrived on top of it.
+
+What has been played, in a real world: the seed planted, fed on greydwarf deaths through
+all four stages, opened into a spirit, communed with, and the heartwood carried away and
+dropped. That part works. Everything added since is built and not proven.
 
 ### The sapling
 
@@ -75,10 +81,20 @@ that matters: the sapling, the spirit, the heartwood and the post are registered
 a client that cannot resolve one throws the object away rather than erroring. A server
 without Vaettir silently destroys everything already standing. Solo, none of that applies.
 
-### Known limits
+### What has not been proven
 
-- Exercised in single-player. Each spirit and sapling is driven by whoever owns it, so co-op
-  should be fine, but dedicated-server use is untested.
+Worth reading before treating any of this as done.
+
+- **The bone mill** has never been placed, fed or watched. It builds and registers; that is
+  all that is known about it.
+- **Bonemeal** has been crafted and confirmed to register, and nothing beyond that. The
+  fertilising, the doubled harvest and the Farming credit are all unexercised.
+- **The sapling's stirring** has never been seen running.
+- **The merge itself.** Stow and Furrow ship inside this now, and no world has been played
+  with the merged assembly. Each was working separately before it moved.
+- **Dedicated servers.** Everything here has been exercised in single-player. Each spirit,
+  sapling and mill is driven by whoever owns it, so co-op should be fine, and should is
+  doing real work in that sentence.
 - The spirit's parting has no effect on it yet. The setting names a vanilla particle to play
   where it stood and ships blank, because a wrong name costs the moment its flourish rather
   than breaking anything.

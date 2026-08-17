@@ -35,7 +35,7 @@ namespace Grove
     {
         public const string PluginGuid = "ezomic.valheim.vaettir";
         public const string PluginName = "Vaettir";
-        public const string PluginVersion = "1.0.0";
+        public const string PluginVersion = "0.6.0";
         public const string PluginAuthor = "Robbin Thijssen";
 
         /// <summary>Core's plugin GUID. Optional - see TryRegisterWithCore.</summary>
