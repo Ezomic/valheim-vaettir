@@ -1,15 +1,7 @@
 # Vaettir
 
-Something grows where you have killed enough. Speak to it once, and it comes home with you.
-
-Plant an ancient seed in the Black Forest. It does not grow on time, it grows on death, and
-only on the deaths of greydwarfs, and only within sight of it. About thirty of them and it
-opens into a forest spirit, which is one raid if the forest comes to you. Press use once and
-the spirit folds itself into a piece of heartwood for you to carry, and you go and build it
-somewhere to live.
-
-Where it lives is a stowing post. Drop things in, close it, and the spirit carries them to
-the chests that asked for them.
+Raise a forest spirit by killing greydwarfs beside a planted seed, then house it in a post
+that sorts your storage.
 
 ## Quick start
 
