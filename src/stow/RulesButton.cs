@@ -37,19 +37,17 @@ namespace Stow
             // post is asked what it fetches and how it behaves. Building a second button
             // beside this one would put a dead control on screen for every container in
             // the game.
-            var wanted = container != null;
+            // Hidden on a stowing post, not merely relabelled. A post has no settings of
+            // its own in this release and it does not sort by its own rule either - it
+            // distributes to the chests around it - so a rule editor opened on one would
+            // edit something nothing reads. A button that does nothing is worse than no
+            // button, which is the whole reason there is only ever one of these.
+            var wanted = container != null && !StowPost.Is(container);
 
             if (_button.gameObject.activeSelf != wanted)
                 _button.gameObject.SetActive(wanted);
 
             if (!wanted) return;
-
-            if (StowPost.Is(container))
-            {
-                var fetch = PostRules.Fetch(container).Count;
-                _label.text = fetch == 0 ? "Post…" : "Post · fetch " + fetch;
-                return;
-            }
 
             var entries = ChestFilter.Entries(container).Count;
             _label.text = entries == 0 ? "Holds…" : "Holds " + entries;
@@ -117,18 +115,13 @@ namespace Stow
             var container = StowPatches.CurrentContainer(gui);
             if (container == null) return;
 
-            // The post's own settings, or a chest's rule. Toggled rather than opened, so
-            // the same press that opened it closes it again - and the other panel is shut
-            // either way, because two 520px windows over one chest window is a mess.
-            if (StowPost.Is(container))
-            {
-                if (PostPanel.IsOpen) PostPanel.Close();
-                else { FilterPanel.Close(); PostPanel.Open(container); }
-                return;
-            }
-
+            // Toggled rather than opened, so the same press that opened it closes it.
+            //
+            // A post has no settings of its own in this release. Fetch, tidy and presence
+            // are held for 1.2, and with all three gone the post's panel had nothing left
+            // in it - so the button is a chest rule button and nothing else.
             if (FilterPanel.IsOpen) FilterPanel.Close();
-            else { PostPanel.Close(); FilterPanel.Open(container); }
+            else FilterPanel.Open(container);
         }
     }
 }

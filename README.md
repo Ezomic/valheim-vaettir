@@ -103,7 +103,8 @@ other posts.
 
 ### Telling a chest what it holds
 
-The chest window has a **Holds…** button under the game's own Stack all. A chest holds
+A chest window has a **Holds…** button under the game's own Stack all. The post has no
+button of its own: it distributes to the chests around it, so the rules live on them. A chest holds
 groups, like ore, fuel, seeds or building materials, and where a group will not do, single
 items. Chests with a rule say so in their hover text, in gold.
 
@@ -135,31 +136,6 @@ rule at all that already holds some. Ties go to the nearer chest.
 That last tier is what makes the mod useful before you have configured anything. A chest you
 have given a rule never gets it.
 
-### The post's panel
-
-The same button opens the post's own settings, in two tabs.
-
-- **Fetch** is stowing run backwards: name what the post should have and spirits bring it in
-  from the chests around it.
-- **Tidy** moves items sitting in a chest whose rule actively refuses them. It only ever
-  corrects a mistake, so it cannot churn a room that is already right.
-- **Presence** decides whether the spirit only appears when there is work, or lives at the
-  heartwood between runs.
-
-Errands run in order: stow, then fetch, then tidy.
-
-
-## Multiplayer
-
-The mod is needed at both ends. This is not caution. The sapling, the spirit, the heartwood
-and the post are all registered pieces, and a client that cannot resolve one throws the
-object away rather than erroring, so a server without Vaettir silently destroys everything
-already standing in the world.
-
-Longhouse Core is what turns that into a refused connection instead of a loss. Without it
-nothing checks. Solo, none of it applies.
-
-## Design notes
 
 ### Why a seed that ignores time
 

@@ -86,7 +86,10 @@ continuing is a merge rather than a rebuild.
 
 - **1.1** - sowing a rank of seeds by Farming skill, and the sapling's staged growth. The
   staging works and has been played; three of its four models were not good enough.
-- **1.2** - bonemeal, and the bone mill that grinds it.
+- **1.2**, a refinement pass - better animation throughout, and the post's own panel:
+  fetch, tidy and presence. All three were built and none of them were proven, and with
+  the three of them out the panel had nothing left in it, so it goes whole.
+- **1.3** - bonemeal, and the bone mill that grinds it.
 - **Unscheduled** - the vaettr visitor and the market they were to stand in.
 
 ### Late fixes

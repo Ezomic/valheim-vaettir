@@ -94,12 +94,7 @@ namespace Stow
 
         private void OnGUI()
         {
-            // Both panels, and the post's one was missing here. It opened, set IsOpen, and
-            // was never drawn - which from the chair is a button that does nothing at all.
-            // A panel is two halves, the state and the draw, and only the state had been
-            // wired. Same omission ran through every gate below.
             FilterPanel.Draw();
-            PostPanel.Draw();
         }
 
         private void Update()
@@ -148,7 +143,6 @@ namespace Stow
             if (_configureHeld) return;
             _configureHeld = true;
 
-            if (PostPanel.IsOpen) { PostPanel.Close(); return; }
             if (FilterPanel.IsOpen) { FilterPanel.Close(); return; }
             if (Busy()) return;
 
@@ -223,7 +217,6 @@ namespace Stow
 
             RulesButton.Hide();
             if (FilterPanel.IsOpen) FilterPanel.Close();
-            if (PostPanel.IsOpen) PostPanel.Close();
 
             var post = container.GetComponent<StowPost>();
             if (post != null) post.Empty();
@@ -266,14 +259,14 @@ namespace Stow
         [HarmonyPatch(typeof(Player), "TakeInput")]
         private static void BlockInput(ref bool __result)
         {
-            if (FilterPanel.IsOpen || PostPanel.IsOpen) __result = false;
+            if (FilterPanel.IsOpen) __result = false;
         }
 
         [HarmonyPostfix]
         [HarmonyPatch(typeof(PlayerController), "TakeInput")]
         private static void BlockController(ref bool __result)
         {
-            if (FilterPanel.IsOpen || PostPanel.IsOpen) __result = false;
+            if (FilterPanel.IsOpen) __result = false;
         }
 
         /// <summary>Stops the camera swinging while the panel is up.</summary>
@@ -281,7 +274,7 @@ namespace Stow
         [HarmonyPatch(typeof(PlayerController), "InInventoryEtc")]
         private static void HoldLookStill(ref bool __result)
         {
-            if (FilterPanel.IsOpen || PostPanel.IsOpen) __result = true;
+            if (FilterPanel.IsOpen) __result = true;
         }
 
         /// <summary>
@@ -294,7 +287,7 @@ namespace Stow
         [HarmonyPatch(typeof(GameCamera), nameof(GameCamera.UpdateMouseCapture))]
         private static void FreeCursor()
         {
-            if (!FilterPanel.IsOpen && !PostPanel.IsOpen) return;
+            if (!FilterPanel.IsOpen) return;
 
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
@@ -305,7 +298,7 @@ namespace Stow
         [HarmonyPatch(typeof(Menu), nameof(Menu.Show))]
         private static bool EscapeClosesPanel()
         {
-            if (!FilterPanel.IsOpen && !PostPanel.IsOpen) return true;
+            if (!FilterPanel.IsOpen) return true;
 
             FilterPanel.Close();
             return false;
