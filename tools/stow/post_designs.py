@@ -29,7 +29,10 @@ import bpy
 import math
 import os
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# Three levels: tools/stow -> tools -> the repo. These scripts used to sit in their
+# own repo's tools/ and two was right there; they are one deeper now, and two would
+# quietly write every asset into tools/assets instead of assets.
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 ASSETS = os.path.join(ROOT, "assets")
 PREVIEWS = os.path.join(ASSETS, "previews")
 

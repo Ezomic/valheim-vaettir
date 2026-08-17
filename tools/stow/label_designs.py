@@ -29,12 +29,14 @@ convincing chest would just make it the thing being looked at.
 import os
 import sys
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# Three levels: tools/stow -> tools -> the repo. These scripts used to sit in their
+# own repo's tools/ and two was right there; they are one deeper now, and two would
+# quietly write every asset into tools/assets instead of assets.
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # tools/ first: vhbuild.py is vendored here so this repo stands alone. The sibling
 # vaettir checkout is kept as a fallback for a working tree that has both.
-sys.path.insert(0, os.path.join(os.path.dirname(ROOT), "vaettir", "tools"))
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import bpy
 import math

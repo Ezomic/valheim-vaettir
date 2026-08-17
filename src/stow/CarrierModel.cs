@@ -1,5 +1,11 @@
 using System.IO;
 using UnityEngine;
+// ObjMesh and ModelData come from the Grove namespace. There used to be a byte-identical
+// copy of both in this folder, from when Stow was its own repository and could not
+// reach across to a sibling checkout. It ships in the same assembly now, so the copy
+// was two files drifting apart for no reason. Types in this namespace still win over
+// this import, so Stow's own Icons and PropIndex are unaffected.
+using Grove;
 
 namespace Stow
 {
