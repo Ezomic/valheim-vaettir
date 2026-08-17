@@ -90,6 +90,12 @@ continuing is a merge rather than a rebuild.
   fetch, tidy and presence. All three were built and none of them were proven, and with
   the three of them out the panel had nothing left in it, so it goes whole.
 - **1.3** - bonemeal, and the bone mill that grinds it.
+- **1.4** - upgrades for the stowing post. It starts out carrying ten items a trip and each
+  upgrade raises that, so a post becomes something you improve rather than something you
+  finish. It also gives the heartwood somewhere to go after the post is built.
+- **1.5** - an upgrade that houses a second spirit, so two stacks are in the air at once
+  rather than one moving faster. Two of them working is worth watching; one of them hurrying
+  is a number.
 - **Unscheduled** - the vaettr visitor and the market they were to stand in.
 
 ### Late fixes
