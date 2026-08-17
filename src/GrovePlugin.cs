@@ -118,20 +118,6 @@ namespace Grove
                 HeartwoodPrefab.Register();
                 SpiritPrefab.Register();
                 SaplingPrefab.Register();
-
-                // Bonemeal belongs here for exactly the reason above, and it is the second
-                // item in this mod that can sit in a saved inventory. Registering it only
-                // from Update would put a stack of it into the same race the heartwood lost:
-                // Inventory.AddItem skips what ObjectDB cannot resolve, and the next save
-                // writes the inventory back without it.
-                BonemealPrefab.Register();
-
-                // The mill is a piece rather than an item, so it is not in the
-                // inventory race the others are - but it registers a prefab, and
-                // ZNetScene discards the ZDO of anything it cannot resolve, so a
-                // mill already built wants this to have happened before the world
-                // finishes loading around it.
-                MillPrefab.Register();
             }
             catch (System.Exception e)
             {
@@ -177,7 +163,6 @@ namespace Grove
             _harmony = new Harmony(PluginGuid);
             _harmony.PatchAll(typeof(BloodFeed));
             _harmony.PatchAll(typeof(GrovePatches));
-            _harmony.PatchAll(typeof(Fertilise));
 
             // Built once rather than per frame, so Update allocates nothing to iterate.
             _steps = new[]
@@ -185,8 +170,6 @@ namespace Grove
                 new Step { Name = "Heartwood", Run = HeartwoodPrefab.Register },
                 new Step { Name = "Forest spirit", Run = SpiritPrefab.Register },
                 new Step { Name = "Ancient sapling", Run = SaplingPrefab.Register },
-                new Step { Name = "Bonemeal", Run = BonemealPrefab.Register },
-                new Step { Name = "Bone mill", Run = MillPrefab.Register },
                 new Step { Name = "Stow coupling", Run = StowApply },
             };
 
@@ -289,7 +272,6 @@ namespace Grove
             // has to be reapplied - otherwise loading a second world after the first
             // leaves the post back at its unmodified cost.
             StowCoupling.Invalidate();
-            BonemealPrefab.Invalidate();
 
             // And the item goes back in immediately, not next frame. The first Awake of
             // a session fires against a stub ObjectDB with no items in it, where this
@@ -318,7 +300,6 @@ namespace Grove
         {
             Skins.Invalidate();
             StowCoupling.Invalidate();
-            BonemealPrefab.Invalidate();
             GrovePlugin.RegisterNow();
         }
     }

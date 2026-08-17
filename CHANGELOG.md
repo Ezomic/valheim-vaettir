@@ -6,8 +6,7 @@ and the mod uses [semantic versioning](https://semver.org).
 ## [0.6.0] - unreleased
 
 Not 1.0, and it was wrong to call it that. The number 1.0 says a thing is finished and
-public, and this has a mill nobody has placed, bonemeal nobody has used, an animation
-nobody has seen and a three-mod merge nobody has played. It went to 1.0 when it was one
+public, and this has an animation nobody has seen and a merge nobody has played. It went to 1.0 when it was one
 chain that had been played end to end, and then three more features and two whole mods
 arrived on top of it.
 
@@ -65,14 +64,6 @@ Furrow is no longer a separate mod either. It keeps its own settings file.
 - One click never plants several ancient seeds. The sapling has no growth timer, and a
   growth timer is what sowing looks for before it multiplies anything.
 
-### Bonemeal
-
-- Ground bone, from 10 bone fragments and 2 entrails at a workbench.
-- Used on a crop it brings a third of that plant's growing time forward and doubles what it
-  yields when picked. Three will finish anything.
-- It refuses rather than being wasted: no plant under the crosshair, or one that cannot grow
-  where it stands, and the bonemeal is not spent.
-- Feeding one plant twice brings more time forward but does not raise the harvest again.
 
 ### Requires
 
@@ -85,15 +76,11 @@ without Vaettir silently destroys everything already standing. Solo, none of tha
 
 Worth reading before treating any of this as done.
 
-- **The bone mill** has never been placed, fed or watched. It builds and registers; that is
-  all that is known about it.
-- **Bonemeal** has been crafted and confirmed to register, and nothing beyond that. The
-  fertilising, the doubled harvest and the Farming credit are all unexercised.
 - **The sapling's stirring** has never been seen running.
 - **The merge itself.** Stow and Furrow ship inside this now, and no world has been played
   with the merged assembly. Each was working separately before it moved.
 - **Dedicated servers.** Everything here has been exercised in single-player. Each spirit,
-  sapling and mill is driven by whoever owns it, so co-op should be fine, and should is
+  sapling and post is driven by whoever owns it, so co-op should be fine, and should is
   doing real work in that sentence.
 - The spirit's parting has no effect on it yet. The setting names a vanilla particle to play
   where it stood and ships blank, because a wrong name costs the moment its flourish rather

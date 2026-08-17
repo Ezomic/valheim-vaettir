@@ -35,8 +35,6 @@ down gives the heartwood back.
 | Sapling health | 500, about ten hits from a brute |
 | Yield | One heartwood per spirit, always |
 | Stowing post | 20 fine wood, 20 iron nails, 1 heartwood. 12 slots, 6 across by 2 down |
-| Bonemeal | 10 bone fragments and 2 entrails at a workbench, makes 5 |
-| Bonemeal effect | Brings a third of a crop's growing time forward, doubles its harvest |
 | Sowing | Up to 20 seeds a click, or 5 for trees, reached at Farming 80 |
 
 Every number above is a config default and can be changed.
@@ -59,7 +57,7 @@ Three files under `BepInEx/config/`, written on first run:
 
 | File | Covers |
 | --- | --- |
-| `ezomic.valheim.vaettir.cfg` | The sapling, the spirit, the heartwood, bonemeal |
+| `ezomic.valheim.vaettir.cfg` | The sapling, the spirit, the heartwood |
 | `ezomic.valheim.stow.cfg` | The stowing post, the carrying spirit, sorting |
 | `ezomic.valheim.furrow.cfg` | Sowing several seeds at once |
 
@@ -67,8 +65,7 @@ Three files because the stowing post and the sowing used to be separate mods and
 own settings, so an upgrade does not lose what you had.
 
 Almost everything is adjustable: what each creature is worth, how far a kill counts, the
-sapling's health, the post's size and recipe, how much of a crop bonemeal advances and
-whether it doubles the harvest at all, the sowing curve, and the keys.
+sapling's health, the post's size and recipe, the sowing curve, and the keys.
 
 BepInEx writes every entry on first run, and from then on the saved value beats any new
 default in code. Changing a default in a later version does nothing on a machine that has
@@ -153,16 +150,6 @@ The same button opens the post's own settings, in two tabs.
 
 Errands run in order: stow, then fetch, then tidy.
 
-### Bonemeal
-
-Crafted at a workbench from 10 bone fragments and 2 entrails, five at a time.
-
-Use it on the crop under your crosshair and it brings a third of that plant's growing time
-forward and doubles what it yields when picked. Three will finish anything. It refuses rather
-than being spent if there is no plant under the crosshair, or if the one there cannot grow
-where it stands.
-
-Feeding one plant twice brings more time forward but does not raise the harvest again.
 
 ### Sowing a rank at a time
 
@@ -316,13 +303,6 @@ forever, and renaming it later destroys every one in every save, for something t
 persistence at all. What travels instead is the trip: where from, where to, what is being
 carried, when it started and how long it takes. Every client draws the arc locally from the
 game's shared clock, which is one network write per leg rather than one per frame.
-
-Bonemeal moves the plant's own planted moment rather than running a timer of its own, so
-growth stays the game's. A modded crop is advanced by a third of its own season without this
-mod knowing it exists, and the effect survives a reload because it was written to the plant
-rather than held in memory. The extra harvest travels down the same channel the Farming
-skill's own bonus yield uses, so world drop scaling and anything else a plant drops keep
-working.
 
 The stowing post is cloned from the vanilla wood chest, which is what carries the container,
 the placement rules and the wear that make it a real buildable piece, and then given a
