@@ -30,6 +30,7 @@ namespace Grove
         public static ConfigEntry<string> BonemealCost;
         public static ConfigEntry<int> BonemealYield;
         public static ConfigEntry<string> BonemealStation;
+        public static ConfigEntry<bool> BonemealAtWorkbench;
         public static ConfigEntry<float> BonemealAdvance;
         public static ConfigEntry<float> BonemealHarvest;
         public static ConfigEntry<float> BonemealFarming;
@@ -40,6 +41,8 @@ namespace Grove
         public static ConfigEntry<int> MillYield;
         public static ConfigEntry<float> MillSeconds;
         public static ConfigEntry<int> MillCapacity;
+        public static ConfigEntry<string> MillDonor;
+        public static ConfigEntry<string> MillBuildCost;
 
         public static ConfigEntry<string> SaplingName;
         public static ConfigEntry<string> SaplingCost;
@@ -195,6 +198,14 @@ namespace Grove
                 "Where it is crafted. Blank, or a name that does not resolve, makes it "
                 + "craftable by hand.");
 
+            BonemealAtWorkbench = config.Bind("Bonemeal", "BonemealAtWorkbench", false,
+                "Whether bonemeal can also be crafted at a workbench.\n"
+                + "Off, because the bone mill is what bonemeal is for. A workbench "
+                + "recipe sitting beside it would mean the mill never had to be built "
+                + "at all, which makes the piece decoration.\n"
+                + "On restores the old recipe, BonemealCost at BonemealStation, for "
+                + "anyone who wants the material without the machine.");
+
             BonemealAdvance = config.Bind("Bonemeal", "BonemealAdvance", 0.34f,
                 "How much of a plant's own growth one use brings forward, as a fraction. A "
                 + "third, so three uses mature anything.\n"
@@ -264,6 +275,17 @@ namespace Grove
                 + "Time is the whole cost here beyond the bone. A mill that finished "
                 + "instantly would be a crafting recipe with an extra building step in "
                 + "front of it, which is worse than the workbench recipe it replaces.");
+
+            MillDonor = config.Bind("Mill", "MillDonor", "charcoal_kiln",
+                "The vanilla piece it is cloned from, for its Piece, WearNTear and ZNetView "
+                + "- the machinery that makes it buildable, damageable and networked. Its "
+                + "own smelter, switches, smoke and particles are torn out, and the body is "
+                + "replaced, so nothing of the donor is visible.");
+
+            MillBuildCost = config.Bind("Mill", "MillBuildCost", "Stone:20,Wood:10",
+                "What building one costs, as Item:Amount. Stone because it is a grindstone, "
+                + "and cheap because the mill is not the achievement - the bone you feed it "
+                + "is.");
 
             MillCapacity = config.Bind("Mill", "MillCapacity", 20,
                 "How many batches it will hold at once. One press loads as many as your "

@@ -125,6 +125,13 @@ namespace Grove
                 // Inventory.AddItem skips what ObjectDB cannot resolve, and the next save
                 // writes the inventory back without it.
                 BonemealPrefab.Register();
+
+                // The mill is a piece rather than an item, so it is not in the
+                // inventory race the others are - but it registers a prefab, and
+                // ZNetScene discards the ZDO of anything it cannot resolve, so a
+                // mill already built wants this to have happened before the world
+                // finishes loading around it.
+                MillPrefab.Register();
             }
             catch (System.Exception e)
             {
@@ -179,6 +186,7 @@ namespace Grove
                 new Step { Name = "Forest spirit", Run = SpiritPrefab.Register },
                 new Step { Name = "Ancient sapling", Run = SaplingPrefab.Register },
                 new Step { Name = "Bonemeal", Run = BonemealPrefab.Register },
+                new Step { Name = "Bone mill", Run = MillPrefab.Register },
                 new Step { Name = "Stow coupling", Run = StowApply },
             };
 

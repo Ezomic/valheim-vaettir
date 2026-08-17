@@ -84,13 +84,33 @@ namespace Stow
         /// </summary>
         public static bool Apply(GameObject prefab)
         {
+            return Apply(prefab, ModelFile, "post_visual", true);
+        }
+
+        /// <summary>
+        /// The same work for any piece, not just the post.
+        ///
+        /// Everything below is general: strip the donor's renderers, hang our mesh on a
+        /// square child, skin each material group off a vanilla prefab, remap the UVs into
+        /// each group's atlas rect, and swap the colliders for the ones in the sidecar. Only
+        /// two things were ever Stow's, and they are now arguments: which file to load, and
+        /// whether to look for a heartwood in it.
+        ///
+        /// Generalised for the bone mill, which needs all of the above and has no heartwood.
+        /// A model loader keyed to one config entry is one piece's loader; this one is the
+        /// repo's.
+        /// </summary>
+        public static bool Apply(GameObject prefab, string modelFile, string visualName,
+                                 bool heartwood)
+        {
             var dir = Path.GetDirectoryName(typeof(PostModel).Assembly.Location);
-            var model = ObjMesh.Load(Path.Combine(dir, ModelFile));
+            var model = ObjMesh.Load(Path.Combine(dir, modelFile));
 
             if (model == null || model.Mesh == null)
             {
                 StowPlugin.Log.LogWarning(
-                    "No post model beside the dll - falling back to the donor's own look.");
+                    "No " + modelFile + " beside the dll - falling back to the donor's own "
+                    + "look.");
                 return false;
             }
 
@@ -106,7 +126,7 @@ namespace Stow
                 UnityEngine.Object.DestroyImmediate(renderer.gameObject);
             }
 
-            var visual = new GameObject("post_visual");
+            var visual = new GameObject(visualName);
             visual.transform.SetParent(prefab.transform, false);
 
             // Explicitly square, not merely assumed square. The donor is a barrel, and
@@ -125,13 +145,13 @@ namespace Stow
             // After SkinsFor, because that is what learns each group's atlas rectangle.
             Remap(model.Mesh, model.Groups);
 
-            Heartwood(prefab, visual.transform, model);
+            if (heartwood) Heartwood(prefab, visual.transform, model);
 
-            ReplaceColliders(prefab, Path.Combine(dir, ColliderFile));
+            ReplaceColliders(prefab, Path.Combine(dir, Path.ChangeExtension(modelFile, ".col")));
 
             StowPlugin.Log.LogInfo(string.Format(
-                "Post model loaded: {0} verts, {1} tris, groups [{2}].",
-                model.Mesh.vertexCount, model.Mesh.triangles.Length / 3,
+                "{0} loaded: {1} verts, {2} tris, groups [{3}].",
+                modelFile, model.Mesh.vertexCount, model.Mesh.triangles.Length / 3,
                 string.Join(", ", model.Groups)));
 
             return true;

@@ -37,6 +37,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import bpy
 import math
 
+from mathutils import Vector
+
 from vhbuild import (box, camera, clear_scene, collide, disc, export, finish, orb,
                      reference_cube, render, ring, shell, stage_scene, taper, tint,
                      write_col)
@@ -204,6 +206,64 @@ def look(name):
     render(os.path.join(PREVIEWS, name + ".png"), width=760, height=620, bloom=False)
 
 
+def icon_scene(obj):
+    """
+    Orthographic, three quarters on, transparent, fitted.
+
+    Its own pass, because the eye-height preview above is the wrong picture for a build
+    menu: it has a ground plane, a sky and a reference cube in it, and the menu wants the
+    piece alone on nothing. Three quarters rather than front on, since dead front on
+    flattens a symmetrical object into a blob and the slot is judged on outline.
+    """
+    scene = bpy.context.scene
+    scene.render.film_transparent = True
+
+    corners = [obj.matrix_world @ Vector(c) for c in obj.bound_box]
+    lo = [min(c[i] for c in corners) for i in range(3)]
+    hi = [max(c[i] for c in corners) for i in range(3)]
+
+    centre = [(lo[i] + hi[i]) * 0.5 for i in range(3)]
+    span = max(hi[i] - lo[i] for i in range(3))
+
+    target = bpy.data.objects.new("aim", None)
+    bpy.context.collection.objects.link(target)
+    target.location = centre
+
+    azimuth, elevation, distance = math.radians(34.0), math.radians(22.0), 4.0
+
+    bpy.ops.object.camera_add(location=(
+        centre[0] + math.sin(azimuth) * math.cos(elevation) * distance,
+        centre[1] - math.cos(azimuth) * math.cos(elevation) * distance,
+        centre[2] + math.sin(elevation) * distance))
+
+    cam = bpy.context.active_object
+    cam.data.type = "ORTHO"
+    cam.data.ortho_scale = span * 1.15
+
+    track = cam.constraints.new(type="TRACK_TO")
+    track.target = target
+    track.track_axis = "TRACK_NEGATIVE_Z"
+    track.up_axis = "UP_Y"
+    scene.camera = cam
+
+    # Suns, not area lights. An area light a metre from a 1.3m piece blows every channel
+    # to white, and the tell is stone rendering as paper.
+    bpy.ops.object.light_add(type="SUN", location=(-1.0, -1.6, 1.2))
+    key = bpy.context.active_object
+    key.data.energy = 3.0
+    key.rotation_euler = (math.radians(56.0), 0.0, math.radians(-34.0))
+
+    bpy.ops.object.light_add(type="SUN", location=(1.3, -1.4, -0.4))
+    fill = bpy.context.active_object
+    fill.data.energy = 1.2
+    fill.rotation_euler = (math.radians(104.0), 0.0, math.radians(36.0))
+
+    world = bpy.data.worlds.new("icon_world")
+    scene.world = world
+    world.use_nodes = True
+    world.node_tree.nodes["Background"].inputs[1].default_value = 0.0
+
+
 def build(label, maker):
     name = "grove_mill_" + label
     winner = label == WINNER
@@ -223,6 +283,18 @@ def build(label, maker):
     maker()
     obj = finish(name)
     look(name)
+
+    # The build menu picture, and only for the one that ships. A piece that inherits its
+    # donor's icon advertises itself as the donor, which is what made the stowing post
+    # look like a wooden chest in the Furniture tab.
+    if winner:
+        clear_scene()
+        maker()
+        obj = finish(name)
+        tint()
+        icon_scene(obj)
+        render(os.path.join(SHIPPED, "grove_mill_icon.png"), width=128, height=128,
+               bloom=False)
 
     # A buildable piece is capped at 10,000 triangles and gets placed in rows, so the
     # number is multiplied by however many you build rather than paid once.

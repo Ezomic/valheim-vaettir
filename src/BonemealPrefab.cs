@@ -227,6 +227,19 @@ namespace Grove
         {
             if (_recipeAdded) return;
 
+            // Off by default now that the bone mill exists. Bonemeal is what the mill
+            // is for, and leaving a workbench recipe beside it would mean the piece
+            // never had to be built at all.
+            //
+            // Kept rather than deleted, and turned off rather than removed, for the
+            // same reason CoupleToStow survives: somebody will want the material
+            // without the machine, and that is a setting rather than an argument.
+            if (!GroveConfig.BonemealAtWorkbench.Value)
+            {
+                _recipeAdded = true;
+                return;
+            }
+
             var db = ObjectDB.instance;
             if (db == null || _prefab == null) return;
 
