@@ -183,7 +183,7 @@ def ring(radius, thickness, location, mat, major=18, minor=7, rot_x=90.0, tilt=1
     return obj
 
 
-def shell(bottom, top, height, location, mat, sides=9, rot_x=0.0):
+def shell(bottom, top, height, location, mat, sides=9, rot_x=0.0, rot_y=0.0):
     """
     An open frustum: both caps deleted, so whatever is inside can be seen.
 
@@ -194,7 +194,10 @@ def shell(bottom, top, height, location, mat, sides=9, rot_x=0.0):
     bpy.ops.mesh.primitive_cone_add(vertices=sides, radius1=bottom, radius2=top,
                                     depth=height, location=location)
     obj = bpy.context.active_object
-    obj.rotation_euler = (math.radians(rot_x), 0.0, 0.0)
+    # rot_y as well as rot_x, because rot_x lays a tube along y and there is no way to
+    # lay one along x without it. The cap selection below reads local normals and runs
+    # after this, so object rotation does not disturb which faces are the caps.
+    obj.rotation_euler = (math.radians(rot_x), math.radians(rot_y), 0.0)
 
     mesh = obj.data
     bpy.ops.object.mode_set(mode="EDIT")
