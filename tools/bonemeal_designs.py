@@ -47,7 +47,7 @@ PREVIEWS = os.path.join(ASSETS, "previews")
 
 # None until there is a pick. Naming one here is what promotes it out of variants,
 # which the build does not copy, into assets, which it does.
-WINNER = None
+WINNER = "crock"
 SHIPPED_MESH = "grove_bonemeal"
 SHIPPED_ICON = "grove_bonemeal_icon.png"
 
@@ -56,118 +56,119 @@ BONE = "bone"
 
 # --------------------------------------------------------------------------- shapes
 
-def heap():
+def sack():
     """
-    A mound of meal with shards standing out of it.
+    A cinched cloth sack with two bone shards pushed into it.
 
-    First pass buried the shards and the whole thing rendered as a grey potato. The
-    shards have to *break the outline* to do their job - a lump with texture on it is
-    still a lump at 48 pixels, and bone is only bone if you can see a bone.
-    """
-    mat = BONE
+    Fourth attempt, and the lesson from the three before it is arithmetic rather than
+    art: every failure was a part floating clear of the body. Gathered corners half a
+    centimetre above the neck, a bone whose end cap sat outside the sack, a knot
+    resting on air. At this scale "touching" is not enough - a 2mm gap is plainly
+    visible at 512px and reads as debris orbiting the object.
 
-    orb(0.098, (0.000, 0.000, 0.004), mat, subdivisions=2, stretch=0.40)
-    orb(0.062, (0.056, -0.026, 0.002), mat, subdivisions=2, stretch=0.38)
-    orb(0.054, (-0.054, 0.028, 0.002), mat, subdivisions=2, stretch=0.36)
+    So this one is deliberately fewer, larger, heavily overlapping parts, and every z
+    span below is written down so the overlaps can be checked rather than eyeballed:
 
-    # Standing well proud of the pile, and leaning, so the silhouette has spikes in
-    # it. Rooted deep enough to overlap the domes - a shard resting on top reads as a
-    # separate object dropped there.
-    taper(0.017, 0.009, 0.120, (0.030, 0.030, 0.052), mat, sides=5,
-          rot_x=64.0, rot_y=22.0)
-    taper(0.014, 0.008, 0.098, (-0.038, -0.030, 0.046), mat, sides=5,
-          rot_x=-58.0, rot_y=-16.0)
-    box((0.092, 0.020, 0.015), (0.006, 0.052, 0.050), mat, rot_z=16.0, rot_y=26.0)
+        base orb    0.000 - 0.073
+        body orb    0.000 - 0.123
+        neck        0.070 - 0.140   (53mm into the body)
+        tie         0.125 - 0.139   (inside the neck)
+        gather      0.125 - 0.165   (40mm through the tie)
 
-
-def horn():
-    """
-    A hollowed horn on its side, spilling.
-
-    Two passes went wrong on one mistake worth writing down: rot_x=90 lays a cylinder
-    along **y**, and the segments were being spaced along **x** - so what was meant to
-    be one tube end to end came out as three parallel tubes side by side, with
-    daylight between them. Laying along x is rot_y=90. The bundle below was right the
-    whole time for exactly that reason.
+    Few large parts beat many small ones, which was the rule the whole time.
     """
     mat = BONE
 
-    # The mouth, open, and the only part that needs to be a shell.
-    shell(0.056, 0.050, 0.058, (-0.092, 0.000, 0.048), mat, sides=11, rot_x=90.0)
+    # Body: off-centre so it slumps rather than standing like a jar.
+    orb(0.080, (0.012, -0.006, 0.055), mat, subdivisions=2, stretch=0.85)
+    orb(0.068, (-0.018, 0.012, 0.032), mat, subdivisions=2, stretch=0.60)
 
-    # Body and tip, each overlapping the one before by about a third of its length so
-    # the three are one tapering object rather than three touching ones.
-    taper(0.030, 0.052, 0.128, (-0.014, 0.004, 0.046), mat, sides=11, rot_y=90.0)
-    taper(0.010, 0.030, 0.092, (0.082, 0.012, 0.042), mat, sides=9,
-          rot_y=90.0, rot_x=10.0)
+    # One fold plane sunk deep into the body, breaking the curve without adding a
+    # part that can come adrift.
+    box((0.026, 0.104, 0.070), (0.044, -0.010, 0.058), mat, rot_z=26.0, rot_y=-10.0)
 
-    # The spill, running out of the mouth and widening away from it.
-    orb(0.044, (-0.124, -0.014, 0.015), mat, subdivisions=2, stretch=0.30)
-    orb(0.030, (-0.158, -0.030, 0.010), mat, subdivisions=2, stretch=0.24)
+    # Neck, driven 53mm down into the body.
+    taper(0.055, 0.026, 0.070, (0.006, 0.000, 0.105), mat, sides=9, spin=False)
+
+    # The tie, sitting inside the neck's span.
+    taper(0.031, 0.031, 0.014, (0.006, 0.000, 0.132), mat, sides=11, spin=False)
+
+    # Gathered cloth above it, passing right through the tie rather than perching on
+    # top of it, and squared off so it does not read as a cork.
+    taper(0.024, 0.048, 0.040, (0.006, 0.000, 0.145), mat, sides=7, spin=False)
+    box((0.052, 0.024, 0.020), (0.010, 0.004, 0.160), mat, rot_z=22.0, rot_y=9.0)
+
+    # Shards, rooted at the centre of the body so no amount of rotation can lift the
+    # buried end out of it.
+    taper(0.016, 0.009, 0.150, (0.020, 0.010, 0.060), mat, sides=7,
+          rot_x=36.0, rot_y=34.0)
+    taper(0.013, 0.008, 0.120, (0.000, 0.006, 0.055), mat, sides=5,
+          rot_x=-42.0, rot_y=-26.0)
 
 
-def cake():
+def crock():
     """
-    A pressed brick, cracked across.
+    A wide-mouthed crock with cloth tied over the mouth and a bone leaning on it.
 
-    The flattest and most man-made of the four, and the only one with a straight edge
-    - which is why it is here, because in a row of slots a rectangle is instantly not
-    a lump. First pass sat a near-spherical cap on top and it read as a gem on a
-    paving slab; the cap is now barely proud of the brick, which is what pressed
-    powder actually looks like.
+    The picked shape, and the reason it won is that it is the only candidate that
+    reads as one coherent object. Three passes at a cloth sack all came out as
+    pottery anyway - stacking primitives on a shared vertical axis produces a surface
+    of revolution, which is exactly what a thrown pot is - so the honest move was to
+    build the pot on purpose rather than keep failing to avoid it.
+
+    It is also the only shape here with a straight vertical side, which is what makes
+    it findable in a row of slots full of curves.
+
+    Every z span is written down, because the recurring failure across five passes was
+    never the design, it was a part half a centimetre clear of its neighbour:
+
+        lower body   0.002 - 0.050
+        upper body   0.040 - 0.100   (10mm overlap)
+        lip          0.091 - 0.109   (9mm into the body)
+        cord         0.099 - 0.110   (inside the lip)
+        cover        0.097 - 0.127   (12mm over the lip, overhanging the cord)
     """
     mat = BONE
 
-    box((0.092, 0.146, 0.048), (-0.050, 0.000, 0.024), mat, rot_z=1.6)
-    box((0.088, 0.146, 0.045), (0.048, 0.004, 0.022), mat, rot_z=-2.2)
+    # Straight-sided with a slight belly, sitting flat. Odd side count so it reads as
+    # round rather than presenting a flat face to the camera.
+    taper(0.076, 0.084, 0.048, (0.000, 0.000, 0.026), mat, sides=13, spin=False)
+    taper(0.084, 0.072, 0.060, (0.000, 0.000, 0.070), mat, sides=13, spin=False)
 
-    # Low and wide. A cap you can see the edge of is a lid; this is a surface.
-    orb(0.084, (0.000, 0.000, 0.044), mat, subdivisions=2, stretch=0.10)
+    # A lip for the cord to bite on. Without it the cloth is tied to nothing and the
+    # cover slides visually off the top.
+    taper(0.072, 0.078, 0.018, (0.000, 0.000, 0.100), mat, sides=13, spin=False)
 
-    # A shard through the crack, so it is bone rather than chalk.
-    taper(0.013, 0.007, 0.086, (0.002, 0.020, 0.062), mat, sides=5,
-          rot_x=72.0, rot_y=8.0)
+    # The cloth: thin and overhanging, not a dome. The previous pass used stretch=0.30
+    # and it read as a mushroom cap, which is to say as a lid - a hard thing, which is
+    # the one thing cloth must not look like.
+    orb(0.088, (0.000, 0.000, 0.112), mat, subdivisions=2, stretch=0.17)
 
-    orb(0.028, (0.006, -0.088, 0.010), mat, subdivisions=2, stretch=0.30)
-    box((0.024, 0.019, 0.013), (-0.022, 0.088, 0.008), mat, rot_z=24.0)
+    # The cord, proud of the lip and tucked under the cover's overhang.
+    taper(0.080, 0.080, 0.011, (0.000, 0.000, 0.104), mat, sides=13, spin=False)
 
+    # Two cloth ends hanging down the side from under the cover, overlapping both it
+    # and the body so they are part of the object rather than tabs stuck on it.
+    box((0.024, 0.015, 0.044), (0.076, 0.016, 0.090), mat, rot_y=13.0, rot_z=8.0)
+    box((0.018, 0.013, 0.032), (0.066, -0.042, 0.094), mat, rot_y=-9.0, rot_z=-26.0)
 
-def bundle():
-    """
-    Long bones bound together, one split and spilling.
+    # The bone, rooted well inside the wall so no rotation can lift its buried end
+    # out. This is what stops the whole thing being a generic pot.
+    #
+    # On the +x -y side deliberately. The icon camera stands at azimuth 34 degrees,
+    # so anything on the far side is behind the pot in the one picture that has to
+    # carry the item's identity - and the first version of this put it there, where it
+    # was completely hidden. Same mistake as photographing a piece from behind.
+    taper(0.016, 0.009, 0.130, (0.046, -0.030, 0.058), mat, sides=7,
+          rot_x=-26.0, rot_y=36.0)
 
-    First pass used limb() chains and they came out as flat stacked plates - a curved
-    tapering chain at 2cm thick over 20cm is mostly bevel, and the join collapsed it.
-    Explicit cylinders with knuckles at both ends are cruder and read correctly, which
-    is the trade every time.
-    """
-    mat = BONE
-
-    def shaft(y, z, length, thick, lean):
-        # Laid along x: rot_y=90 turns an upright cylinder onto its side. rot_x would
-        # lay it along y instead, which is the mistake to make here.
-        taper(thick, thick * 0.86, length, (0.000, y, z), mat, sides=7,
-              rot_y=90.0, rot_x=lean)
-        orb(thick * 1.5, (-length * 0.5, y, z), mat, subdivisions=2, stretch=0.86)
-        orb(thick * 1.4, (length * 0.5, y, z), mat, subdivisions=2, stretch=0.84)
-
-    shaft(0.030, 0.024, 0.210, 0.022, 3.0)
-    shaft(-0.016, 0.026, 0.196, 0.020, -4.0)
-    shaft(0.008, 0.062, 0.178, 0.019, 1.5)
-
-    # The binding: a band wrapping the bundle, which is a short open cylinder laid
-    # along the same axis as the shafts. The first pass used an upright box and it
-    # read as a fin standing through them - a slab across a bundle is not a binding,
-    # it is a signpost. Only the band's outer wall is ever seen, so the shafts sitting
-    # inside it cost nothing.
-    shell(0.062, 0.062, 0.034, (0.012, 0.006, 0.038), mat, sides=13, rot_y=90.0)
+    # One shard at the foot, overlapping the base, so the identity reads even when the
+    # leaning bone is hidden behind the pot at an awkward angle.
+    box((0.050, 0.014, 0.011), (0.048, -0.044, 0.007), mat, rot_z=28.0)
 
 
 DESIGNS = (
-    ("heap", heap),
-    ("horn", horn),
-    ("cake", cake),
-    ("bundle", bundle),
+    ("crock", crock),
 )
 
 
