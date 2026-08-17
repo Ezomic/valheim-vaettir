@@ -22,6 +22,17 @@ namespace Grove
         public static ConfigEntry<int> HeartwoodStack;
         public static ConfigEntry<int> HeartwoodGiven;
 
+        public static ConfigEntry<string> BonemealName;
+        public static ConfigEntry<string> BonemealDonor;
+        public static ConfigEntry<string> BonemealModel;
+        public static ConfigEntry<string> BonemealIcon;
+        public static ConfigEntry<int> BonemealStack;
+        public static ConfigEntry<string> BonemealCost;
+        public static ConfigEntry<int> BonemealYield;
+        public static ConfigEntry<string> BonemealStation;
+        public static ConfigEntry<float> BonemealAdvance;
+        public static ConfigEntry<float> BonemealRadius;
+
         public static ConfigEntry<string> SaplingName;
         public static ConfigEntry<string> SaplingCost;
         public static ConfigEntry<string> SaplingDonor;
@@ -139,6 +150,63 @@ namespace Grove
                 + "the economy - the whole chain exists to make a single stowing post "
                 + "cost something real, and five would make the rest free - but the "
                 + "story is the harder constraint of the two.");
+
+            // ---------------------------------------------------------- bonemeal
+
+            BonemealName = config.Bind("Bonemeal", "BonemealName", "Bonemeal",
+                "What the item is called.");
+
+            BonemealDonor = config.Bind("Bonemeal", "BonemealDonor", "BoneFragments",
+                "The vanilla item it is cloned from, for its ItemDrop, Rigidbody, colliders "
+                + "and float-in-water behaviour. Only the mesh, the icon, the name and the "
+                + "item type change.");
+
+            BonemealModel = config.Bind("Bonemeal", "BonemealModel", "grove_bonemeal.obj",
+                "The mesh, read from beside the dll. Optional: without it the item keeps "
+                + "the donor's, which looks wrong rather than being broken - the mechanic "
+                + "is playable before the model pass has happened.");
+
+            BonemealIcon = config.Bind("Bonemeal", "BonemealIcon", "grove_bonemeal_icon.png",
+                "The inventory picture, read from beside the dll. Optional in the same way.");
+
+            BonemealStack = config.Bind("Bonemeal", "BonemealStack", 50,
+                "How many fit in a slot. Generous, because the whole point is using several "
+                + "on a field and a stack of ten would mean a trip back to a chest mid-row.");
+
+            BonemealCost = config.Bind("Bonemeal", "BonemealCost",
+                "BoneFragments:10,Entrails:2",
+                "What one craft costs, as Item:Amount. Entrails rather than bone alone so it "
+                + "is a craft rather than a free conversion of the drop everybody is "
+                + "drowning in by the Black Forest. An ingredient that does not resolve "
+                + "abandons the whole recipe rather than quietly cheapening it.");
+
+            BonemealYield = config.Bind("Bonemeal", "BonemealYield", 5,
+                "How many one craft produces.");
+
+            BonemealStation = config.Bind("Bonemeal", "BonemealStation", "piece_workbench",
+                "Where it is crafted. Blank, or a name that does not resolve, makes it "
+                + "craftable by hand.");
+
+            BonemealAdvance = config.Bind("Bonemeal", "BonemealAdvance", 0.34f,
+                "How much of a plant's own growth one use brings forward, as a fraction. A "
+                + "third, so three uses mature anything.\n"
+                + "A share of the plant's time rather than a flat number of seconds, because "
+                + "grow times differ enormously and a modded crop should be advanced by a "
+                + "third of *its* season without this mod knowing it exists. It is applied "
+                + "by moving the planted moment earlier on the plant's own ZDO, which is why "
+                + "it survives a reload and why the growth is still the game's rather than "
+                + "a timer of ours.\n"
+                + "Set it to 1 and one use matures a crop outright. That is deliberately not "
+                + "the default: a fertiliser that finishes the job is a harvest button, and "
+                + "it makes the Farming skill Furrow exists to reward moot.");
+
+            BonemealRadius = config.Bind("Bonemeal", "BonemealRadius", 0f,
+                "Metres around the plant you used it on that are fertilised too. Zero, so "
+                + "one press feeds one plant.\n"
+                + "Off by default because the constrained reading is the honest one, and a "
+                + "single press advancing a whole field is a different and much larger mod. "
+                + "It exists because somebody farming at Furrow's twenty-seeds-a-click will "
+                + "want it, and would otherwise go and install something that does far more.");
 
             // ---------------------------------------------------------- the sapling
 
