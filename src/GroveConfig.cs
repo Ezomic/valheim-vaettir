@@ -31,6 +31,7 @@ namespace Grove
         public static ConfigEntry<int> BonemealYield;
         public static ConfigEntry<string> BonemealStation;
         public static ConfigEntry<float> BonemealAdvance;
+        public static ConfigEntry<float> BonemealHarvest;
         public static ConfigEntry<float> BonemealRadius;
 
         public static ConfigEntry<string> SaplingName;
@@ -199,6 +200,21 @@ namespace Grove
                 + "Set it to 1 and one use matures a crop outright. That is deliberately not "
                 + "the default: a fertiliser that finishes the job is a harvest button, and "
                 + "it makes the Farming skill Furrow exists to reward moot.");
+
+            BonemealHarvest = config.Bind("Bonemeal", "BonemealHarvest", 2f,
+                "What a fertilised crop yields when picked, as a multiplier. Two, so a fed "
+                + "carrot gives two.\n"
+                + "It travels down RPC_Pick's own bonus argument - the same channel the "
+                + "Farming skill's max-level bonus already uses - so the extra goes through "
+                + "the game's own drop loop and world drop scaling, extra drops and the way "
+                + "pickups spread out all still apply. The base it multiplies is recomputed "
+                + "exactly as the game recomputes it, so doubling doubles what you would "
+                + "really have got rather than what the prefab says.\n"
+                + "The mark is set, not counted. A second bonemeal on the same plant brings "
+                + "more time forward but does not stack the harvest, so this cannot be "
+                + "farmed by standing over one carrot. It is also spent on picking, which "
+                + "matters for anything that respawns rather than being consumed.\n"
+                + "Set it to 1 to keep the speed and drop the bounty.");
 
             BonemealRadius = config.Bind("Bonemeal", "BonemealRadius", 0f,
                 "Metres around the plant you used it on that are fertilised too. Zero, so "
