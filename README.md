@@ -138,7 +138,7 @@ nothing checks. Solo, none of it applies.
 ## Design notes
 
 Why the seed counts kills instead of ticking a clock, why the heartwood is a home rather than
-a heart, and why the sorting rules live on the chest: [DESIGN.md](DESIGN.md).
+a heart, and why the sorting rules live on the chest: [DESIGN.md](https://github.com/Ezomic/valheim-vaettir/blob/main/DESIGN.md).
 
 ## Upgrading from Stow
 
