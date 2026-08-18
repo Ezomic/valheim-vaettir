@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using Grove;
 
 namespace Stow
 {
@@ -57,15 +58,32 @@ namespace Stow
         public static float DriftMax = 13f;
 
         /// <summary>
-        /// Vanilla's amber, measured rather than picked. guard_stone's material carries
-        /// _EmissionColor = (1.934, 1.017, 0.185), which normalises to this - deeper and
-        /// far more orange than the (1, 0.74, 0.30) that was here, which was a guess and
-        /// read as pale yellow next to anything the game lights with.
+        /// The spirit's own numbers, not a second set. These were four separate values
+        /// here - a different colour, range, depth and period - and the two spirits were
+        /// visibly different creatures because of it. They are one creature.
+        ///
+        /// What is lost by pointing at ForestSpirit is worth writing down rather than
+        /// deleting: this colour was (1, 0.53, 0.10), measured off guard_stone's
+        /// _EmissionColor of (1.934, 1.017, 0.185) normalised, and the argument was that
+        /// the spirit's (1, 0.74, 0.30) is a guess that reads pale next to anything the
+        /// game lights with. That may well be true. If it is, the fix is to change it in
+        /// ForestSpirit, where both of them will follow.
         /// </summary>
-        public static Color LightColour = new Color(1f, 0.53f, 0.10f);
-        public static float LightRange = 6f;
-        public static float PulseDepth = 0.26f;
-        public static float PulsePeriod = 4.4f;
+        public static Color LightColour { get { return ForestSpirit.LightColour; } }
+        public static float LightRange { get { return ForestSpirit.LightRange; } }
+        public static float PulseDepth { get { return ForestSpirit.PulseDepth; } }
+        public static float PulsePeriod { get { return ForestSpirit.PulsePeriod; } }
+
+        /// <summary>
+        /// What ForestSpirit's light reaches at full wake, since a flying carrier is
+        /// never anything but awake. Its Pulse lerps 0.5 to 1.6 across _wake.
+        /// </summary>
+        private const float Awake = 1.6f;
+
+        private static readonly int EmissionColour = Shader.PropertyToID("_EmissionColor");
+
+        private Renderer[] _renderers;
+        private MaterialPropertyBlock _block;
 
         /// <summary>Seconds to shrink away when dismissed.</summary>
         public static float FadeTime = 0.45f;
@@ -192,7 +210,12 @@ namespace Stow
             _light.type = LightType.Point;
             _light.range = LightRange;
             _light.color = LightColour;
-            _light.intensity = 1.1f;
+            _light.intensity = Awake;
+
+            // Collected here rather than at build time: MakeLight runs after the body,
+            // the rings and every mote exist, which is the whole set Pulse has to drive.
+            _renderers = GetComponentsInChildren<Renderer>(true);
+            _block = new MaterialPropertyBlock();
 
             // No shadows. A point light inside the thing that is itself the light source
             // would cast its own hoop across the floor in seven directions, and the cost
@@ -272,7 +295,7 @@ namespace Stow
 
                     var shrink = Mathf.Clamp01(_fade / Mathf.Max(0.01f, FadeTime));
                     transform.localScale = Vector3.one * _scale * shrink;
-                    if (_light != null) _light.intensity = 1.1f * shrink;
+                    if (_light != null) _light.intensity = Awake * shrink;
                     break;
             }
 
@@ -346,20 +369,50 @@ namespace Stow
         }
 
         /// <summary>
-        /// Breathing, on the light only.
+        /// Breathing, on the light and on the material, exactly as ForestSpirit does it.
         ///
-        /// Never on the material. The glow is *borrowed* off a vanilla prefab and is
-        /// shared with every other object using it, so writing to it would set half the
-        /// world pulsing. Vaettir's spirit also drives an emission property block, which
-        /// is skipped here: it depends on the borrowed shader happening to have
-        /// _EmissionColor, and the light is the part that is certain to work.
+        /// The emission half used to be skipped here, on the reasoning that it depends on
+        /// the borrowed shader happening to have _EmissionColor while the light is certain
+        /// to work. That was the whole of why one spirit glowed and the other did not: the
+        /// light lit the room around the carrier and its mesh stayed flat, while the one
+        /// you commune with was lit from inside.
+        ///
+        /// The reasoning is also disproved by the log both of them now write. They wear
+        /// the same material and it is reported [emissive]:
+        ///
+        ///   'core' skinned with stone from fire_pit (Custom/StaticRock) [emissive]
+        ///
+        /// The guard below stays regardless, because a donor list is a guess about the
+        /// game rather than a fact about it.
+        ///
+        /// Never written to the shared material itself - that is borrowed off a vanilla
+        /// prefab and shared with everything else using it, so it would set half the world
+        /// pulsing. A property block writes per renderer and touches nothing else.
         /// </summary>
         private void Pulse(float time)
         {
             if (_light == null || _phase == Phase.Fading) return;
 
             var breath = Mathf.Sin(time * (Mathf.PI * 2f / PulsePeriod) + _pulsePhase);
-            _light.intensity = 1.1f * (1f + breath * PulseDepth);
+            var level = 1f + breath * PulseDepth;
+
+            _light.intensity = Awake * level;
+
+            if (_renderers == null || _block == null) return;
+
+            var colour = LightColour * level;
+
+            foreach (var renderer in _renderers)
+            {
+                if (renderer == null) continue;
+
+                var material = renderer.sharedMaterial;
+                if (material == null || !material.HasProperty(EmissionColour)) continue;
+
+                renderer.GetPropertyBlock(_block);
+                _block.SetColor(EmissionColour, colour);
+                renderer.SetPropertyBlock(_block);
+            }
         }
     }
 }
