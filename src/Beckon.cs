@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using HarmonyLib;
 using UnityEngine;
 
 namespace Grove
@@ -63,6 +64,80 @@ namespace Grove
 
             _area.m_spawnIntervalSec =
                 Mathf.Lerp(_slowest, _fastest, Mathf.Clamp01(_sapling.Progress));
+
+            if (Time.time - _lastHunt < HuntSweep) return;
+            _lastHunt = Time.time;
+
+            Hunt();
+        }
+
+        /// <summary>Seconds between hunt sweeps. They spawn no faster than one per two
+        /// seconds, so anything tighter than this is walking the list for nothing.</summary>
+        private const float HuntSweep = 2f;
+
+        private static float _lastHunt = -99f;
+
+        /// <summary>
+        /// Tells everything the sapling called to come and find you.
+        ///
+        /// This is the other half of arriving from a distance. Spawning them out in the
+        /// trees is easy; without this they simply stay out there, because a greydwarf with
+        /// nothing to be angry about wanders where it spawned. SetHuntPlayer is what a
+        /// vanilla raid uses and it means exactly this: stop wandering, go and find someone.
+        ///
+        /// Hunting players rather than the sapling, deliberately. There is no vanilla "go
+        /// and attack this object" to ride, the player is standing at the sapling anyway,
+        /// and it makes the raid land on the person holding the ground rather than on the
+        /// thing they are holding it for - which is both better to play and much easier on
+        /// a piece with 500 health.
+        ///
+        /// No bookkeeping of which ones have been told. SetHuntPlayer returns immediately
+        /// when the flag already matches, so calling it again every two seconds costs a
+        /// comparison, and a creature that arrived by some other route joining in is a
+        /// feature rather than a leak.
+        /// </summary>
+        private void Hunt()
+        {
+            var roster = Names();
+            if (roster.Count == 0) return;
+
+            var here = transform.position;
+            var reach = _area.m_nearRadius;
+
+            foreach (var ai in BaseAI.BaseAIInstances)
+            {
+                if (ai == null) continue;
+
+                if (Utils.DistanceXZ(ai.transform.position, here) > reach) continue;
+
+                // Tamed creatures are excluded for the same reason vanilla's own instance
+                // count excludes them: a boar somebody raised is not part of the raid, and
+                // sending it hunting players means sending it at its owner.
+                var character = ai.GetComponent<Character>();
+                if (character == null || character.IsTamed()) continue;
+
+                if (!roster.Contains(Utils.GetPrefabName(ai.gameObject))) continue;
+
+                ai.SetHuntPlayer(true);
+            }
+        }
+
+        /// <summary>The roster's prefab names, resolved once. Compared by name because a
+        /// spawned creature is a clone and carries the "(Clone)" suffix.</summary>
+        private static HashSet<string> _names;
+
+        private static HashSet<string> Names()
+        {
+            if (_names != null) return _names;
+
+            _names = new HashSet<string>();
+            foreach (var entry in (GroveConfig.BeckonRoster.Value ?? "").Split(','))
+            {
+                var name = entry.Split(':')[0].Trim();
+                if (name.Length > 0) _names.Add(name);
+            }
+
+            return _names;
         }
 
         private static void Interval(out float slowest, out float fastest)
@@ -90,6 +165,36 @@ namespace Grove
             // and someone asking for 2 would have quietly been given 5.
             slowest = Mathf.Max(2f, slowest);
             fastest = Mathf.Max(2f, fastest);
+        }
+
+        /// <summary>
+        /// How far out they appear, nearest first.
+        ///
+        /// A band rather than a single radius, because vanilla's FindSpawnPoint picks its
+        /// point at Random.Range(0, m_spawnRadius) - uniform across a disc, which puts most
+        /// of them near the middle however wide the radius is. That is why they used to
+        /// materialise on top of the sapling: widening the radius alone would only have
+        /// scattered them between nought and the edge.
+        /// </summary>
+        internal static void Band(out float near, out float far)
+        {
+            var parts = (GroveConfig.BeckonDistance.Value ?? "").Split('-');
+
+            near = Parse(parts.Length > 0 ? parts[0] : "", 35f);
+            far = Parse(parts.Length > 1 ? parts[1] : "", 60f);
+
+            if (far < near)
+            {
+                var swap = near;
+                near = far;
+                far = swap;
+            }
+
+            // Far enough out to be out of sight, and inside the zone the game has actually
+            // loaded. Past about 64m the ground under a spawn point may not exist yet, and
+            // FindFloor simply fails - which reads as the sapling having stopped calling.
+            near = Mathf.Clamp(near, 5f, 60f);
+            far = Mathf.Clamp(far, near + 5f, 70f);
         }
 
         private static float Parse(string text, float fallback)
@@ -132,13 +237,19 @@ namespace Grove
             Interval(out slowest, out fastest);
             area.m_spawnIntervalSec = slowest;
 
-            area.m_spawnRadius = Mathf.Max(1f, GroveConfig.BeckonRadius.Value);
+            float near, far;
+            Band(out near, out far);
 
-            // The near radius is what m_maxNear counts inside, so it has to be wider than
-            // the spawn radius or the cap counts a circle the spawns mostly land outside of
-            // and never stops anything.
-            area.m_nearRadius = Mathf.Max(area.m_spawnRadius + 4f,
-                                          GroveConfig.BeckonRadius.Value * 2f);
+            // Vanilla's own upper bound, kept in step with ours. FindSpawnPoint is replaced
+            // by a prefix below so this is not what actually places anything - but if that
+            // patch ever fails to apply, this is the number the original falls back to, and
+            // it should be the far edge rather than the old twelve metres.
+            area.m_spawnRadius = far;
+
+            // Wide enough to count everything on its way in, not just what has arrived.
+            // m_maxNear is the cap that matters, and if it only counted the clearing then
+            // six fighting you plus ten still running would all be legal at once.
+            area.m_nearRadius = far + 10f;
             area.m_farRadius = 1000f;
 
             area.m_maxNear = Mathf.Max(1, GroveConfig.BeckonMaxNear.Value);
@@ -150,14 +261,19 @@ namespace Grove
             area.m_triggerDistance = Mathf.Max(8f, GroveConfig.BeckonRange.Value);
 
             area.m_onGroundOnly = true;
-            area.m_setPatrolSpawnPoint = true;
+
+            // False, and this is half of why they come at you. SetPatrolPoint makes a
+            // creature treat where it spawned as the place it belongs, so with it on they
+            // stood around in the trees exactly where they appeared. Off, they are free to
+            // move, and Hunt below is what tells them where.
+            area.m_setPatrolSpawnPoint = false;
 
             if (clone.GetComponent<Beckon>() == null) clone.AddComponent<Beckon>();
 
             GrovePlugin.Log.LogInfo(string.Format(
-                "The sapling calls {0} kind(s), every {1:0}s falling to {2:0}s, "
-                + "within {3:0}m of a player.",
-                area.m_prefabs.Count, slowest, fastest, area.m_triggerDistance));
+                "The sapling calls {0} kind(s), every {1:0}s falling to {2:0}s, arriving "
+                + "from {3:0}-{4:0}m, while a player is within {5:0}m.",
+                area.m_prefabs.Count, slowest, fastest, near, far, area.m_triggerDistance));
         }
 
         /// <summary>
@@ -224,6 +340,65 @@ namespace Grove
             }
 
             return list;
+        }
+    }
+
+    /// <summary>
+    /// Where a called greydwarf appears: out in the trees, not on top of the seed.
+    ///
+    /// Vanilla's FindSpawnPoint takes Random.Range(0f, m_spawnRadius), which is uniform
+    /// across a disc - so most points land near the middle whatever the radius is set to.
+    /// That is why widening the radius alone does not work and why they seemed to
+    /// materialise around the sapling: they were.
+    ///
+    /// Replacing the search rather than nudging its answer, because the answer has already
+    /// been validated against the ground by the time a postfix could see it, and moving a
+    /// checked point puts a greydwarf inside a rock. The replacement makes the same two
+    /// ZoneSystem calls in the same order; only the distance is drawn from a band.
+    ///
+    /// Every other SpawnArea in the game - every nest, every camp - is left alone. The
+    /// prefix runs vanilla's own method for anything that is not one of ours.
+    /// </summary>
+    [HarmonyPatch(typeof(SpawnArea), "FindSpawnPoint")]
+    internal static class BeckonSpawnPoint
+    {
+        private const int Attempts = 12;
+
+        [HarmonyPrefix]
+        private static bool Ring(SpawnArea __instance, ref Vector3 point, ref bool __result)
+        {
+            if (__instance == null || __instance.GetComponent<Beckon>() == null) return true;
+
+            var zones = ZoneSystem.instance;
+            if (zones == null) return true;
+
+            float near, far;
+            Beckon.Band(out near, out far);
+
+            var centre = __instance.transform.position;
+
+            for (var i = 0; i < Attempts; i++)
+            {
+                var spot = centre
+                           + Quaternion.Euler(0f, Random.Range(0f, 360f), 0f)
+                           * Vector3.forward * Random.Range(near, far);
+
+                float height;
+                if (!zones.FindFloor(spot, out height)) continue;
+                if (__instance.m_onGroundOnly && zones.IsBlocked(spot)) continue;
+
+                spot.y = height + 0.1f;
+                point = spot;
+                __result = true;
+                return false;
+            }
+
+            // Failing is normal and harmless: SpawnArea simply tries again in two seconds.
+            // A band that lands in water or on a cliff the whole way round is a bad place
+            // to have planted, not a bug.
+            point = Vector3.zero;
+            __result = false;
+            return false;
         }
     }
 }

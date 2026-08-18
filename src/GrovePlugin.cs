@@ -113,6 +113,11 @@ namespace Grove
             _harmony.PatchAll(typeof(GrovePatches));
             _harmony.PatchAll(typeof(Stow.StowPatches));
 
+            // Without this the sapling still calls, and every one of them appears on top of
+            // it: the band is enforced by a prefix on SpawnArea.FindSpawnPoint, and an
+            // unapplied patch is a silent fallback to vanilla's uniform disc.
+            _harmony.PatchAll(typeof(BeckonSpawnPoint));
+
             // Everything this mod puts into a world, declared once and kept there by the
             // suite's shared registry. Prefabs re-registers all four into every world that
             // loads and asks the live scene each time rather than trusting a flag of ours,

@@ -38,7 +38,7 @@ namespace Grove
         public static ConfigEntry<bool> Beckon;
         public static ConfigEntry<string> BeckonRoster;
         public static ConfigEntry<string> BeckonInterval;
-        public static ConfigEntry<float> BeckonRadius;
+        public static ConfigEntry<string> BeckonDistance;
         public static ConfigEntry<float> BeckonRange;
         public static ConfigEntry<int> BeckonMaxNear;
         public static ConfigEntry<int> BeckonMaxTotal;
@@ -241,9 +241,16 @@ namespace Grove
                 + "SpawnArea wakes on its own two-second repeat and spawns at most one "
                 + "creature each time, so two is the floor.");
 
-            BeckonRadius = config.Bind("Sapling", "BeckonRadius", 12f,
-                "How far from the sapling they appear. Well inside FeedRange, so what it "
-                + "calls is close enough that killing it feeds the thing that called it.");
+            BeckonDistance = config.Bind("Sapling", "BeckonDistance", "35-60",
+                "How far out they appear, nearest first. They walk in from there.\n"
+                + "A band rather than one radius, and that is the whole of why they arrive "
+                + "instead of materialising: vanilla picks its spawn point at a random "
+                + "distance between nought and the radius, which is uniform across a disc, "
+                + "so most of them land near the middle however wide it is set. This was 12 "
+                + "metres and they appeared in your face.\n"
+                + "Kept under about 70. Past that the ground at the spawn point may not be "
+                + "loaded yet, the floor test simply fails, and the sapling reads as having "
+                + "stopped calling.");
 
             BeckonRange = config.Bind("Sapling", "BeckonRange", 48f,
                 "How close you have to be for it to call at all. Vanilla nests use 256m, "

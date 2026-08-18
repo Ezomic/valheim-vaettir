@@ -26,6 +26,20 @@ The sapling half. Four things, and the first of them is the one that matters.
   that matters most - its own guards: owner only, inside the active area, with a player in
   range. Nothing happens while you are asleep, which was the sapling's first principle and
   is the one thing a spawner could most easily have broken.
+- **They arrive from a distance and run in** rather than appearing around the seed. Found in
+  play: they were materialising on top of it. Widening the radius does not fix that, because
+  vanilla's FindSpawnPoint draws its distance from Random.Range(0, radius) - uniform across
+  a disc, so most points land near the middle however wide it is. A prefix replaces that
+  search with one that draws from a band, 35 to 60 metres by default, making the same two
+  ZoneSystem checks in the same order so nothing lands inside a rock. Every other SpawnArea
+  in the game runs vanilla's own method untouched.
+- Getting them to actually come is a second thing. SetPatrolSpawnPoint is off, so they do
+  not treat the trees they appeared in as home, and a sweep every two seconds calls
+  SetHuntPlayer on everything from the roster within reach - which is what a vanilla raid
+  does and means "stop wandering, go and find someone". They hunt the player rather than
+  the sapling: there is no vanilla "attack this object" to ride, the player is standing at
+  the sapling anyway, and it puts the raid on the person holding the ground instead of on
+  the thing with 500 health.
 - The trigger range is 48m rather than vanilla's 256m. A nest filling a forest you are
   nowhere near is one thing; a sapling quietly getting itself killed by what it summoned
   while you are two zones away is another.
