@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.IO;
 using HarmonyLib;
 using UnityEngine;
+using Ezomic.Shared;
 
 namespace Grove
 {
@@ -42,31 +43,16 @@ namespace Grove
         /// </summary>
         private const int Stages = 1;
 
-        private static GameObject _prefab;
-        private static GameObject _holder;
-
-        public static bool Ready
-        {
-            get { return ZNetScene.instance != null && ZNetScene.instance.GetPrefab(Name) != null; }
-        }
-
-        /// <summary>Idempotent, and safe to call every frame until it takes.</summary>
-        public static bool Register()
-        {
-            if (ZNetScene.instance == null || ObjectDB.instance == null) return false;
-            if (Ready && InCultivator()) return true;
-
-            if (_prefab == null)
-            {
-                _prefab = Build();
-                if (_prefab == null) return false;
-            }
-
-            AddToScene();
-            AddToCultivator();
-            return Ready && InCultivator();
-        }
-
+        /// <summary>
+        /// Builds the sapling once. The scene, the cultivator's build menu, and being put
+        /// back into both on every world load are Ezomic.Shared.Prefabs' business - it is
+        /// handed this method, the name and the tool in GrovePlugin.Awake.
+        ///
+        /// The cultivator rather than the hammer, and that is a decision rather than a
+        /// detail: it is a seed, so the tool already in your hand when you think "I want to
+        /// plant this" is the one it should be under. On the hammer it would work and you
+        /// would go looking for it among the furniture.
+        /// </summary>
         // ------------------------------------------------------------------ building
 
         private static GameObject Donor()
@@ -86,7 +72,7 @@ namespace Grove
             return null;
         }
 
-        private static GameObject Build()
+        internal static GameObject Build()
         {
             var source = Donor();
             if (source == null) return null;
@@ -106,21 +92,12 @@ namespace Grove
                 return null;
             }
 
-            if (_holder == null)
-            {
-                _holder = new GameObject("GroveSaplingHolder");
-                _holder.SetActive(false);
-                Object.DontDestroyOnLoad(_holder);
-            }
+            // Holder and init suppression both from Prefabs. The suppression is the half
+            // that matters: cloned under an active parent, the ZNetView's Awake runs and
+            // tries to register the thing on the network while it is still half-built.
+            var clone = Prefabs.Clone(source, Name);
+            if (clone == null) return null;
 
-            var previous = ZNetView.m_forceDisableInit;
-            ZNetView.m_forceDisableInit = true;
-
-            GameObject clone;
-            try { clone = Object.Instantiate(source, _holder.transform); }
-            finally { ZNetView.m_forceDisableInit = previous; }
-
-            clone.name = Name;
             clone.transform.localRotation = Quaternion.identity;
             clone.transform.localScale = Vector3.one * GroveConfig.SaplingScale.Value;
 
@@ -333,75 +310,5 @@ namespace Grove
             return list.ToArray();
         }
 
-        // ------------------------------------------------------------------ registering
-
-        private static void AddToScene()
-        {
-            var scene = ZNetScene.instance;
-            if (_prefab == null || scene.GetPrefab(Name) != null) return;
-
-            if (!scene.m_prefabs.Contains(_prefab)) scene.m_prefabs.Add(_prefab);
-
-            try
-            {
-                var named = (Dictionary<int, GameObject>)
-                    AccessTools.Field(typeof(ZNetScene), "m_namedPrefabs").GetValue(scene);
-                named[Name.GetStableHashCode()] = _prefab;
-            }
-            catch (System.Exception e)
-            {
-                GrovePlugin.Log.LogError("Could not register " + Name + ": " + e.Message);
-            }
-        }
-
-        /// <summary>
-        /// Onto the cultivator, not the hammer.
-        ///
-        /// It is a seed. Putting it on the hammer would work and would be wrong - you
-        /// would go looking for it under furniture, and the cultivator is already the
-        /// tool you are holding when you think "I want to plant this".
-        /// </summary>
-        /// <summary>
-        /// The cultivator's piece table, for the ObjectDB that exists now.
-        ///
-        /// Asked of the table rather than remembered in a static bool. ObjectDB is rebuilt
-        /// per world, so the Cultivator from the last one is a different object with a
-        /// different list - and a flag that says "already done" then keeps the sapling out
-        /// of the menu for the whole of the second world. Stow lost a built piece to the
-        /// same mistake in its harsher form, where the stale flag was on the ZNetScene
-        /// registration and every ZDO of the prefab was discarded.
-        /// </summary>
-        private static bool InCultivator()
-        {
-            var table = CultivatorPieces();
-            return table != null && _prefab != null && table.m_pieces.Contains(_prefab);
-        }
-
-        private static PieceTable CultivatorPieces()
-        {
-            if (ObjectDB.instance == null) return null;
-
-            var tool = ObjectDB.instance.GetItemPrefab("Cultivator");
-            var drop = tool != null ? tool.GetComponent<ItemDrop>() : null;
-            if (drop == null || drop.m_itemData == null || drop.m_itemData.m_shared == null)
-                return null;
-
-            var table = drop.m_itemData.m_shared.m_buildPieces;
-            return table != null && table.m_pieces != null ? table : null;
-        }
-
-        private static void AddToCultivator()
-        {
-            if (_prefab == null) return;
-
-            var table = CultivatorPieces();
-            if (table == null || table.m_pieces.Contains(_prefab)) return;
-
-            table.m_pieces.Add(_prefab);
-
-            // Logged on the add, not on the call: this is retried every frame and an
-            // already-satisfied retry would write a line per frame.
-            GrovePlugin.Log.LogInfo("Ancient sapling added to the cultivator.");
-        }
     }
 }

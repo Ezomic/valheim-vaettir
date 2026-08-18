@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.IO;
 using HarmonyLib;
 using UnityEngine;
+using Ezomic.Shared;
 
 namespace Grove
 {
@@ -32,36 +33,16 @@ namespace Grove
         private const string HoopMesh = "grove_spirit_hoop.obj";
         private const string MoteMesh = "grove_spirit_mote.obj";
 
-        private static GameObject _prefab;
-        private static GameObject _holder;
         private static Material _glow;
 
-        public static bool Ready
-        {
-            get { return ZNetScene.instance != null && ZNetScene.instance.GetPrefab(Name) != null; }
-        }
-
-        /// <summary>Idempotent, and safe to call every frame until it takes.</summary>
-        public static bool Register()
-        {
-            if (Ready) return true;
-
-            var scene = ZNetScene.instance;
-            if (scene == null) return false;
-
-            if (_prefab == null)
-            {
-                _prefab = Build();
-                if (_prefab == null) return false;
-            }
-
-            AddToScene(scene);
-            return Ready;
-        }
-
+        /// <summary>
+        /// Builds the spirit once. Getting it into the scene, and back into every scene
+        /// after that, belongs to Ezomic.Shared.Prefabs - see the header of that file for
+        /// why "have I registered yet" must never be answered from a field of ours.
+        /// </summary>
         // ------------------------------------------------------------------ building
 
-        private static GameObject Build()
+        internal static GameObject Build()
         {
             var directory = Path.GetDirectoryName(typeof(SpiritPrefab).Assembly.Location);
 
@@ -78,13 +59,6 @@ namespace Grove
                 return null;
             }
 
-            if (_holder == null)
-            {
-                _holder = new GameObject("GroveSpiritHolder");
-                _holder.SetActive(false);
-                Object.DontDestroyOnLoad(_holder);
-            }
-
             // Built inside a disabled holder with init suppressed, so the ZNetView
             // cannot try to register itself on the network while it is half-assembled.
             //
@@ -98,7 +72,7 @@ namespace Grove
             try
             {
                 root = new GameObject(Name);
-                root.transform.SetParent(_holder.transform, false);
+                root.transform.SetParent(Prefabs.Holder, false);
 
                 var scale = GroveConfig.SpiritScale.Value;
                 root.transform.localScale = new Vector3(scale, scale, scale);
@@ -336,33 +310,5 @@ namespace Grove
             }
         }
 
-        // ------------------------------------------------------------------ registering
-
-        /// <summary>
-        /// Adds the prefab to both places ZNetScene looks. M_prefabs alone is not enough
-        /// once Awake has already run, because the lookup dictionary it feeds is built
-        /// there and never rebuilt.
-        /// </summary>
-        private static void AddToScene(ZNetScene scene)
-        {
-            if (_prefab == null || scene.GetPrefab(Name) != null) return;
-
-            if (!scene.m_prefabs.Contains(_prefab)) scene.m_prefabs.Add(_prefab);
-
-            try
-            {
-                var named = (Dictionary<int, GameObject>)
-                    AccessTools.Field(typeof(ZNetScene), "m_namedPrefabs").GetValue(scene);
-                named[Name.GetStableHashCode()] = _prefab;
-            }
-            catch (System.Exception e)
-            {
-                GrovePlugin.Log.LogError("Could not register " + Name + ": " + e.Message);
-                return;
-            }
-
-            GrovePlugin.Log.LogInfo("Registered " + Name + " with ZNetScene. Try: spawn "
-                                    + Name);
-        }
     }
 }

@@ -49,7 +49,11 @@ namespace Grove
             // Heartwood has to exist first, or the requirement would name an item that
             // ObjectDB cannot resolve and the post would become unbuildable rather than
             // more expensive.
-            if (!HeartwoodPrefab.Ready) return;
+            // Asked of ObjectDB rather than of Prefabs.Known, which asks ZNetScene. The
+            // heartwood is an item and what this needs is that a recipe can name it, so the
+            // item database is the register that has to have heard of it.
+            if (ObjectDB.instance == null
+                || ObjectDB.instance.GetItemPrefab(HeartwoodPrefab.Name) == null) return;
 
             var prefab = ZNetScene.instance.GetPrefab(PostPrefab);
             if (prefab == null) return;

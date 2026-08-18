@@ -33,16 +33,10 @@ namespace Stow
         /// <summary>Called once from GrovePlugin.Update, at the end of its own work.</summary>
         internal static void Tick()
         {
-            // Retried every frame, and deliberately not short-circuited by a flag of our
-            // own: the piece needs ZNetScene and ObjectDB, neither exists at load, and both
-            // are rebuilt for every world. Register asks the live scene whether it already
-            // knows the prefab, so a call against a world that has it costs two lookups -
-            // and a world that does not gets told, which is what stops its posts being
-            // discarded.
-            //
-            // Guarding this with a static "already done" bool destroyed a built post.
-            StowPost.Register();
-
+            // The post is no longer registered from here. GrovePlugin declares it to
+            // Ezomic.Shared.Prefabs in Awake and that re-registers it into every world -
+            // asking the live scene each time, never a flag of ours, which is the lesson
+            // this file's own post was destroyed to teach on 2026-08-16.
             var player = Player.m_localPlayer;
             if (player == null) return;
 
