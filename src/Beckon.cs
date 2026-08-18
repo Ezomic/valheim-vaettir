@@ -45,8 +45,13 @@ namespace Grove
         /// The closer it is to opening, the harder it calls.
         ///
         /// A constant rate would be a wave you learn to stand in. Ramping it means the last
-        /// few kills are the loudest part of the hour, which puts the fight where the
-        /// tension is - and it reads without any explanation, because you can hear it.
+        /// few kills are the loudest part of the fight, which puts the tension where the
+        /// end is - and it reads without any explanation, because you can hear it.
+        ///
+        /// Both ends of the range are raid numbers rather than wildlife numbers. The first
+        /// pair here was 90 seconds falling to 30, which was one greydwarf every minute and
+        /// a half: something to deal with between other jobs rather than something to hold
+        /// ground against, and the whole point of the sapling is the holding.
         ///
         /// Written into the component rather than tracked ourselves: SpawnArea compares its
         /// own timer against this field every two seconds, so changing it is the whole of
@@ -64,13 +69,13 @@ namespace Grove
         {
             var parts = (GroveConfig.BeckonInterval.Value ?? "").Split('-');
 
-            slowest = Parse(parts.Length > 0 ? parts[0] : "", 90f);
-            fastest = Parse(parts.Length > 1 ? parts[1] : "", 30f);
+            slowest = Parse(parts.Length > 0 ? parts[0] : "", 20f);
+            fastest = Parse(parts.Length > 1 ? parts[1] : "", 6f);
 
             // Guarded rather than trusted. The two are written slowest-first because that
-            // is the order they happen in, and somebody reading "90-30" as a range will
-            // eventually write "30-90" - which would make a nearly-open sapling the
-            // quietest it has ever been.
+            // is the order they happen in, and somebody reading "20-6" as a range will
+            // eventually write "6-20" - which would make a nearly-open sapling the quietest
+            // it has ever been.
             if (fastest > slowest)
             {
                 var swap = slowest;
@@ -78,8 +83,13 @@ namespace Grove
                 fastest = swap;
             }
 
-            slowest = Mathf.Max(5f, slowest);
-            fastest = Mathf.Max(5f, fastest);
+            // Two, not five. The floor is SpawnArea's own two-second repeat - it wakes on
+            // that schedule and spawns at most one creature each time, so nothing below it
+            // can mean anything. Five was written when this ran at 90 and 30 and no setting
+            // could ever have reached it; at raid numbers it sits inside the useful range,
+            // and someone asking for 2 would have quietly been given 5.
+            slowest = Mathf.Max(2f, slowest);
+            fastest = Mathf.Max(2f, fastest);
         }
 
         private static float Parse(string text, float fallback)

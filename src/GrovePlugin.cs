@@ -210,6 +210,11 @@ namespace Grove
             // does, so it is never "done" and simply keeps being called.
             StowCoupling.Apply();
 
+            // Takes map pins off saplings that are no longer there. Throttled to one sweep
+            // a second inside, and it runs from here rather than from the sapling because
+            // by the time a sapling could tell you it has gone, it is gone.
+            SaplingPin.Reconcile(GroveConfig.SaplingName.Value);
+
             // The post registers itself on the same retry-until-it-takes footing as the
             // pieces above, and reads the two stow keys. Last, because it is the half of
             // the mod that depends on the heartwood existing.

@@ -156,32 +156,21 @@ namespace Grove
         }
 
         /// <summary>
-        /// Fires on a destroyed sapling and on an unloaded one alike, and the map pin must
-        /// only come off for the first.
+        /// Nothing about the map pin happens here, and that is the fix rather than an
+        /// omission.
         ///
-        /// Unity gives no way to tell those apart, so the ZDO is asked instead: a zone
-        /// going quiet leaves the ZDO in ZDOMan, while a sapling that opened or was torn
-        /// down has had it destroyed. Getting this wrong the other way would unpin every
-        /// sapling the moment you walked away from it, which is precisely when the pin is
-        /// the only thing you have.
+        /// This fired on a destroyed sapling and on an unloaded one alike, and the two had
+        /// to be told apart - so it asked whether the ZDO was still in ZDOMan. That test
+        /// cannot work: ZDOMan.DestroyZDO only adds the uid to m_destroySendList, and the
+        /// ZDO leaves m_objectsByID some frames later, so on this frame a sapling that has
+        /// just opened is indistinguishable from one whose zone went quiet. Both endings
+        /// read as "merely unloaded" and the pin stayed on the map forever.
+        ///
+        /// SaplingPin reconciles against the world instead - see the header of that file.
         /// </summary>
         private void OnDestroy()
         {
             All.Remove(this);
-
-            if (!Gone()) return;
-
-            SaplingPin.Clear(transform.position, GetHoverName());
-        }
-
-        private bool Gone()
-        {
-            if (_nview == null || ZDOMan.instance == null) return false;
-
-            var zdo = _nview.GetZDO();
-            if (zdo == null) return true;
-
-            return ZDOMan.instance.GetZDO(zdo.m_uid) == null;
         }
 
         private void Start()

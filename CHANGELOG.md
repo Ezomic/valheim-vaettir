@@ -16,9 +16,11 @@ The sapling half. Four things, and the first of them is the one that matters.
   you chose is the thing that matters, and what it summons is what feeds it: a seed planted
   in an empty meadow is slow rather than impossible, and one planted beside a real camp is
   still faster, because the camp counts too.
-- It ramps. The interval falls from 90 seconds at an unfed seed to 30 at one about to open,
-  so the loudest part of the hour is the end of it. A constant rate is a wave you learn to
-  stand in; a rising one can be heard without looking at anything.
+- It ramps, and it is a raid rather than wildlife. The interval falls from 20 seconds at an
+  unfed seed to 6 at one about to open, so the loudest part of the fight is the end of it. A
+  constant rate is a wave you learn to stand in; a rising one can be heard without looking
+  at anything. 90 and 30 were the first numbers and they were far too polite - one greydwarf
+  every minute and a half is something you deal with between other jobs.
 - Ridden on vanilla's own `SpawnArea`, which is the component a greydwarf nest is made of.
   That buys the near and total caps, the floor-finding, the spawn effect, and - the part
   that matters most - its own guards: owner only, inside the active area, with a player in
@@ -27,9 +29,10 @@ The sapling half. Four things, and the first of them is the one that matters.
 - The trigger range is 48m rather than vanilla's 256m. A nest filling a forest you are
   nowhere near is one thing; a sapling quietly getting itself killed by what it summoned
   while you are two zones away is another.
-- Three standing around it at once, eight alive in the area. The sapling has 500 health and
-  about ten brute hits in it, so a fourth arriving while you are still on the first three is
-  how an hour is lost.
+- Six standing around it at once, sixteen alive in the area. Deliberately more than the
+  sapling survives being ignored for - it has 500 health and about ten brute hits in it -
+  which is the trade the whole feature makes: the forest comes to you instead of you going
+  out to find it, and the price is having to hold the ground.
 - All of it is off with one setting, and every number above is config.
 
 ### Everyone defending it can see the count
@@ -50,9 +53,14 @@ The sapling half. Four things, and the first of them is the one that matters.
   here" costs the same ancient seed as losing it to a brute.
 - Client-side and per player, saved in your own profile like a pin you placed by hand.
   Nothing about it is networked and a server needs to know nothing about it.
-- Told apart from a zone simply unloading by asking ZDOMan whether the ZDO is really gone.
-  Getting that backwards would unpin every sapling the moment you walked away from it, which
-  is precisely when the pin is the only thing you have.
+- The pin comes off by reconciling against the world - a pin whose zone is loaded with no
+  sapling under it is stale - rather than from the sapling's own OnDestroy. Found in play:
+  the pins never went away. OnDestroy fires on a destroyed sapling and an unloaded one
+  alike, and the test meant to tell them apart asked ZDOMan whether the ZDO was gone, which
+  it never is on that frame - DestroyZDO only queues the uid on m_destroySendList and the
+  ZDO leaves m_objectsByID some frames later. Both endings read as "merely unloaded".
+  Asking whether a sapling is standing there needs no guess, covers every ending including
+  one another player removed, and clears the pins the first version stranded.
 
 ### The spirit's parting has an effect again
 

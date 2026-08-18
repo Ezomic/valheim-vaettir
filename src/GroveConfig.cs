@@ -227,12 +227,19 @@ namespace Grove
                 + "is worth. Tying the two together would mean a shaman worth three points "
                 + "had to arrive three times as often as it should.");
 
-            BeckonInterval = config.Bind("Sapling", "BeckonInterval", "90-30",
+            BeckonInterval = config.Bind("Sapling", "BeckonInterval", "20-6",
                 "Seconds between arrivals, slowest first: the first number is a seed "
                 + "nobody has fed and the second is one about to open.\n"
-                + "It ramps because a constant rate is a wave you learn to stand in. "
-                + "Getting louder as it fills puts the hardest part of the hour at the "
-                + "end, and you can hear how close it is without looking at anything.");
+                + "This is meant to read as a raid on the clearing rather than as wildlife "
+                + "wandering past it. 90 and 30 were the first numbers here and they were "
+                + "far too polite: one greydwarf every minute and a half is something you "
+                + "deal with between other jobs, not something you hold ground against.\n"
+                + "It still ramps, because a constant rate is a wave you learn to stand in, "
+                + "and getting louder as it fills means you can hear how close it is without "
+                + "looking at anything. Both ends simply moved.\n"
+                + "Below about two seconds nothing more happens whatever is written here: "
+                + "SpawnArea wakes on its own two-second repeat and spawns at most one "
+                + "creature each time, so two is the floor.");
 
             BeckonRadius = config.Bind("Sapling", "BeckonRadius", 12f,
                 "How far from the sapling they appear. Well inside FeedRange, so what it "
@@ -244,15 +251,20 @@ namespace Grove
                 + "quietly getting itself killed by what it summoned. Close enough to hear "
                 + "is the intent.");
 
-            BeckonMaxNear = config.Bind("Sapling", "BeckonMaxNear", 3,
-                "Most it will have standing around it at once. Three, because the sapling "
-                + "has 500 health and about ten brute hits in it: a fourth arriving while "
-                + "you are still fighting the first three is how you lose an hour.");
+            BeckonMaxNear = config.Bind("Sapling", "BeckonMaxNear", 6,
+                "Most it will have standing around it at once.\n"
+                + "Six is a fight rather than an encounter, and it is deliberately more "
+                + "than the sapling survives being ignored for: it has 500 health and about "
+                + "ten brute hits in it, so a raid you wander off halfway through takes the "
+                + "seed with it. That is the trade - the forest comes to you instead of you "
+                + "going out to find it, and the price is having to hold the ground.\n"
+                + "Three was the first number here and it was tuned for a sapling that "
+                + "trickled. Put it back if a raid is more than you wanted.");
 
-            BeckonMaxTotal = config.Bind("Sapling", "BeckonMaxTotal", 8,
+            BeckonMaxTotal = config.Bind("Sapling", "BeckonMaxTotal", 16,
                 "Most it will have alive in the wider area. The ceiling that stops a "
-                + "sapling left alone overnight from being the reason a zone is full of "
-                + "greydwarfs.");
+                + "sapling left alone from being the reason a whole zone is full of "
+                + "greydwarfs - it is a raid on a clearing, and a raid ends.");
 
             // ---------------------------------------------------------- feeding
 

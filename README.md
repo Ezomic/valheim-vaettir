@@ -33,7 +33,7 @@ down gives the heartwood back.
 | Where | Anywhere you like; greydwarfs are the requirement, not the biome |
 | To open it | 30 points of greydwarf death. Greydwarf 1, shaman 3, elite 4, greyling 0 |
 | Range | 24m, and only the nearest sapling is fed by a kill |
-| Calling | Draws greydwarfs within 12m of itself, every 90s falling to 30s as it fills. Three at once, eight in the area, and only while you are within 48m |
+| Calling | Draws greydwarfs within 12m of itself, every 20s falling to 6s as it fills. Six at once, sixteen in the area, and only while you are within 48m |
 | On the map | Pinned where you planted it, unpinned when it opens or dies |
 | Sapling health | 500, about ten hits from a brute |
 | Yield | One heartwood per spirit, always |
@@ -70,6 +70,17 @@ setting most likely to be left on by accident.
 ## Mechanics
 
 ### The sapling
+
+**It calls the forest to it.** A planted seed draws greydwarfs into the clearing around it,
+faster as it fills, and what it summons is what feeds it. It is a raid rather than wildlife
+wandering past - six of them around you at a time, arriving every few seconds by the end -
+and that is what the sapling's health is for: you are not looking for a fight, you are
+holding a place, and a raid you walk away from halfway through takes the seed with it. It
+only ever calls while a player is within 48 metres, so nothing happens while you are away.
+Turn it off with `Beckon` and the sapling goes back to waiting for kills you bring it.
+
+**It goes on your map** when you plant it, and the pin comes off once there is no longer a
+sapling standing there. That pin is yours alone and is saved in your own profile.
 
 It keeps a count, not a clock. Only the creatures on its list feed it, only kills within range
 count, and only the nearest sapling is fed, so a heap of them planted together does not all
