@@ -40,6 +40,15 @@ The sapling half. Four things, and the first of them is the one that matters.
   the sapling: there is no vanilla "attack this object" to ride, the player is standing at
   the sapling anyway, and it puts the raid on the person holding the ground instead of on
   the thing with 500 health.
+- **The first wave leaves immediately.** Vanilla counts its spawn timer up from zero on a
+  two-second repeat and fires when it exceeds the interval, so an unfed seed produced
+  nothing at all for 22 seconds and then the wave still had to walk in - half a minute of
+  silence after planting, which reads as the mod not working. The timer now starts full, so
+  the first wave goes out on the next tick. It does the same on every later load, and since
+  the timer only advances with a player in range, walking back to a half-fed sapling
+  restarts the siege as you arrive rather than after another silent interval.
+- The band came in from 35-60m to 25-40m with it, so the first wave is on you in roughly
+  fifteen seconds rather than forty. Still far enough to be out of sight in forest.
 - **They arrive in waves, from one side.** Vanilla's spawner produces exactly one creature
   per interval, which is a queue rather than a raid - a greydwarf, a wait, another
   greydwarf, and nothing that has to be handled as a group. A wave is 2 at an unfed seed

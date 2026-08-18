@@ -41,12 +41,47 @@ namespace Grove
         private float _slowest;
         private float _fastest;
 
+        /// <summary>
+        /// SpawnArea.m_spawnTimer, so the first wave does not cost half a minute of nothing.
+        /// </summary>
+        private static readonly AccessTools.FieldRef<SpawnArea, float> TimerRef =
+            AccessTools.FieldRefAccess<SpawnArea, float>("m_spawnTimer");
+
         private void Awake()
         {
             _sapling = GetComponent<Sapling>();
             _area = GetComponent<SpawnArea>();
 
             Interval(out _slowest, out _fastest);
+
+            Prime();
+        }
+
+        /// <summary>
+        /// Starts the spawn timer full, so the first wave goes out on the next tick instead
+        /// of a whole interval later.
+        ///
+        /// Vanilla counts up from zero and spawns when the timer *exceeds* the interval, on
+        /// a two-second repeat - so an unfed seed at a 20 second interval produced nothing
+        /// at all for 22 seconds, and then the wave still had to walk in. Half a minute of
+        /// silence after planting reads as the mod not working, which is the worst thing a
+        /// feature whose whole job is atmosphere can do.
+        ///
+        /// It also does the right thing on every later Awake. This runs whenever the sapling
+        /// is instantiated, which includes its zone loading, and UpdateSpawn only counts
+        /// while a player is within range - so walking back to a half-fed sapling restarts
+        /// the siege as you arrive rather than after another silent interval.
+        /// </summary>
+        private void Prime()
+        {
+            if (_area == null) return;
+
+            try { TimerRef(_area) = _area.m_spawnIntervalSec; }
+            catch (System.Exception e)
+            {
+                GrovePlugin.LogOnce("Could not prime the spawn timer, so the first wave will "
+                                    + "take a full interval: " + e.Message);
+            }
         }
 
         /// <summary>

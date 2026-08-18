@@ -32,7 +32,7 @@ down gives the heartwood back.
 | Where | Anywhere you like; greydwarfs are the requirement, not the biome |
 | To open it | 50 points of greydwarf death. Greydwarf 1, shaman 3, elite 4, greyling 0 |
 | Range | 24m, and only the nearest sapling is fed by a kill |
-| Calling | Waves of 2-5 arrive together from 35-60m out and come running, every 20s falling to 6s as it fills. Ten at once, twenty-four in the area, and only while you are within 48m |
+| Calling | The first wave leaves at once; waves of 2-5 arrive together from 25-40m out and come running, every 20s falling to 6s as it fills. Ten at once, twenty-four in the area, and only while you are within 48m |
 | On the map | Pinned where you planted it, unpinned when it opens or dies |
 | Sapling health | 500, about ten hits from a brute |
 | Yield | One heartwood per spirit, always |
@@ -71,9 +71,9 @@ setting most likely to be left on by accident.
 ### The sapling
 
 **It calls the forest to it.** A planted seed draws greydwarfs out of the woods around it,
-faster as it fills, and what it summons is what feeds it. They come from 35 to 60 metres
+faster as it fills, and what it summons is what feeds it. They come from 25 to 40 metres
 away and run in, so you hear and see them coming rather than finding them already on top of
-you. They arrive in waves, out of the trees on one side rather than scattered around you, and
+you, and the first wave leaves the moment you plant. They arrive in waves, out of the trees on one side rather than scattered around you, and
 the waves get bigger and closer together as it fills. It is a siege rather than wildlife
 wandering past -
 and that is what the sapling's health is for: you are not looking for a fight, you are

@@ -254,7 +254,7 @@ namespace Grove
                 + "SpawnOne, which checks MaxNear and MaxTotal for itself, so a wave that "
                 + "would breach them simply comes up short.");
 
-            BeckonDistance = config.Bind("Sapling", "BeckonDistance", "35-60",
+            BeckonDistance = config.Bind("Sapling", "BeckonDistance", "25-40",
                 "How far out they appear, nearest first. They walk in from there.\n"
                 + "A band rather than one radius, and that is the whole of why they arrive "
                 + "instead of materialising: vanilla picks its spawn point at a random "
