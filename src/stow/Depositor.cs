@@ -155,14 +155,30 @@ namespace Stow
             // Without this the write lands on a copy the owner will overwrite.
             nview.ClaimOwnership();
 
-            var before = item.m_stack;
-            var placed = inventory.AddItem(item);
+            // How much of the stack this trip is allowed to carry. A spirit used to take
+            // whatever was in the slot, so a full stack of fifty wood crossed the room as
+            // easily as one, and the size of a load was invisible.
+            //
+            // Clone rather than move-and-put-back. The item in the post is the real one
+            // and the safety rule is that it never leaves until a trip lands, so what goes
+            // into AddItem is a copy carrying the trip's share; the original is decremented
+            // by however much of that copy the chest actually took. A chest that offers
+            // room and then takes none leaves both untouched.
+            var cap = StowConfig.ItemsPerTrip.Value;
+            var take = cap > 0 ? Mathf.Min(cap, item.m_stack) : item.m_stack;
+
+            var load = item.Clone();
+            load.m_stack = take;
+
+            var placed = inventory.AddItem(load);
 
             // AddItem tops up existing stacks first and only then gives up, so a false
-            // return still means the remainder is now on the item.
-            var went = placed ? before : before - item.m_stack;
+            // return still means the remainder is on the item it was handed.
+            var went = placed ? take : take - load.m_stack;
 
-            if (placed)
+            item.m_stack -= went;
+
+            if (item.m_stack <= 0)
             {
                 source.RemoveItem(item);
                 emptied = true;

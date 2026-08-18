@@ -24,6 +24,7 @@ namespace Stow
         public static ConfigEntry<int> Couriers;
         public static ConfigEntry<float> CarrierSpeed;
         public static ConfigEntry<float> CarrierPause;
+        public static ConfigEntry<int> ItemsPerTrip;
         public static ConfigEntry<float> CarrierCruise;
         public static ConfigEntry<float> CarrierScale;
         public static ConfigEntry<string> PostGlowDonors;
@@ -131,6 +132,13 @@ namespace Stow
             CarrierPause = config.Bind("Carrier", "CarrierPause", 0.5f,
                 "Seconds spent hovering at each end, loading and unloading. Without a "
                 + "pause the spirit bounces off the chest and the delivery is invisible.");
+
+            ItemsPerTrip = config.Bind("Carrier", "ItemsPerTrip", 10,
+                "How many items a spirit carries in one trip. A stack of fifty wood "
+                + "leaves the post ten at a time and takes five trips, so a big load "
+                + "looks like a big load rather than crossing the room in one go. "
+                + "0 carries the whole stack however large, which is what this did "
+                + "before. This is the number the post upgrades are meant to raise.");
 
             CarrierCruise = config.Bind("Carrier", "CarrierCruise", 1.1f,
                 "How high above the higher end it arcs. This is what carries it over "

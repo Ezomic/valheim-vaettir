@@ -65,6 +65,16 @@ Stow is no longer a separate mod. Its post, its spirit and its sorting ship here
   full-size spirit.
 - One setting still drops the heartwood from the recipe and puts the post back to wood and
   nails, for anyone who wants the sorting without the ritual.
+- **A spirit carries ten items a trip**, so a stack of fifty wood leaves the post in five
+  trips rather than crossing the room in one. A big load looks like a big load.
+  `ItemsPerTrip` sets it and 0 restores the whole stack. This is the number the post
+  upgrades are meant to raise.
+- **The carrying spirit and the one you commune with are the same creature**, which took
+  three passes to actually mean. The merge gave them one mesh; they still resolved their
+  material through two different lookups against two different donor lists, and even once
+  that was fixed only one of them glowed. The glow is a Light and an emission write, and
+  the carrier had half of one, so the room around it lit up while its own mesh stayed
+  flat. Colour, range, pulse depth and pulse period were each a second value too.
 - The last of the seams from when these were two repos are gone. Icons and PropIndex each
   existed in two diverged copies, one per old namespace, and the comment justifying that
   said a copy was better than reaching into a sibling repo. There is no sibling repo.
