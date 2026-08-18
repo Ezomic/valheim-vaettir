@@ -112,6 +112,12 @@ namespace Grove
                 HeartwoodPrefab.Register();
                 SpiritPrefab.Register();
                 SaplingPrefab.Register();
+
+                // Alongside the rest, and for the same reason: a prefab that is not in
+                // ZNetScene by the time a zone loads has its ZDOs discarded rather than
+                // errored. A planted seedling is exactly as easy to lose that way as a
+                // heartwood in an inventory.
+                Thicket.WildPlants.Register();
             }
             catch (System.Exception e)
             {
@@ -157,6 +163,12 @@ namespace Grove
             // its settings against this Config is what puts them in this mod's .cfg.
             GroveConfig.Bind(Config);
             Stow.StowConfig.Bind(Config);
+
+            // The wild plants bind their own rows, one per plant, so the defaults live
+            // beside the plant they describe rather than in a second list here that can
+            // drift out of step with it.
+            Thicket.ThicketConfig.Bind(Config);
+            Thicket.WildPlants.Bind(Config);
             Stow.StowRuntime.Log = Logger;
 
             TryRegisterWithCore();
@@ -165,6 +177,7 @@ namespace Grove
             _harmony.PatchAll(typeof(BloodFeed));
             _harmony.PatchAll(typeof(GrovePatches));
             _harmony.PatchAll(typeof(Stow.StowPatches));
+            _harmony.PatchAll(typeof(Thicket.SkillGate));
 
             // Built once rather than per frame, so Update allocates nothing to iterate.
             _steps = new[]
@@ -172,6 +185,7 @@ namespace Grove
                 new Step { Name = "Heartwood", Run = HeartwoodPrefab.Register },
                 new Step { Name = "Forest spirit", Run = SpiritPrefab.Register },
                 new Step { Name = "Ancient sapling", Run = SaplingPrefab.Register },
+                new Step { Name = "Wild plants", Run = Thicket.WildPlants.Register },
                 new Step { Name = "Stow coupling", Run = StowApply },
             };
 
@@ -250,6 +264,11 @@ namespace Grove
             // pieces above, and reads the two stow keys. Last, because it is the half of
             // the mod that depends on the heartwood existing.
             Stow.StowRuntime.Tick();
+
+            // Says which Farming level a locked plant wants. Driven from here rather than
+            // from inside the gate itself, which the Hud asks about every piece in the open
+            // build menu on every frame.
+            Thicket.SkillGate.Tick(Player.m_localPlayer);
 
             if (_diagnosticsDone || ZNetScene.instance == null) return;
             _diagnosticsDone = true;
