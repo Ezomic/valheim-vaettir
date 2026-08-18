@@ -45,9 +45,17 @@ growth, opened into a spirit, communed with, and the heartwood carried away and 
 
 Stow is no longer a separate mod. Its post, its spirit and its sorting ship here unchanged.
 
+- **One mod, not two shipped together.** Stow arrived carrying its own `[BepInPlugin]`, and
+  leaving it there meant one DLL announcing two plugins in the log, writing two config
+  files, registering with Core's version gate twice, and reporting two different version
+  numbers. It reads as two mods in a trenchcoat, and it was one. The post's half is now
+  driven by Vaettir's own plugin class: one GUID, one config file, one Harmony instance,
+  one registration.
 - Nothing you have built is affected. The piece keeps its internal name, so posts already
-  standing survive, and it keeps its own settings file, so the rules and options you had are
-  the ones you still have. Only the file it lives in moved.
+  standing survive.
+- Its settings moved into `ezomic.valheim.vaettir.cfg`, under `[Post]`, `[Sorting]`,
+  `[Carrier]` and `[Keys]`. Anyone who had tuned `ezomic.valheim.stow.cfg` copies those
+  values across once; nothing reads that file any more.
 - Delete `BepInEx/plugins/Stow` if you are upgrading by hand. Two copies loaded at once is
   the one thing that will go wrong.
 - One spirit, not two. Each mod used to build its own from its own script and they had

@@ -103,7 +103,7 @@ namespace Stow
                 rect.anchoredPosition = from.anchoredPosition
                                         - new Vector2(0f, from.rect.height + 4f);
 
-            StowPlugin.Log.LogInfo("Rules button added to the container window.");
+            StowRuntime.Log.LogInfo("Rules button added to the container window.");
             return true;
         }
 

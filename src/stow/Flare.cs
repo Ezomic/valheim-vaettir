@@ -80,11 +80,11 @@ namespace Stow
                 _template = Clone(found);
                 if (_template == null) continue;
 
-                StowPlugin.Log.LogInfo("Flare borrowed from " + name + "/" + found.name + ".");
+                StowRuntime.Log.LogInfo("Flare borrowed from " + name + "/" + found.name + ".");
                 return _template;
             }
 
-            StowPlugin.Log.LogWarning(
+            StowRuntime.Log.LogWarning(
                 "No flare donor resolved - spirits will be lit but will not halo. Set "
                 + "FlareDonors to a prefab that has one.");
 

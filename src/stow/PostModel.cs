@@ -108,7 +108,7 @@ namespace Stow
 
             if (model == null || model.Mesh == null)
             {
-                StowPlugin.Log.LogWarning(
+                StowRuntime.Log.LogWarning(
                     "No " + modelFile + " beside the dll - falling back to the donor's own "
                     + "look.");
                 return false;
@@ -149,7 +149,7 @@ namespace Stow
 
             ReplaceColliders(prefab, Path.Combine(dir, Path.ChangeExtension(modelFile, ".col")));
 
-            StowPlugin.Log.LogInfo(string.Format(
+            StowRuntime.Log.LogInfo(string.Format(
                 "{0} loaded: {1} verts, {2} tris, groups [{3}].",
                 modelFile, model.Mesh.vertexCount, model.Mesh.triangles.Length / 3,
                 string.Join(", ", model.Groups)));
@@ -216,7 +216,7 @@ namespace Stow
 
             Flare.Attach(anchor.transform, StowConfig.PostFlareScale.Value);
 
-            StowPlugin.Log.LogInfo("Heartwood found at " + anchor.transform.localPosition
+            StowRuntime.Log.LogInfo("Heartwood found at " + anchor.transform.localPosition
                                    + " - the post is lit and the spirit starts there.");
         }
 
@@ -233,7 +233,7 @@ namespace Stow
             {
                 skins[i] = Borrow(groups[i]);
                 if (skins[i] == null)
-                    StowPlugin.Log.LogWarning(
+                    StowRuntime.Log.LogWarning(
                         "No material found for group '" + groups[i] + "'.");
             }
 
@@ -289,7 +289,7 @@ namespace Stow
                     Cache[group] = material;
                     Atlas[group] = UvRegion(renderer);
 
-                    StowPlugin.Log.LogInfo(string.Format(
+                    StowRuntime.Log.LogInfo(string.Format(
                         "Group '{0}' skinned with {1} from {2} (shader {3}), atlas {4}.",
                         group, material.name, name, material.shader.name, Atlas[group]));
                     return material;
@@ -434,7 +434,7 @@ namespace Stow
             if (moved == 0) return;
 
             mesh.uv = uv;
-            StowPlugin.Log.LogInfo("Remapped UVs into the atlas for " + moved + " group(s).");
+            StowRuntime.Log.LogInfo("Remapped UVs into the atlas for " + moved + " group(s).");
         }
 
         /// <summary>
@@ -445,7 +445,7 @@ namespace Stow
         {
             if (!File.Exists(path))
             {
-                StowPlugin.Log.LogWarning(
+                StowRuntime.Log.LogWarning(
                     "No collider file beside the dll - keeping the donor's collision.");
                 return;
             }
@@ -482,7 +482,7 @@ namespace Stow
                     float.Parse(parts[6], culture));
             }
 
-            StowPlugin.Log.LogInfo("Post collision: " + boxes.Count + " boxes.");
+            StowRuntime.Log.LogInfo("Post collision: " + boxes.Count + " boxes.");
         }
     }
 }

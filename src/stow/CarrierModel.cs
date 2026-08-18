@@ -255,7 +255,7 @@ namespace Stow
             // Once, not every frame. A post retries this on every trip it wants to make.
             _missing = true;
 
-            StowPlugin.Log.LogError(
+            StowRuntime.Log.LogError(
                 "Carrier meshes are missing from beside the dll - the post will move "
                 + "things instantly instead. Expected " + HeartMesh + ", " + HoopMesh
                 + " and " + MoteMesh + ".");

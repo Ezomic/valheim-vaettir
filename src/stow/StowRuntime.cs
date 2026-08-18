@@ -1,103 +1,36 @@
-using System.Runtime.CompilerServices;
-using BepInEx;
-using BepInEx.Bootstrap;
 using BepInEx.Logging;
-using Ezomic.Core;
 using HarmonyLib;
 using UnityEngine;
 
 namespace Stow
 {
-    [BepInPlugin(PluginGuid, PluginName, PluginVersion)]
-    // Soft, not hard. Stow installs and runs on its own; a hard dependency
-    // that is absent does not degrade, the plugin simply never loads. Soft still buys
-    // the load-order guarantee when Core is present, which is what registering needs.
-    [BepInDependency(CoreGuid, BepInDependency.DependencyFlags.SoftDependency)]
-    // No BepInProcess. It is a whitelist, and a dedicated server runs valheim_server.exe.
-    // The stowing post is a registered prefab, and ZNetScene discards any ZDO whose prefab
-    // name does not resolve - so a server without it destroys every post already built.
-    public class StowPlugin : BaseUnityPlugin
+    /// <summary>
+    /// The stowing post's half of Vaettir, driven by GrovePlugin rather than by BepInEx.
+    ///
+    /// This was a plugin of its own until the merge, and leaving it one was the mistake:
+    /// two [BepInPlugin] classes in a single DLL means two entries in the BepInEx log, two
+    /// .cfg files, two registrations with Core's version gate and two version numbers for
+    /// one file. All of that reads as two mods that happen to ship together, which is
+    /// exactly what this is not.
+    ///
+    /// The GUID went with it. Config now lives in ezomic.valheim.vaettir.cfg alongside
+    /// the sapling and the spirit, since BepInEx names a config file after the plugin GUID
+    /// and there is only one of those now.
+    ///
+    /// Nothing about the world changes. The post keeps its prefab name, so every post
+    /// already standing resolves exactly as before - which is the part that could not be
+    /// got wrong, because ZNetScene discards a ZDO whose prefab name no longer resolves.
+    /// </summary>
+    internal static class StowRuntime
     {
-        public const string PluginGuid = "ezomic.valheim.stow";
-        public const string PluginName = "Stow";
-        public const string PluginVersion = "0.5.0";
-        public const string PluginAuthor = "Robbin Thijssen";
-
-        /// <summary>Core's plugin GUID. Optional - see TryRegisterWithCore.</summary>
-        private const string CoreGuid = "ezomic.valheim.core";
-
         internal static ManualLogSource Log;
 
-        private Harmony _harmony;
-        private bool _stowHeld;
-        private bool _configureHeld;
-        private bool _propsReported;
+        private static bool _stowHeld;
+        private static bool _configureHeld;
+        private static bool _propsReported;
 
-        private void Awake()
-        {
-            Log = Logger;
-            StowConfig.Bind(Config);
-            TryRegisterWithCore();
-
-            _harmony = new Harmony(PluginGuid);
-            _harmony.PatchAll(typeof(StowPatches));
-
-            Log.LogInfo(PluginName + " " + PluginVersion + " by " + PluginAuthor + " - ready.");
-        }
-
-        /// <summary>
-        /// Joins Core's version gate when Core is installed, and does nothing when it is not.
-        ///
-        /// Stow is worth installing on its own, and a hard dependency that is absent does
-        /// not degrade gracefully - the plugin never loads at all. So the reference is
-        /// compile-time only and the call is made behind a check.
-        ///
-        /// What is given up standing alone is the gate, not the mod.
-        /// This registers a buildable piece, and a client that cannot resolve its prefab hash
-        /// discards the ZDO rather than erroring - destroying posts already placed. Without Core
-        /// nothing refuses that client.
-        /// </summary>
-        private void TryRegisterWithCore()
-        {
-            if (!Chainloader.PluginInfos.ContainsKey(CoreGuid))
-            {
-                Log.LogInfo("Core not installed - running standalone, without the version gate.");
-                return;
-            }
-
-            RegisterWithCore();
-        }
-
-        /// <summary>
-        /// Kept separate and never inlined on purpose. The JIT resolves the assemblies a method
-        /// needs when it first compiles that method, so a Suite call sitting directly in Awake
-        /// would drag Ezomic.Core in before the check above could prevent it - and the
-        /// missing-assembly exception would land during plugin load, which is the failure this
-        /// whole arrangement exists to avoid. Isolating it means the type is only ever resolved
-        /// on a machine that has Core.
-        /// </summary>
-        [MethodImpl(MethodImplOptions.NoInlining)]
-        private void RegisterWithCore()
-        {
-            // Everyone, not HostOnly. Both ends have to agree about this mod, and the
-            // disagreement is silent when they do not: a client that cannot resolve a prefab
-            // hash discards the ZDO rather than erroring - destroying what is already standing
-            // in the world - and item data that differs desyncs inventories.
-            Suite.Register(PluginGuid, PluginName, PluginVersion, Config);
-        }
-
-
-        private void OnDestroy()
-        {
-            if (_harmony != null) _harmony.UnpatchSelf();
-        }
-
-        private void OnGUI()
-        {
-            FilterPanel.Draw();
-        }
-
-        private void Update()
+        /// <summary>Called once from GrovePlugin.Update, at the end of its own work.</summary>
+        internal static void Tick()
         {
             // Retried every frame, and deliberately not short-circuited by a flag of our
             // own: the piece needs ZNetScene and ObjectDB, neither exists at load, and both
@@ -124,7 +57,7 @@ namespace Stow
             HandleConfigure(player);
         }
 
-        private void HandleStow(Player player)
+        private static void HandleStow(Player player)
         {
             var down = StowConfig.KeyStow.Value.IsDown();
             if (!down) { _stowHeld = false; return; }
@@ -136,7 +69,7 @@ namespace Stow
             Depositor.Run(player);
         }
 
-        private void HandleConfigure(Player player)
+        private static void HandleConfigure(Player player)
         {
             var down = StowConfig.KeyConfigure.Value.IsDown();
             if (!down) { _configureHeld = false; return; }

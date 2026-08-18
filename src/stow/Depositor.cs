@@ -169,7 +169,7 @@ namespace Stow
             }
 
             if (went > 0 && StowConfig.Verbose.Value)
-                StowPlugin.Log.LogInfo("stowed " + went + "x " + item.m_shared.m_name
+                StowRuntime.Log.LogInfo("stowed " + went + "x " + item.m_shared.m_name
                                        + " into " + target.m_name);
 
             return went;

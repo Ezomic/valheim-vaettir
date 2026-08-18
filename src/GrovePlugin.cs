@@ -17,20 +17,14 @@ namespace Grove
     // The spirit and its pieces are registered prefabs, and ZNetScene discards any ZDO whose
     // prefab name does not resolve - so a server without it destroys them all, silently.
     //
-    // Stow used to be declared here as a soft dependency, for load order: if it was present
-    // it loaded first, so its post existed to be repriced. It is not a separate mod any
-    // more - StowPlugin ships in this assembly - and BepInEx still orders the two plugin
-    // classes, so the declaration bought nothing and read as though an absent third-party
-    // mod were still involved.
+    // Stow was a plugin of its own until the merge, declared here as a soft dependency so
+    // that it loaded first and its post existed to be repriced. It is not a plugin at all
+    // now - StowRuntime is driven from this class - so there is nothing to order against.
     //
     // StowCoupling is deliberately left as it was, finding the post by prefab name rather
     // than by reference. It costs nothing now that the piece is guaranteed present, and the
     // lookup is what keeps CoupleToStow meaningful: someone who wants the sorting post at
     // its wood-and-nails price still turns the heartwood off and gets it.
-    // The GUID by reference rather than as a literal, which is one thing the merge buys:
-    // it is the same assembly now, so a rename over there is a compile error here instead
-    // of a silent no-op.
-    [BepInDependency(Stow.StowPlugin.PluginGuid, BepInDependency.DependencyFlags.SoftDependency)]
     public class GrovePlugin : BaseUnityPlugin
     {
         public const string PluginGuid = "ezomic.valheim.vaettir";
@@ -157,12 +151,20 @@ namespace Grove
         private void Awake()
         {
             Log = Logger;
+
+            // One config file, one Harmony instance, one registration with Core. The post
+            // was a second plugin until the merge and is now a part of this one; binding
+            // its settings against this Config is what puts them in this mod's .cfg.
             GroveConfig.Bind(Config);
+            Stow.StowConfig.Bind(Config);
+            Stow.StowRuntime.Log = Logger;
+
             TryRegisterWithCore();
 
             _harmony = new Harmony(PluginGuid);
             _harmony.PatchAll(typeof(BloodFeed));
             _harmony.PatchAll(typeof(GrovePatches));
+            _harmony.PatchAll(typeof(Stow.StowPatches));
 
             // Built once rather than per frame, so Update allocates nothing to iterate.
             _steps = new[]
@@ -244,6 +246,11 @@ namespace Grove
             // and this notices.
             foreach (var step in _steps) Run(step);
 
+            // The post registers itself on the same retry-until-it-takes footing as the
+            // pieces above, and reads the two stow keys. Last, because it is the half of
+            // the mod that depends on the heartwood existing.
+            Stow.StowRuntime.Tick();
+
             if (_diagnosticsDone || ZNetScene.instance == null) return;
             _diagnosticsDone = true;
 
@@ -252,6 +259,15 @@ namespace Grove
 
             if (GroveConfig.DumpMaterials.Value)
                 SpiritPrefab.DumpMaterials();
+        }
+
+        /// <summary>
+        /// The chest-rules panel is IMGUI, so it needs a MonoBehaviour to paint from and
+        /// this is now the only one in the assembly.
+        /// </summary>
+        private void OnGUI()
+        {
+            Stow.FilterPanel.Draw();
         }
     }
 

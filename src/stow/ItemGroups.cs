@@ -201,7 +201,7 @@ namespace Stow
 
             if (_built && StowConfig.Verbose != null && StowConfig.Verbose.Value)
                 foreach (var group in All)
-                    StowPlugin.Log.LogInfo("group " + group.Id + ": " + group.Members.Count + " items");
+                    StowRuntime.Log.LogInfo("group " + group.Id + ": " + group.Members.Count + " items");
         }
 
         private static ItemGroup Group(string id, string display)

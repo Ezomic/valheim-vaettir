@@ -95,18 +95,18 @@ namespace Stow
 
             // ---------------------------------------------------------- sorting
 
-            Range = config.Bind("Stow", "Range", 12f,
+            Range = config.Bind("Sorting", "Range", 12f,
                 "How far a chest may be from the post and still be stowed into. Measured "
                 + "from the post, through walls - a storage room is still one room when "
                 + "the shelves are behind a pillar.");
 
-            MatchContents = config.Bind("Stow", "MatchContents", true,
+            MatchContents = config.Bind("Sorting", "MatchContents", true,
                 "Let a chest that has been given no rules still take more of what it "
                 + "already holds. This is what makes the mod useful before you have "
                 + "configured anything, and it is the lowest-priority match: any chest "
                 + "that actually asked for the item wins over one that merely has some.");
 
-            Messages = config.Bind("Stow", "Messages", true,
+            Messages = config.Bind("Sorting", "Messages", true,
                 "Corner message summarising what went where. With the carrier on this "
                 + "arrives when the last trip lands, not when you close the post.");
 
@@ -207,8 +207,9 @@ namespace Stow
                 "Hammer,Hoe,Cultivator",
                 "For KeyStow only: prefab names that never leave your pack. Comma-separated.");
 
-            Verbose = config.Bind("Diagnostics", "Verbose", false,
-                "Log every item moved and the chest it chose.");
+            // Not bound here. Diagnostics/Verbose belongs to GroveConfig, and binding the
+            // same section and key twice throws. One mod, one switch.
+            Verbose = Grove.GroveConfig.Verbose;
         }
     }
 }

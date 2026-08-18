@@ -37,7 +37,7 @@ namespace Stow
 
             if (!File.Exists(path))
             {
-                StowPlugin.Log.LogWarning(
+                StowRuntime.Log.LogWarning(
                     "No " + fileName + " beside the dll - " + label + " will wear the "
                     + "donor chest's icon, which is a picture of something else.");
                 return null;
@@ -66,7 +66,7 @@ namespace Stow
             }
             catch (System.Exception e)
             {
-                StowPlugin.Log.LogError("Could not read " + fileName + ": " + e.Message);
+                StowRuntime.Log.LogError("Could not read " + fileName + ": " + e.Message);
                 return null;
             }
         }
@@ -102,7 +102,7 @@ namespace Stow
             var type = AccessTools.TypeByName("UnityEngine.ImageConversion");
             if (type == null)
             {
-                StowPlugin.Log.LogWarning(
+                StowRuntime.Log.LogWarning(
                     "UnityEngine.ImageConversion is missing - cannot read icons.");
                 return false;
             }
@@ -115,7 +115,7 @@ namespace Stow
 
             if (method == null)
             {
-                StowPlugin.Log.LogWarning(
+                StowRuntime.Log.LogWarning(
                     "No LoadImage overload found on UnityEngine.ImageConversion.");
                 return false;
             }

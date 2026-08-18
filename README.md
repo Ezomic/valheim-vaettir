@@ -50,15 +50,9 @@ you. Solo you do not need it at all. On a server it matters, for the reason in
 
 ## Configuration
 
-Two files under `BepInEx/config/`, written on first run:
-
-| File | Covers |
-| --- | --- |
-| `ezomic.valheim.vaettir.cfg` | The sapling, the spirit, the heartwood |
-| `ezomic.valheim.stow.cfg` | The stowing post, the carrying spirit, sorting |
-
-Two files because the stowing post used to be a separate mod and keeps its own settings, so
-an upgrade does not lose what you had.
+One file, `BepInEx/config/ezomic.valheim.vaettir.cfg`, written on first run. The sapling and
+the spirit are under `[Sapling]`, `[Spirit]` and `[Heartwood]`; the stowing post is under
+`[Post]`, `[Sorting]`, `[Carrier]` and `[Keys]`.
 
 Almost everything is adjustable: what each creature is worth, how far a kill counts, the
 sapling's health, and the post's size and recipe. BepInEx writes every entry on first run and
@@ -148,9 +142,11 @@ a heart, and why the sorting rules live on the chest: [DESIGN.md](DESIGN.md).
 
 ## Upgrading from Stow
 
-Stow used to be a separate mod and now ships inside this one, unchanged. The post keeps its
-internal name, so posts already standing survive, and it keeps its own settings file, so the
-rules you had are the ones you still have.
+Stow used to be a separate mod and now ships inside this one as part of it, not beside it.
+The post keeps its internal name, so every post already standing survives untouched.
+
+Its settings moved into this mod's config file. If you had tuned `ezomic.valheim.stow.cfg`,
+copy those values across once and delete it; nothing reads it any more.
 
 Delete `BepInEx/plugins/Stow` if you are upgrading by hand. Two copies loaded at once is the
 one thing that will go wrong.

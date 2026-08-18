@@ -326,7 +326,7 @@ namespace Stow
 
             if (went <= 0)
             {
-                StowPlugin.Log.LogWarning(
+                StowRuntime.Log.LogWarning(
                     "A container offered room for " + item.m_shared.m_name
                     + " and then accepted none - not trying it again this run.");
                 return false;
@@ -437,7 +437,7 @@ namespace Stow
             Launch(courier, from, aim, cargo, now);
 
             if (StowConfig.Verbose.Value)
-                StowPlugin.Log.LogInfo(verb + " " + item.m_stack + "x "
+                StowRuntime.Log.LogInfo(verb + " " + item.m_stack + "x "
                                        + item.m_shared.m_name);
         }
 

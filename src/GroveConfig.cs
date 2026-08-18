@@ -214,20 +214,18 @@ namespace Grove
             Verbose = config.Bind("Diagnostics", "Verbose", false,
                 "Log every feed.");
 
-            // ---------------------------------------------------------- stow
+            // ------------------------------------------- the post, from the grove side
 
-            CoupleToStow = config.Bind("Stow", "CoupleToStow", true,
-                "If the Stow mod is installed, make its stowing post cost heartwood - "
-                + "which is to say, make the post the place the spirit ends up living. "
-                + "That is where the sorting comes from, and it is why the post is "
-                + "worth an hour of greydwarfs when a chest is worth ten wood. "
-                + "Off leaves Stow's own recipe alone. Nothing here touches Stow when it "
-                + "is absent, and Stow is never told about this mod - it stays a mod that "
-                + "works on its own and still builds its post out of wood and fine wood.");
+            CoupleToStow = config.Bind("Post", "CoupleToStow", true,
+                "Make the stowing post cost heartwood - which is to say, make the post the "
+                + "place the spirit ends up living. That is where the sorting comes from, "
+                + "and it is why the post is worth an hour of greydwarfs when a chest is "
+                + "worth ten wood. Off puts the post back to plain wood and nails, for "
+                + "anyone who wants the sorting without the ritual.");
 
-            StowPostCost = config.Bind("Stow", "StowPostCost", "GroveHeartwood:1",
+            StowPostCost = config.Bind("Post", "StowPostCost", "GroveHeartwood:1",
                 "What is *added* to the stowing post's cost, as Item:Amount. Added rather "
-                + "than replacing, because the rest of that recipe is Stow's setting and "
+                + "than replacing, because the rest of that recipe is Post/PostCost and "
                 + "someone may have changed it deliberately. An ingredient already there "
                 + "is raised to whichever amount is higher rather than counted twice.");
 

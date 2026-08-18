@@ -221,7 +221,7 @@ namespace Stow
                 var found = scene.GetPrefab(name);
                 if (found != null) return found;
 
-                StowPlugin.Log.LogWarning("Post donor '" + name + "' does not exist.");
+                StowRuntime.Log.LogWarning("Post donor '" + name + "' does not exist.");
             }
 
             return null;
@@ -292,7 +292,7 @@ namespace Stow
             // *materials* are borrowed, group by group, so the mesh is ours and the
             // surfaces are the game's.
             if (!PostModel.Apply(clone))
-                StowPlugin.Log.LogWarning(
+                StowRuntime.Log.LogWarning(
                     "Stowing post is wearing the donor chest's own body - the model file "
                     + "was not found beside the dll.");
 
@@ -301,7 +301,7 @@ namespace Stow
 
             if (clone.GetComponent<StowPost>() == null) clone.AddComponent<StowPost>();
 
-            StowPlugin.Log.LogInfo("Built " + Name + " from " + source.name + ".");
+            StowRuntime.Log.LogInfo("Built " + Name + " from " + source.name + ".");
             return clone;
         }
 
@@ -324,7 +324,7 @@ namespace Stow
                 var drop = prefab != null ? prefab.GetComponent<ItemDrop>() : null;
                 if (drop == null)
                 {
-                    StowPlugin.Log.LogWarning("Post cost mentions unknown item '" + itemName + "'.");
+                    StowRuntime.Log.LogWarning("Post cost mentions unknown item '" + itemName + "'.");
                     continue;
                 }
 
@@ -354,7 +354,7 @@ namespace Stow
             }
             catch (System.Exception e)
             {
-                StowPlugin.Log.LogError("Could not register " + Name + ": " + e.Message);
+                StowRuntime.Log.LogError("Could not register " + Name + ": " + e.Message);
             }
         }
 
@@ -396,7 +396,7 @@ namespace Stow
 
             // Logged on the add rather than on the call, or a per-frame retry that is
             // already satisfied would write a line every frame.
-            StowPlugin.Log.LogInfo("Stowing post added to the hammer.");
+            StowRuntime.Log.LogInfo("Stowing post added to the hammer.");
         }
     }
 }

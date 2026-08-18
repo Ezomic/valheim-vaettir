@@ -57,7 +57,7 @@ namespace Stow
                     _index[candidate.name] = candidate;
             }
 
-            StowPlugin.Log.LogInfo("Prop index built: " + _index.Count + " candidates with meshes.");
+            StowRuntime.Log.LogInfo("Prop index built: " + _index.Count + " candidates with meshes.");
         }
 
         /// <summary>
@@ -93,7 +93,7 @@ namespace Stow
                 }
 
                 hits.Sort();
-                StowPlugin.Log.LogInfo(
+                StowRuntime.Log.LogInfo(
                     "Prefabs matching '" + word + "' (" + hits.Count + "): "
                     + string.Join(", ", hits.GetRange(0, Math.Min(40, hits.Count)).ToArray()));
             }
