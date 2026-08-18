@@ -152,3 +152,13 @@ Delete `BepInEx/plugins/Stow` if you are upgrading by hand. Two copies loaded at
 one thing that will go wrong.
 
 Their history is in `archive/`, one git bundle each. See `archive/README.md`.
+
+## Reporting bugs
+
+[The Discord](https://discord.gg/hJzAVaZ5wb) is the fastest route, and the right one if
+you are not sure whether what you are seeing is a bug at all. Issues on
+[the repo](https://github.com/Ezomic/valheim-vaettir) work too and suit anything long.
+
+Bring `BepInEx\LogOutput.log` if you can, and say whether you were on a server or your
+own world. The log is most of the difference between a fix and a guess, and it is written
+every session whether or not anything went wrong.
