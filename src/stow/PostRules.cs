@@ -17,6 +17,17 @@ namespace Stow
     /// comma-separated string a chest's rule uses, so the same grid, the same chips and the
     /// same parser serve both. A post asking for ore and a chest holding ore are the same
     /// sentence pointed in opposite directions.
+    ///
+    /// **Nothing sets any of this on main.** SetFetch, SetTidy and SetPresence have no
+    /// callers: the only thing that ever called them was the post's own panel, which was
+    /// shelved to the v1.2-panel branch unproven. So the readers below always answer with
+    /// the default, which makes the Fetch, Tidy and Resting errands in CarryRun and the
+    /// NextFetch/NextTidy searches in Depositor unreachable code on this branch.
+    ///
+    /// Left standing rather than stripped, and that is a trade rather than an oversight.
+    /// The changelog promises 1.2 is a merge and not a rebuild, and deleting the half that
+    /// lives here would make it a rebuild. The cost is that a reader hunting for what sets
+    /// a post to LivesHere finds nothing, which is what this paragraph is for.
     /// </summary>
     internal static class PostRules
     {

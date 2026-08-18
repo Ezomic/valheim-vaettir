@@ -12,6 +12,10 @@ namespace Grove
     /// dll and Sprite.Create over it is the whole of the answer. This started life
     /// private inside HeartwoodPrefab; the sapling needed exactly the same thing for
     /// Piece.m_icon, and two copies of a reflection lookup is one too many.
+    ///
+    /// The stowing post kept a third copy while it was its own mod, on the reasoning that
+    /// reaching into a sibling repo for one file would reverse which mod knows about which.
+    /// There is no sibling repo now, so that copy is this one.
     /// </summary>
     internal static class Icons
     {
@@ -62,6 +66,24 @@ namespace Grove
                 GrovePlugin.Log.LogError("Could not read " + fileName + ": " + e.Message);
                 return null;
             }
+        }
+
+        /// <summary>
+        /// The icon that goes with a model file: stow_post_rack.obj ->
+        /// stow_post_rack_icon.png.
+        ///
+        /// Derived rather than configured, deliberately, even though this repo's rule is
+        /// to make filenames settings. The model file is already a setting, and a second
+        /// one for the icon could only ever disagree with it - a post wearing the rack and
+        /// showing a picture of the barrow is worse than either, and is exactly the sort
+        /// of mismatch that takes an hour to notice.
+        /// </summary>
+        public static string For(string modelFile)
+        {
+            if (string.IsNullOrEmpty(modelFile)) return null;
+
+            var stem = Path.GetFileNameWithoutExtension(modelFile);
+            return string.IsNullOrEmpty(stem) ? null : stem + "_icon.png";
         }
 
         /// <summary>

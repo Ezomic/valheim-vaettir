@@ -31,3 +31,7 @@ build/
 # A 284K zip in git is a build output, not a source, and it goes stale the moment anything
 # under src or assets changes.
 dist/
+
+# Python leaves these beside the build scripts and they are pure derivation.
+__pycache__/
+*.pyc
