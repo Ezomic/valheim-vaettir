@@ -66,8 +66,10 @@ The sapling half. Four things, and the first of them is the one that matters.
 ### Not in this yet
 
 - The sapling's staged growth and the sowing of a rank of seeds are still on
-  `v1.1-sowing`, cut from 1.0 for their art. Nothing here touches them and merging is a
-  separate job - that branch predates the 1.0 tidy-up and does not fast-forward.
+  `v1.1-sowing`, cut from 1.0 for their art. They are 1.2 now: the roadmap in the 1.0 entry
+  below was renumbered when this release took the 1.1 slot, and that branch keeps its old
+  name. Nothing here touches it, and merging is a separate job - it predates the 1.0
+  tidy-up and does not fast-forward.
 
 ## [1.0.0] - 2026-08-18
 
@@ -171,16 +173,26 @@ Stated rather than quietly shipped.
 Cut rather than shipped unproven or unfinished, each kept whole on its own branch so
 continuing is a merge rather than a rebuild.
 
-- **1.1** - sowing a rank of seeds by Farming skill, and the sapling's staged growth. The
-  staging works and has been played; three of its four models were not good enough.
-- **1.2**, a refinement pass - better animation throughout, and the post's own panel:
+This list was renumbered after 1.0 shipped. 1.1 became the sapling half instead - the seed
+calling greydwarfs to itself, the map pin, the co-op counter and the parting effect - which
+is work on the piece the whole chain starts at rather than on the two halves either side of
+it, and everything below moved down one. The branch names still carry their old numbers,
+because a branch is renamed easily and remembered wrongly: `v1.1-sowing` is 1.2 here,
+`v1.2-panel` is 1.3, and `v1.3-bonemeal` is 1.4.
+
+- **1.2** - sowing a rank of seeds by Farming skill, and the sapling's staged growth. The
+  staging works and has been played; three of its four models were not good enough. It sits
+  directly behind 1.1 rather than ahead of it because the staged models are the visible half
+  of the same piece, and it is worth knowing how a sapling plays once it is worth standing
+  next to before choosing how it should look while you do.
+- **1.3**, a refinement pass - better animation throughout, and the post's own panel:
   fetch, tidy and presence. All three were built and none of them were proven, and with
   the three of them out the panel had nothing left in it, so it goes whole.
-- **1.3** - bonemeal, and the bone mill that grinds it.
-- **1.4** - upgrades for the stowing post. It starts out carrying ten items a trip and each
+- **1.4** - bonemeal, and the bone mill that grinds it.
+- **1.5** - upgrades for the stowing post. It starts out carrying ten items a trip and each
   upgrade raises that, so a post becomes something you improve rather than something you
   finish. It also gives the heartwood somewhere to go after the post is built.
-- **1.5** - an upgrade that houses a second spirit, so two stacks are in the air at once
+- **1.6** - an upgrade that houses a second spirit, so two stacks are in the air at once
   rather than one moving faster. Two of them working is worth watching; one of them hurrying
   is a number.
 - **Unscheduled** - the vaettr visitor and the market they were to stand in.
