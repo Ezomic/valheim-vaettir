@@ -312,7 +312,7 @@ namespace Stow
         private static string[] DonorsFor(string group)
         {
             if (string.Equals(group, GlowGroup, StringComparison.OrdinalIgnoreCase))
-                return (StowConfig.CarrierGlowDonors.Value ?? "").Split(',');
+                return (StowConfig.PostGlowDonors.Value ?? "").Split(',');
 
             string[] donors;
             return Donors.TryGetValue(group, out donors) ? donors : Donors["wood"];

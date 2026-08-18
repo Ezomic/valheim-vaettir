@@ -26,7 +26,7 @@ namespace Stow
         public static ConfigEntry<float> CarrierPause;
         public static ConfigEntry<float> CarrierCruise;
         public static ConfigEntry<float> CarrierScale;
-        public static ConfigEntry<string> CarrierGlowDonors;
+        public static ConfigEntry<string> PostGlowDonors;
         public static ConfigEntry<string> FlareDonors;
 
         public static ConfigEntry<float> PostLightRange;
@@ -173,15 +173,18 @@ namespace Stow
                 + "nothing. The lantern is first because its flare is a single soft halo; "
                 + "guard_stone works but hangs four other billboards off itself.");
 
-            CarrierGlowDonors = config.Bind("Carrier", "CarrierGlowDonors",
+            PostGlowDonors = config.Bind("Post", "PostGlowDonors",
                 "piece_dvergr_lantern,guard_stone,piece_walltorch,fire_pit",
-                "Prefabs to lift the spirit's *surface* from, best first - the first that "
-                + "resolves and has an albedo wins. This is only the material on the mesh; "
-                + "what makes it read as lit is its Light and its flare, so a poor choice "
-                + "here is dull rather than invisible. fire_pit led this list and was a "
-                + "real bug: the first material with an albedo on a fire pit is its "
-                + "stones, so the spirit flew around wearing rock. The dvergr lantern is "
-                + "warm worked metal, which is what a heartwood should look like unlit.");
+                "Prefabs to lift the post's glowing recess from, best first - the first "
+                + "that resolves and has an albedo wins. This used to skin the carrying "
+                + "spirit too, under the name CarrierGlowDonors, and the two spirits came "
+                + "out wearing different materials from different lists: the one you "
+                + "commune with took stone from fire_pit and the one carrying your ore "
+                + "took the dvergr lantern's metal. They are one creature, so the carrier "
+                + "reads Spirit/GlowDonors now and this list serves only the post. "
+                + "The old comment here called fire_pit leading the list a real bug, on "
+                + "the grounds that a fire pit's first material with an albedo is its "
+                + "stones. It is - and that is what the better-looking spirit is wearing.");
 
             // ---------------------------------------------------------- optional keys
 

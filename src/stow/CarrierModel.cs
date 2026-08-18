@@ -215,7 +215,15 @@ namespace Stow
             //
             // Skinned here but never remapped here - see Dress(). The UV remap happens
             // once per mesh, at load.
-            renderer.sharedMaterials = PostModel.SkinsFor(model.Groups);
+            // Grove's Skins, not PostModel's. Both meshes here are usemtl core and both
+            // asked for a material for that group, but through two different lookups with
+            // two different donor lists - so the spirit you commune with wore the fire
+            // pit's material and the one carrying your ore wore the dvergr lantern's. The
+            // merge made them one creature and left them wearing two skins.
+            //
+            // PostModel's borrow is right for the post, which is timber and iron and
+            // genuinely wants a material per group. A spirit is one surface.
+            renderer.sharedMaterials = Skins.Skin(model.Groups);
 
             // Nothing here should darken anything. The carrier is a light source, and one
             // that casts its own hoop across the floor looks like a bug.
@@ -277,8 +285,8 @@ namespace Stow
         /// </summary>
         private static void Dress(ModelData model)
         {
-            PostModel.SkinsFor(model.Groups);
-            PostModel.Remap(model.Mesh, model.Groups);
+            Skins.Skin(model.Groups);
+            Skins.Remap(model.Mesh, model.Groups);
         }
     }
 }
