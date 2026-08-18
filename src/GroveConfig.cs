@@ -39,6 +39,7 @@ namespace Grove
         public static ConfigEntry<string> BeckonRoster;
         public static ConfigEntry<string> BeckonInterval;
         public static ConfigEntry<string> BeckonPack;
+        public static ConfigEntry<string> BeckonMessage;
         public static ConfigEntry<string> BeckonDistance;
         public static ConfigEntry<float> BeckonRange;
         public static ConfigEntry<int> BeckonMaxNear;
@@ -253,6 +254,17 @@ namespace Grove
                 + "The caps still apply. Each of a wave is spawned through the game's own "
                 + "SpawnOne, which checks MaxNear and MaxTotal for itself, so a wave that "
                 + "would breach them simply comes up short.");
+
+            BeckonMessage = config.Bind("Sapling", "BeckonMessage",
+                "The forest is enraged.",
+                "Said once, centre screen, when a sapling starts calling. Blank for "
+                + "nothing.\n"
+                + "Everyone within BeckonRange is told, not only whoever planted it, "
+                + "because it is a warning about a place rather than a note to an owner - "
+                + "and on the frame it appears there is nothing on screen yet to account "
+                + "for the noise coming out of the trees.\n"
+                + "Said again if you leave and come back, since the sapling goes quiet "
+                + "while nobody is near it and starts over when someone is.");
 
             BeckonDistance = config.Bind("Sapling", "BeckonDistance", "25-40",
                 "How far out they appear, nearest first. They walk in from there.\n"

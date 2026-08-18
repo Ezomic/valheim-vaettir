@@ -119,6 +119,48 @@ namespace Grove
 
         private static float _lastHunt = -99f;
 
+        /// <summary>Whether this sapling has already announced itself. Per instance and not
+        /// static: two saplings in earshot are two sieges, and the second one starting is
+        /// worth hearing about.</summary>
+        private bool _announced;
+
+        /// <summary>Reused so an announcement does not allocate.</summary>
+        private static readonly List<Player> Nearby = new List<Player>();
+
+        /// <summary>
+        /// Tells everyone nearby that the wood has turned on them.
+        ///
+        /// Once per sapling per load, and fired from the first wave rather than from
+        /// planting: that is the moment the fiction begins, and a message on Awake would go
+        /// out while the seed is still waiting for someone to come within range.
+        ///
+        /// Everyone in range rather than whoever planted it. It is a warning about a place,
+        /// and on the frame it appears there is nothing on screen yet to account for what is
+        /// coming out of the trees. Player.Message does the networking itself - it invokes
+        /// an RPC on any player this client does not own - so this needs none of its own.
+        /// </summary>
+        internal void Rouse()
+        {
+            if (_announced) return;
+            _announced = true;
+
+            var line = GroveConfig.BeckonMessage.Value;
+            if (string.IsNullOrEmpty(line)) return;
+
+            Nearby.Clear();
+            Player.GetPlayersInRange(transform.position,
+                                     Mathf.Max(8f, GroveConfig.BeckonRange.Value), Nearby);
+
+            foreach (var player in Nearby)
+            {
+                if (player == null) continue;
+                player.Message(MessageHud.MessageType.Center,
+                               Localization.instance.Localize(line));
+            }
+
+            Nearby.Clear();
+        }
+
         /// <summary>
         /// Tells everything the sapling called to come and find you.
         ///
@@ -453,6 +495,10 @@ namespace Grove
 
             var beckon = __instance.GetComponent<Beckon>();
             if (beckon == null) return;
+
+            // After the first creature of the wave has actually landed, so a sapling that
+            // could find no ground to spawn on never announces a siege that is not coming.
+            beckon.Rouse();
 
             var wanted = Beckon.Pack(beckon.Progress) - 1;
             if (wanted <= 0 || SpawnOne == null) return;

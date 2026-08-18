@@ -40,6 +40,12 @@ The sapling half. Four things, and the first of them is the one that matters.
   the sapling: there is no vanilla "attack this object" to ride, the player is standing at
   the sapling anyway, and it puts the raid on the person holding the ground instead of on
   the thing with 500 health.
+- **It says so.** "The forest is enraged." goes to everyone within BeckonRange, centre
+  screen, once per sapling per load - fired from the first wave actually landing rather than
+  from planting, so a sapling that can find nowhere to spawn never announces a siege that is
+  not coming. Everyone nearby rather than whoever planted it, because it is a warning about
+  a place and on that frame there is nothing on screen to account for the noise. The text is
+  a config line and blank turns it off.
 - **The first wave leaves immediately.** Vanilla counts its spawn timer up from zero on a
   two-second repeat and fires when it exceeds the interval, so an unfed seed produced
   nothing at all for 22 seconds and then the wave still had to walk in - half a minute of

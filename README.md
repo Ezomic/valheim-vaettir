@@ -73,7 +73,9 @@ setting most likely to be left on by accident.
 **It calls the forest to it.** A planted seed draws greydwarfs out of the woods around it,
 faster as it fills, and what it summons is what feeds it. They come from 25 to 40 metres
 away and run in, so you hear and see them coming rather than finding them already on top of
-you, and the first wave leaves the moment you plant. They arrive in waves, out of the trees on one side rather than scattered around you, and
+you, and the first wave leaves the moment you plant. Everyone
+nearby is told once that the forest is enraged, because on the frame it starts there is
+nothing on screen to account for the noise coming out of the trees. They arrive in waves, out of the trees on one side rather than scattered around you, and
 the waves get bigger and closer together as it fills. It is a siege rather than wildlife
 wandering past -
 and that is what the sapling's health is for: you are not looking for a fight, you are
