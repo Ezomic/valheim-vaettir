@@ -9,10 +9,9 @@ that sorts your storage.
    needs nothing from this mod.
 2. Plant it with the **cultivator**, in bare ground, somewhere greydwarfs will come.
 3. Kill greydwarfs **within 24 metres of it**. It grows on those deaths and nothing else.
-   You do not have to go looking for them: **a planted seed calls them to it**, and calls
-   harder the closer it is to opening.
-   Roughly thirty ordinary ones, and elites count as four and shamans as three, so a "Forest
-   is moving" raid arriving on top of it can finish it alone.
+   You do not have to go looking for them: **a planted seed calls them to it** in waves,
+   which get bigger and closer together the nearer it is to opening.
+   Roughly fifty ordinary ones, and elites count as four and shamans as three.
 4. **Defend it.** It has real health and can be destroyed, and the seed is not refunded. It
    tells you when something is hitting it.
 5. When it opens, a **forest spirit** rises out of it. Press use once and it folds itself
@@ -31,9 +30,9 @@ down gives the heartwood back.
 | --- | --- |
 | Seed | One ancient seed, not refunded if the sapling dies |
 | Where | Anywhere you like; greydwarfs are the requirement, not the biome |
-| To open it | 30 points of greydwarf death. Greydwarf 1, shaman 3, elite 4, greyling 0 |
+| To open it | 50 points of greydwarf death. Greydwarf 1, shaman 3, elite 4, greyling 0 |
 | Range | 24m, and only the nearest sapling is fed by a kill |
-| Calling | Greydwarfs arrive from 35-60m out and come running, every 20s falling to 6s as it fills. Six at once, sixteen in the area, and only while you are within 48m |
+| Calling | Waves of 2-5 arrive together from 35-60m out and come running, every 20s falling to 6s as it fills. Ten at once, twenty-four in the area, and only while you are within 48m |
 | On the map | Pinned where you planted it, unpinned when it opens or dies |
 | Sapling health | 500, about ten hits from a brute |
 | Yield | One heartwood per spirit, always |
@@ -74,8 +73,9 @@ setting most likely to be left on by accident.
 **It calls the forest to it.** A planted seed draws greydwarfs out of the woods around it,
 faster as it fills, and what it summons is what feeds it. They come from 35 to 60 metres
 away and run in, so you hear and see them coming rather than finding them already on top of
-you. It is a raid rather than wildlife wandering past - six at a time, arriving every few
-seconds by the end -
+you. They arrive in waves, out of the trees on one side rather than scattered around you, and
+the waves get bigger and closer together as it fills. It is a siege rather than wildlife
+wandering past -
 and that is what the sapling's health is for: you are not looking for a fight, you are
 holding a place, and a raid you walk away from halfway through takes the seed with it. It
 only ever calls while a player is within 48 metres, so nothing happens while you are away.

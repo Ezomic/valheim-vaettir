@@ -31,6 +31,13 @@ namespace Grove
         private Sapling _sapling;
         private SpawnArea _area;
 
+        /// <summary>How full the seed under this spawner is, 0 to 1. Read by the wave patch,
+        /// which has a SpawnArea and needs the sapling's number off it.</summary>
+        internal float Progress
+        {
+            get { return _sapling != null ? _sapling.Progress : 0f; }
+        }
+
         private float _slowest;
         private float _fastest;
 
@@ -176,6 +183,35 @@ namespace Grove
         /// materialise on top of the sapling: widening the radius alone would only have
         /// scattered them between nought and the edge.
         /// </summary>
+        /// <summary>
+        /// How many arrive together, for a sapling this far along.
+        ///
+        /// Ramped for the same reason the interval is: the fight should be at its heaviest
+        /// when the seed is nearly open. Rounded rather than floored, so the top of the
+        /// range is actually reached on the last few kills instead of only exactly at full.
+        /// </summary>
+        internal static int Pack(float progress)
+        {
+            var parts = (GroveConfig.BeckonPack.Value ?? "").Split('-');
+
+            var fewest = Mathf.Max(1f, Parse(parts.Length > 0 ? parts[0] : "", 2f));
+            var most = Mathf.Max(fewest, Parse(parts.Length > 1 ? parts[1] : "", 5f));
+
+            return Mathf.Clamp(Mathf.RoundToInt(
+                Mathf.Lerp(fewest, most, Mathf.Clamp01(progress))), 1, 20);
+        }
+
+        /// <summary>
+        /// Where the current wave is coming from, in degrees, or a negative number when
+        /// nothing is arriving.
+        ///
+        /// A wave scattered evenly around the ring is four separate greydwarfs that happen
+        /// to share a timer; one that comes out of the trees on a single side is a war band,
+        /// and you can turn to face it. The spawn-point prefix reads this and jitters around
+        /// it rather than picking a fresh angle per creature.
+        /// </summary>
+        internal static float WaveAngle = -1f;
+
         internal static void Band(out float near, out float far)
         {
             var parts = (GroveConfig.BeckonDistance.Value ?? "").Split('-');
@@ -344,6 +380,67 @@ namespace Grove
     }
 
     /// <summary>
+    /// Turns vanilla's one-creature-per-interval into a wave.
+    ///
+    /// SpawnArea spawns exactly one per interval, which is a queue rather than a raid: a
+    /// greydwarf, a wait, another greydwarf, and nothing that has to be handled as a group.
+    /// The prefix picks a direction for the wave and the postfix runs the game's own
+    /// SpawnOne for the rest of it.
+    ///
+    /// Calling SpawnOne rather than instantiating anything is what keeps the caps honest -
+    /// it checks MaxNear and MaxTotal itself at the top, so a wave that would breach them
+    /// comes up short instead of overrunning them. The reentrancy flag is not optional:
+    /// without it each extra spawn would re-enter this postfix and the first wave would
+    /// never end.
+    /// </summary>
+    [HarmonyPatch(typeof(SpawnArea), "SpawnOne")]
+    internal static class BeckonWave
+    {
+        private static readonly System.Func<SpawnArea, bool> SpawnOne =
+            AccessTools.MethodDelegate<System.Func<SpawnArea, bool>>(
+                AccessTools.Method(typeof(SpawnArea), "SpawnOne"));
+
+        private static bool _inWave;
+
+        [HarmonyPrefix]
+        private static void Direction(SpawnArea __instance)
+        {
+            if (_inWave || __instance == null) return;
+            if (__instance.GetComponent<Beckon>() == null) return;
+
+            Beckon.WaveAngle = Random.Range(0f, 360f);
+        }
+
+        [HarmonyPostfix]
+        private static void Rest(SpawnArea __instance, bool __result)
+        {
+            if (_inWave || !__result || __instance == null) return;
+
+            var beckon = __instance.GetComponent<Beckon>();
+            if (beckon == null) return;
+
+            var wanted = Beckon.Pack(beckon.Progress) - 1;
+            if (wanted <= 0 || SpawnOne == null) return;
+
+            _inWave = true;
+            try
+            {
+                // Stops at the first refusal. SpawnOne returns false when a cap is reached
+                // or when it could not find ground, and both mean the rest of this wave has
+                // nowhere to go - retrying nine more times would only walk the instance list
+                // nine more times for nothing.
+                for (var i = 0; i < wanted; i++)
+                    if (!SpawnOne(__instance)) break;
+            }
+            finally
+            {
+                _inWave = false;
+                Beckon.WaveAngle = -1f;
+            }
+        }
+    }
+
+    /// <summary>
     /// Where a called greydwarf appears: out in the trees, not on top of the seed.
     ///
     /// Vanilla's FindSpawnPoint takes Random.Range(0f, m_spawnRadius), which is uniform
@@ -379,8 +476,15 @@ namespace Grove
 
             for (var i = 0; i < Attempts; i++)
             {
+                // One side of the ring while a wave is arriving, anywhere on it otherwise.
+                // The spread is deliberately narrow: much wider and a "wave" is just four
+                // greydwarfs that happen to share a timer.
+                var angle = Beckon.WaveAngle >= 0f
+                    ? Beckon.WaveAngle + Random.Range(-20f, 20f)
+                    : Random.Range(0f, 360f);
+
                 var spot = centre
-                           + Quaternion.Euler(0f, Random.Range(0f, 360f), 0f)
+                           + Quaternion.Euler(0f, angle, 0f)
                            * Vector3.forward * Random.Range(near, far);
 
                 float height;

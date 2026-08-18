@@ -117,6 +117,7 @@ namespace Grove
             // it: the band is enforced by a prefix on SpawnArea.FindSpawnPoint, and an
             // unapplied patch is a silent fallback to vanilla's uniform disc.
             _harmony.PatchAll(typeof(BeckonSpawnPoint));
+            _harmony.PatchAll(typeof(BeckonWave));
 
             // Everything this mod puts into a world, declared once and kept there by the
             // suite's shared registry. Prefabs re-registers all four into every world that

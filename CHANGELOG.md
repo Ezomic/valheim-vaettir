@@ -40,6 +40,18 @@ The sapling half. Four things, and the first of them is the one that matters.
   the sapling: there is no vanilla "attack this object" to ride, the player is standing at
   the sapling anyway, and it puts the raid on the person holding the ground instead of on
   the thing with 500 health.
+- **They arrive in waves, from one side.** Vanilla's spawner produces exactly one creature
+  per interval, which is a queue rather than a raid - a greydwarf, a wait, another
+  greydwarf, and nothing that has to be handled as a group. A wave is 2 at an unfed seed
+  rising to 5 at one about to open, and the whole wave comes out of the trees within 40
+  degrees of one bearing so it can be turned to face. The extra members go through the
+  game's own SpawnOne, so MaxNear and MaxTotal police themselves and a wave that would
+  breach them simply comes up short.
+- **A sapling now costs 50 greydwarf deaths, not 30.** Thirty was chosen when the sapling
+  was passive and thirty was roughly one raid happening to arrive. It does not wait for a
+  raid any more, it makes one, so the number is the length of a fight you started rather
+  than the odds of one finding you. Ten of them around you at a time, twenty-four alive in
+  the area.
 - The trigger range is 48m rather than vanilla's 256m. A nest filling a forest you are
   nowhere near is one thing; a sapling quietly getting itself killed by what it summoned
   while you are two zones away is another.

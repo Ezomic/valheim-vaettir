@@ -38,6 +38,7 @@ namespace Grove
         public static ConfigEntry<bool> Beckon;
         public static ConfigEntry<string> BeckonRoster;
         public static ConfigEntry<string> BeckonInterval;
+        public static ConfigEntry<string> BeckonPack;
         public static ConfigEntry<string> BeckonDistance;
         public static ConfigEntry<float> BeckonRange;
         public static ConfigEntry<int> BeckonMaxNear;
@@ -241,6 +242,18 @@ namespace Grove
                 + "SpawnArea wakes on its own two-second repeat and spawns at most one "
                 + "creature each time, so two is the floor.");
 
+            BeckonPack = config.Bind("Sapling", "BeckonPack", "2-5",
+                "How many arrive together, fewest first: the first number is a seed nobody "
+                + "has fed and the second is one about to open.\n"
+                + "Vanilla's spawner produces exactly one creature per interval, which is a "
+                + "queue rather than a raid - you fight a greydwarf, then wait, then fight "
+                + "another greydwarf. A wave arrives from one direction together and has to "
+                + "be handled as a group, which is the difference between a chore and a "
+                + "fight.\n"
+                + "The caps still apply. Each of a wave is spawned through the game's own "
+                + "SpawnOne, which checks MaxNear and MaxTotal for itself, so a wave that "
+                + "would breach them simply comes up short.");
+
             BeckonDistance = config.Bind("Sapling", "BeckonDistance", "35-60",
                 "How far out they appear, nearest first. They walk in from there.\n"
                 + "A band rather than one radius, and that is the whole of why they arrive "
@@ -258,9 +271,9 @@ namespace Grove
                 + "quietly getting itself killed by what it summoned. Close enough to hear "
                 + "is the intent.");
 
-            BeckonMaxNear = config.Bind("Sapling", "BeckonMaxNear", 6,
+            BeckonMaxNear = config.Bind("Sapling", "BeckonMaxNear", 10,
                 "Most it will have standing around it at once.\n"
-                + "Six is a fight rather than an encounter, and it is deliberately more "
+                + "Ten is a fight rather than an encounter, and it is deliberately more "
                 + "than the sapling survives being ignored for: it has 500 health and about "
                 + "ten brute hits in it, so a raid you wander off halfway through takes the "
                 + "seed with it. That is the trade - the forest comes to you instead of you "
@@ -268,23 +281,23 @@ namespace Grove
                 + "Three was the first number here and it was tuned for a sapling that "
                 + "trickled. Put it back if a raid is more than you wanted.");
 
-            BeckonMaxTotal = config.Bind("Sapling", "BeckonMaxTotal", 16,
+            BeckonMaxTotal = config.Bind("Sapling", "BeckonMaxTotal", 24,
                 "Most it will have alive in the wider area. The ceiling that stops a "
                 + "sapling left alone from being the reason a whole zone is full of "
                 + "greydwarfs - it is a raid on a clearing, and a raid ends.");
 
             // ---------------------------------------------------------- feeding
 
-            BloodNeeded = config.Bind("Sapling", "BloodNeeded", 30f,
-                "How much death it takes. With the default weights that is about thirty "
-                + "greydwarfs, or rather fewer if you go and find a nest - elites are "
-                + "worth four and shamans three.\n"
-                + "Thirty, so that one greydwarf raid arriving on a planted sapling is "
-                + "enough to finish it on its own. Sixty was two or three evenings of "
-                + "going out to look for kills, which made the sapling a chore you "
-                + "topped up. A raid turning up at a grove you planted is the best "
-                + "thing that happens in this whole chain - the forest coming to you "
-                + "instead - and it should be the payoff rather than a fifth of one.");
+            BloodNeeded = config.Bind("Sapling", "BloodNeeded", 50f,
+                "How much death it takes. With the default weights that is about fifty "
+                + "greydwarfs - rather fewer if elites turn up, since they are worth four "
+                + "and shamans three.\n"
+                + "This was thirty, chosen when the sapling was passive and thirty was "
+                + "roughly one raid arriving on its own. It does not wait for a raid any "
+                + "more, it makes one: the seed calls the forest to itself in waves that "
+                + "get heavier as it fills, so the number is now the length of a fight you "
+                + "have started rather than the odds of one finding you. Fifty is a siege "
+                + "you have to hold rather than an errand you complete.");
 
             FeedRange = config.Bind("Sapling", "FeedRange", 24f,
                 "How close a kill must be to count. Only the nearest sapling is fed - "
