@@ -48,6 +48,9 @@
          netstandard 2.1 and this builds against net462, so referencing it fails with
          CS1705. Texture2D.LoadImage is reached by reflection instead - see
          HeartwoodPrefab.LoadIcon. -->
+    <!-- Minimap.AddPin carries an optional PlatformUserID author parameter, and that type
+         lives here. Referenced only so the call compiles; nothing of ours touches it. -->
+    <Reference Include="Splatform"><HintPath>$(ManagedDir)\Splatform.dll</HintPath><Private>false</Private></Reference>
     <Reference Include="BepInEx"><HintPath>$(BepInExCore)\BepInEx.dll</HintPath><Private>false</Private></Reference>
     <Reference Include="0Harmony"><HintPath>$(BepInExCore)\0Harmony.dll</HintPath><Private>false</Private></Reference>
   </ItemGroup>

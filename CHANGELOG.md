@@ -3,6 +3,72 @@
 Notable changes to Vaettir. Format follows [Keep a Changelog](https://keepachangelog.com),
 and the mod uses [semantic versioning](https://semver.org).
 
+## [Unreleased] - 1.1
+
+The sapling half. Four things, and the first of them is the one that matters.
+
+### The seed calls the forest to it
+
+- **A planted sapling now draws greydwarfs to itself**, and calls harder the closer it is
+  to opening. Without this it was entirely passive, and the quest it actually set was "go
+  and find a place greydwarfs already walk through, then stand in it" - a scouting problem
+  rather than a defending one, and the wrong half of what the piece is for. Now the place
+  you chose is the thing that matters, and what it summons is what feeds it: a seed planted
+  in an empty meadow is slow rather than impossible, and one planted beside a real camp is
+  still faster, because the camp counts too.
+- It ramps. The interval falls from 90 seconds at an unfed seed to 30 at one about to open,
+  so the loudest part of the hour is the end of it. A constant rate is a wave you learn to
+  stand in; a rising one can be heard without looking at anything.
+- Ridden on vanilla's own `SpawnArea`, which is the component a greydwarf nest is made of.
+  That buys the near and total caps, the floor-finding, the spawn effect, and - the part
+  that matters most - its own guards: owner only, inside the active area, with a player in
+  range. Nothing happens while you are asleep, which was the sapling's first principle and
+  is the one thing a spawner could most easily have broken.
+- The trigger range is 48m rather than vanilla's 256m. A nest filling a forest you are
+  nowhere near is one thing; a sapling quietly getting itself killed by what it summoned
+  while you are two zones away is another.
+- Three standing around it at once, eight alive in the area. The sapling has 500 health and
+  about ten brute hits in it, so a fourth arriving while you are still on the first three is
+  how an hour is lost.
+- All of it is off with one setting, and every number above is config.
+
+### Everyone defending it can see the count
+
+- **Fixed: only whoever landed the killing blow saw the counter.** `Character.OnDeath` runs
+  on the client that owns the creature and nowhere else, and the message went to
+  `Player.m_localPlayer` - so with two players clearing greydwarfs around one sapling, each
+  of them saw roughly half the kills register and neither could tell whether the other's
+  were counting at all. They always were; only the message was missing. It now goes to every
+  player within the sapling's own feed range, which needs no networking of ours because
+  `Player.Message` already RPCs to a player this client does not own.
+
+### A marker on the map
+
+- **A planted sapling puts a pin on your map**, and takes it off again when it opens or is
+  destroyed. This is the one piece in the mod you are meant to walk away from, and a seed in
+  bare ground is not findable from fifty metres away - losing one to "I know it was around
+  here" costs the same ancient seed as losing it to a brute.
+- Client-side and per player, saved in your own profile like a pin you placed by hand.
+  Nothing about it is networked and a server needs to know nothing about it.
+- Told apart from a zone simply unloading by asking ZDOMan whether the ZDO is really gone.
+  Getting that backwards would unpin every sapling the moment you walked away from it, which
+  is precisely when the pin is the only thing you have.
+
+### The spirit's parting has an effect again
+
+- **The parting effect shipped blank in 1.0** because the name it wanted was a guess about
+  the game and the honest answer was "not confirmed". It is now a list walked in order -
+  `vfx_ghost_death`, then two fallbacks - and the first name that resolves is used, so the
+  wrong ones cost nothing and are skipped in silence. Looked up through PropIndex as well as
+  ZNetScene, because plenty of effect prefabs carry no ZNetView and are invisible to
+  ZNetScene however loaded they are.
+
+### Not in this yet
+
+- The sapling's staged growth and the sowing of a rank of seeds are still on
+  `v1.1-sowing`, cut from 1.0 for their art. Nothing here touches them and merging is a
+  separate job - that branch predates the 1.0 tidy-up and does not fast-forward.
+
 ## [1.0.0] - 2026-08-18
 
 First release. The number sat at 1.0 once before, early, and was taken back down when whole

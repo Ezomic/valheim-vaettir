@@ -130,6 +130,10 @@ namespace Grove
 
             var stages = Visuals(clone, models);
 
+            // After Fortify, so the spawner is put on a piece that can survive what it
+            // calls, and before the Sapling component so a first Update finds it there.
+            Beckon.Attach(clone);
+
             var sapling = clone.GetComponent<Sapling>();
             if (sapling == null) sapling = clone.AddComponent<Sapling>();
             sapling.Stages = stages;

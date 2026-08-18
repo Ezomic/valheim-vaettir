@@ -9,6 +9,8 @@ that sorts your storage.
    needs nothing from this mod.
 2. Plant it with the **cultivator**, in bare ground, somewhere greydwarfs will come.
 3. Kill greydwarfs **within 24 metres of it**. It grows on those deaths and nothing else.
+   You do not have to go looking for them: **a planted seed calls them to it**, and calls
+   harder the closer it is to opening.
    Roughly thirty ordinary ones, and elites count as four and shamans as three, so a "Forest
    is moving" raid arriving on top of it can finish it alone.
 4. **Defend it.** It has real health and can be destroyed, and the seed is not refunded. It
@@ -31,6 +33,8 @@ down gives the heartwood back.
 | Where | Anywhere you like; greydwarfs are the requirement, not the biome |
 | To open it | 30 points of greydwarf death. Greydwarf 1, shaman 3, elite 4, greyling 0 |
 | Range | 24m, and only the nearest sapling is fed by a kill |
+| Calling | Draws greydwarfs within 12m of itself, every 90s falling to 30s as it fills. Three at once, eight in the area, and only while you are within 48m |
+| On the map | Pinned where you planted it, unpinned when it opens or dies |
 | Sapling health | 500, about ten hits from a brute |
 | Yield | One heartwood per spirit, always |
 | Stowing post | 20 fine wood, 20 iron nails, 1 heartwood. 12 slots, 6 across by 2 down |

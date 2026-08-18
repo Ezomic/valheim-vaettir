@@ -155,14 +155,44 @@ namespace Grove
                 Localization.instance.Localize(GetHoverName() + " was destroyed."));
         }
 
+        /// <summary>
+        /// Fires on a destroyed sapling and on an unloaded one alike, and the map pin must
+        /// only come off for the first.
+        ///
+        /// Unity gives no way to tell those apart, so the ZDO is asked instead: a zone
+        /// going quiet leaves the ZDO in ZDOMan, while a sapling that opened or was torn
+        /// down has had it destroyed. Getting this wrong the other way would unpin every
+        /// sapling the moment you walked away from it, which is precisely when the pin is
+        /// the only thing you have.
+        /// </summary>
         private void OnDestroy()
         {
             All.Remove(this);
+
+            if (!Gone()) return;
+
+            SaplingPin.Clear(transform.position, GetHoverName());
+        }
+
+        private bool Gone()
+        {
+            if (_nview == null || ZDOMan.instance == null) return false;
+
+            var zdo = _nview.GetZDO();
+            if (zdo == null) return true;
+
+            return ZDOMan.instance.GetZDO(zdo.m_uid) == null;
         }
 
         private void Start()
         {
             Show();
+
+            // In Start rather than Awake: the Minimap does not exist during the first
+            // frames of a world load, and this simply does nothing then - the sapling gets
+            // its pin the next time its zone loads, which is the frame you could see it
+            // anyway.
+            SaplingPin.Mark(transform.position, GetHoverName());
         }
 
         // ------------------------------------------------------------------ progress
