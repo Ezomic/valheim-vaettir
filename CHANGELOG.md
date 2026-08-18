@@ -3,14 +3,15 @@
 Notable changes to Vaettir. Format follows [Keep a Changelog](https://keepachangelog.com),
 and the mod uses [semantic versioning](https://semver.org).
 
-## [0.6.0] - unreleased
+## [1.0.0] - 2026-08-18
 
-Not 1.0 yet. The number went there when this was one chain played end to end, and then
-features and whole mods arrived on top of it without it moving. Most of those are now cut
-back out and held for later releases, and what is left is close.
+First release. The number sat at 1.0 once before, early, and was taken back down when whole
+mods arrived on top of it without it moving. This is the version that earns it: one chain,
+finished, with everything that was not finished cut out and held on its own branch.
 
-What has been played, in a real world: the seed planted, fed on greydwarf deaths through its
-growth, opened into a spirit, communed with, and the heartwood carried away and dropped.
+The chain, played end to end in a real world: an ancient seed planted, fed on greydwarf
+deaths through its growth, opened into a forest spirit, communed with, and the heartwood
+carried away and built into a stowing post that sorts the chests around it.
 
 ### The sapling
 
@@ -64,6 +65,9 @@ Stow is no longer a separate mod. Its post, its spirit and its sorting ship here
   full-size spirit.
 - One setting still drops the heartwood from the recipe and puts the post back to wood and
   nails, for anyone who wants the sorting without the ritual.
+- The last of the seams from when these were two repos are gone. Icons and PropIndex each
+  existed in two diverged copies, one per old namespace, and the comment justifying that
+  said a copy was better than reaching into a sibling repo. There is no sibling repo.
 
 
 ### Requires
@@ -73,19 +77,18 @@ that matters: the sapling, the spirit, the heartwood and the post are registered
 a client that cannot resolve one throws the object away rather than erroring. A server
 without Vaettir silently destroys everything already standing. Solo, none of that applies.
 
-### What has not been proven
+### Known gaps
 
-Worth reading before treating any of this as done.
+Stated rather than quietly shipped.
 
-- **The sapling's stirring** has never been seen running.
-- **The merge itself.** Stow ships inside this now, and no world has been played with the
-  merged assembly. It was working separately before it moved.
-- **Dedicated servers.** Everything here has been exercised in single-player. Each spirit,
-  sapling and post is driven by whoever owns it, so co-op should be fine, and should is
-  doing real work in that sentence.
-- The spirit's parting has no effect on it yet. The setting names a vanilla particle to play
+- **Dedicated servers are untested.** Everything here has been exercised in single-player.
+  Each spirit, sapling and post is driven by whoever owns it, so co-op should be fine, and
+  should is doing real work in that sentence.
+- **The spirit's parting has no effect on it.** The setting names a vanilla particle to play
   where it stood and ships blank, because a wrong name costs the moment its flourish rather
-  than breaking anything.
+  than breaking anything. It is a flourish that is missing, not a step that fails.
+- **The sapling stirs while it grows**, and that motion is new enough that it has had far
+  less play than the rest of the chain.
 
 ### Held for later releases
 
