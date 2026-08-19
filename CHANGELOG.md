@@ -76,6 +76,19 @@ The sapling half. Four things, and the first of them is the one that matters.
   out to find it, and the price is having to hold the ground.
 - All of it is off with one setting, and every number above is config.
 
+### Black Forest only
+
+- **A seed refuses to go in anywhere but the Black Forest**, and refuses the last five metres
+  before the edge of it too. It is a greydwarf ritual - what it calls and what feeds it both
+  live there - and one that works in the meadows makes the biome a backdrop rather than the
+  reason.
+- The margin is checked on a ring of eight points as well as under the cursor, so the whole
+  circle has to be inside. Planting one step past the treeline and then summoning the forest
+  would put half the fight in the meadow, and a boundary is where a raid is least
+  interesting.
+- Both the biome list and the margin are config, and the refusal says which of the two
+  reasons it was.
+
 ### It will not go in anybody's base
 
 - **A sapling cannot be planted inside a base, and one already standing goes quiet if a base

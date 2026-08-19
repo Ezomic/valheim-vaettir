@@ -74,6 +74,99 @@ namespace Grove
                    != null;
         }
 
+        /// <summary>
+        /// Which biomes will take a sapling at all, parsed once and re-parsed if the setting
+        /// is edited in game.
+        /// </summary>
+        private static Heightmap.Biome _allowed;
+        private static string _allowedRaw;
+
+        private static Heightmap.Biome Allowed()
+        {
+            var raw = GroveConfig.SaplingBiomes.Value ?? "";
+            if (_allowedRaw == raw) return _allowed;
+
+            _allowedRaw = raw;
+            _allowed = (Heightmap.Biome)0;
+
+            foreach (var entry in raw.Split(','))
+            {
+                var name = entry.Trim();
+                if (name.Length == 0) continue;
+
+                try
+                {
+                    _allowed |= (Heightmap.Biome)System.Enum.Parse(
+                        typeof(Heightmap.Biome), name, true);
+                }
+                catch (System.Exception)
+                {
+                    // Named singly rather than parsing the whole list in one call, so one
+                    // typo costs its own biome instead of all of them.
+                    GrovePlugin.LogOnce(name + " is not one of Valheim's biome names.");
+                }
+            }
+
+            return _allowed;
+        }
+
+        /// <summary>
+        /// Whether this spot is far enough inside a biome that will have it.
+        ///
+        /// Sampled on a ring as well as at the point, so the seed has to be a real margin
+        /// inside its own wood rather than balanced on the boundary. Standing one step into
+        /// the forest and planting a thing that summons the forest is exactly the case worth
+        /// refusing: the fight would happen half in the meadow, and the border between two
+        /// biomes is where a raid is least interesting.
+        ///
+        /// Eight points and the centre. Fewer misses a notch of meadow poking in, and the
+        /// whole test runs once a frame while the cultivator is out, which is cheap enough
+        /// at nine heightmap lookups but not at ninety.
+        /// </summary>
+        internal static bool OutsideBiome(Vector3 at)
+        {
+            var allowed = Allowed();
+            if (allowed == 0) return false;
+
+            if ((Heightmap.FindBiome(at) & allowed) == 0) return true;
+
+            var margin = Mathf.Max(0f, GroveConfig.BiomeMargin.Value);
+            if (margin <= 0f) return false;
+
+            for (var i = 0; i < 8; i++)
+            {
+                var angle = i * Mathf.PI * 2f / 8f;
+                var edge = at + new Vector3(Mathf.Cos(angle) * margin, 0f,
+                                            Mathf.Sin(angle) * margin);
+
+                if ((Heightmap.FindBiome(edge) & allowed) == 0) return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Whether this spot refuses a sapling, and why. One place, so the ghost and the
+        /// message can never disagree about the reason.
+        /// </summary>
+        internal static bool Refused(Vector3 at, out string why)
+        {
+            if (InsideBase(at))
+            {
+                why = GroveConfig.BaseRefusal.Value;
+                return true;
+            }
+
+            if (OutsideBiome(at))
+            {
+                why = GroveConfig.BiomeRefusal.Value;
+                return true;
+            }
+
+            why = null;
+            return false;
+        }
+
         /// <summary>Whether the piece being placed is the ancient sapling. The placement
         /// ghost is a clone, so Unity has appended "(Clone)" to its name.</summary>
         private static bool IsSapling(Piece piece)
@@ -115,7 +208,8 @@ namespace Grove
 
             bool have;
             var at = GhostAt(__instance, out have);
-            if (!have || !InsideBase(at)) return;
+            string why;
+            if (!have || !Refused(at, out why)) return;
 
             StatusRef(__instance) = Player.PlacementStatus.Invalid;
             if (SetGhostValid != null) SetGhostValid(__instance, false);
@@ -139,7 +233,8 @@ namespace Grove
 
             bool have;
             var at = GhostAt(__instance, out have);
-            if (!have || !InsideBase(at)) return true;
+            string why;
+            if (!have || !Refused(at, out why)) return true;
 
             // Throttled: the place button repeats while held, and vanilla itself acts on a
             // press every 0.2s, so an unguarded message is a wall of the same line.
@@ -147,7 +242,7 @@ namespace Grove
             {
                 _lastSaid = Time.time;
                 __instance.Message(MessageHud.MessageType.Center,
-                    Localization.instance.Localize(GroveConfig.BaseRefusal.Value));
+                    Localization.instance.Localize(why));
             }
 
             __result = false;

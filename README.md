@@ -7,7 +7,8 @@ that sorts your storage.
 
 1. Kill greydwarf brutes and shamans until one drops an **ancient seed**. Vanilla loot; it
    needs nothing from this mod.
-2. Plant it with the **cultivator**, in bare ground, somewhere greydwarfs will come.
+2. Plant it with the **cultivator**, in bare ground, well inside the Black Forest and
+   away from any base.
 3. Kill greydwarfs **within 24 metres of it**. It grows on those deaths and nothing else.
    You do not have to go looking for them: **a planted seed calls them to it** in waves,
    which get bigger and closer together the nearer it is to opening.
@@ -82,6 +83,11 @@ and that is what the sapling's health is for: you are not looking for a fight, y
 holding a place, and a raid you walk away from halfway through takes the seed with it. It
 only ever calls while a player is within 48 metres, so nothing happens while you are away.
 Turn it off with `Beckon` and the sapling goes back to waiting for kills you bring it.
+
+**Black Forest only, and not on the edge of it.** The seed is a greydwarf ritual - what it
+calls and what feeds it both live there - so it refuses anywhere else, and refuses the last
+five metres before the boundary as well. Planting one step inside the treeline would put half
+the fight in the meadow.
 
 **It will not go in anybody's base.** A ward already refuses it, because it is an ordinary
 piece - and beyond that it cannot be planted inside the area a workbench or fire radiates,

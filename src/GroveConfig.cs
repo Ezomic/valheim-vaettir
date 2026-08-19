@@ -43,6 +43,9 @@ namespace Grove
         public static ConfigEntry<bool> NotInBases;
         public static ConfigEntry<float> BaseMargin;
         public static ConfigEntry<string> BaseRefusal;
+        public static ConfigEntry<string> SaplingBiomes;
+        public static ConfigEntry<float> BiomeMargin;
+        public static ConfigEntry<string> BiomeRefusal;
         public static ConfigEntry<string> BeckonDistance;
         public static ConfigEntry<float> BeckonRange;
         public static ConfigEntry<float> BeckonArea;
@@ -258,6 +261,26 @@ namespace Grove
                 + "The caps still apply. Each of a wave is spawned through the game's own "
                 + "SpawnOne, which checks MaxNear and MaxTotal for itself, so a wave that "
                 + "would breach them simply comes up short.");
+
+            SaplingBiomes = config.Bind("Sapling", "SaplingBiomes", "BlackForest",
+                "Which biomes will take an ancient seed at all, comma separated, using "
+                + "Valheim's own biome names. Blank for anywhere.\n"
+                + "Black Forest alone by default. It is a greydwarf ritual - what it calls "
+                + "and what feeds it both live there - and a seed that works in the meadows "
+                + "makes the biome a backdrop rather than the reason.");
+
+            BiomeMargin = config.Bind("Sapling", "BiomeMargin", 5f,
+                "How far inside its biome the seed has to be, in metres. Checked on a ring "
+                + "as well as under the cursor, so the whole ring has to be in.\n"
+                + "Standing one step into the forest and planting a thing that summons the "
+                + "forest is the case this refuses: the fight would happen half in the "
+                + "meadow, and a boundary is where a raid is least interesting. Nought "
+                + "checks only the spot itself.");
+
+            BiomeRefusal = config.Bind("Sapling", "BiomeRefusal",
+                "Too far from its own wood to grow.",
+                "Said when a seed is refused for being outside its biome, or too near the "
+                + "edge of it.");
 
             NotInBases = config.Bind("Sapling", "NotInBases", true,
                 "A sapling cannot be planted in anybody's base, and one already standing "
