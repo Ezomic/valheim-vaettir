@@ -212,6 +212,47 @@ namespace Grove
 
                 ai.SetHuntPlayer(true);
             }
+
+            Crowded(roster, here);
+        }
+
+        /// <summary>
+        /// Says so when the caps, rather than anything of ours, are what is keeping it quiet.
+        ///
+        /// This is the third way the calling could fail in silence, and it is the one that
+        /// actually happened. SpawnArea.GetInstances counts by prefab name, so wild
+        /// greydwarfs that wandered in count against MaxNear and MaxTotal exactly as if the
+        /// sapling had called them - which is defensible on its own, and indistinguishable
+        /// from a broken mod when it stops everything.
+        /// </summary>
+        private void Crowded(HashSet<string> roster, Vector3 here)
+        {
+            if (_area == null) return;
+
+            int near = 0, total = 0;
+
+            foreach (var ai in BaseAI.BaseAIInstances)
+            {
+                if (ai == null) continue;
+                if (!roster.Contains(Utils.GetPrefabName(ai.gameObject))) continue;
+
+                var character = ai.GetComponent<Character>();
+                if (character == null || character.IsTamed()) continue;
+
+                var away = Utils.DistanceXZ(ai.transform.position, here);
+                if (away < _area.m_nearRadius) near++;
+                if (away < _area.m_farRadius) total++;
+            }
+
+            if (near < _area.m_maxNear && total < _area.m_maxTotal) return;
+
+            GrovePlugin.LogOnce("A sapling is not calling because the area is already full: "
+                                + near + "/" + _area.m_maxNear + " within "
+                                + _area.m_nearRadius.ToString("0") + "m and "
+                                + total + "/" + _area.m_maxTotal + " within "
+                                + _area.m_farRadius.ToString("0") + "m. Greydwarfs already "
+                                + "in the wood count too. Raise BeckonMaxNear and "
+                                + "BeckonMaxTotal, or clear the area.");
         }
 
         /// <summary>The roster's prefab names, resolved once. Compared by name because a
@@ -371,7 +412,18 @@ namespace Grove
             // m_maxNear is the cap that matters, and if it only counted the clearing then
             // six fighting you plus ten still running would all be legal at once.
             area.m_nearRadius = far + 10f;
-            area.m_farRadius = 1000f;
+
+            // Not 1000, which is what vanilla's own field defaults to and what this had.
+            // MaxTotal is counted inside this radius by SpawnArea.GetInstances, and that
+            // count matches creatures by prefab name - so every wild greydwarf in the loaded
+            // world counted towards our cap. In a Black Forest the twenty-four slots were
+            // full before the seed was even planted, SpawnOne refused on its first line, and
+            // the sapling called nothing at all, for ever, with nothing logged. Found by
+            // playing: "my current planted ancient seed is not spawning anything".
+            //
+            // A neighbourhood instead. The cap now means "this clearing is already crowded"
+            // rather than "this half of the map contains greydwarfs".
+            area.m_farRadius = Mathf.Max(area.m_nearRadius + 10f, GroveConfig.BeckonArea.Value);
 
             area.m_maxNear = Mathf.Max(1, GroveConfig.BeckonMaxNear.Value);
             area.m_maxTotal = Mathf.Max(area.m_maxNear, GroveConfig.BeckonMaxTotal.Value);
@@ -507,6 +559,15 @@ namespace Grove
 
             if (Wilderness.InsideBase(__instance.transform.position))
             {
+                // Said once per sapling, because this is indistinguishable from the mod
+                // being broken: nothing spawns, nothing is logged, and the seed sits there
+                // filling up on whatever you happen to kill. A base grew around it, or it
+                // was planted inside one before the rule existed.
+                GrovePlugin.LogOnce("A sapling at " + __instance.transform.position
+                                    + " is inside a base, so it is not calling anything. "
+                                    + "Move it, take the workbench or fire away, or set "
+                                    + "NotInBases to false.");
+
                 __result = false;
                 return false;
             }
@@ -574,6 +635,9 @@ namespace Grove
     {
         private const int Attempts = 12;
 
+        /// <summary>Consecutive searches that came up empty, for the complaint below.</summary>
+        private static int _failures;
+
         [HarmonyPrefix]
         private static bool Ring(SpawnArea __instance, ref Vector3 point, ref bool __result)
         {
@@ -606,13 +670,21 @@ namespace Grove
 
                 spot.y = height + 0.1f;
                 point = spot;
+                _failures = 0;
                 __result = true;
                 return false;
             }
 
-            // Failing is normal and harmless: SpawnArea simply tries again in two seconds.
-            // A band that lands in water or on a cliff the whole way round is a bad place
-            // to have planted, not a bug.
+            // One failure is normal and harmless - SpawnArea tries again in two seconds -
+            // but failing every time is a sapling that will never call anything, and from
+            // the outside that looks exactly like the mod not working. A band that lands in
+            // water or on a cliff the whole way round is a bad place to have planted, and
+            // saying so is the difference between moving it and filing a bug.
+            if (++_failures == 20)
+                GrovePlugin.LogOnce("A sapling at " + centre + " has found nowhere to put "
+                                    + "anything for 20 tries. The ring at BeckonDistance is "
+                                    + "probably water or cliff the whole way round.");
+
             point = Vector3.zero;
             __result = false;
             return false;

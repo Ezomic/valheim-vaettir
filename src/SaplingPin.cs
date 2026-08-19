@@ -58,6 +58,15 @@ namespace Grove
 
         private static float _lastSweep = -99f;
 
+        /// <summary>Pins that looked stale on the previous sweep, keyed by rounded position.
+        /// A pin has to look stale twice running before it is taken off.</summary>
+        private static readonly HashSet<string> _missing = new HashSet<string>();
+
+        private static string Key(Vector3 at)
+        {
+            return Mathf.RoundToInt(at.x) + ":" + Mathf.RoundToInt(at.z);
+        }
+
         /// <summary>
         /// Puts a marker on this sapling if there is not one there already.
         ///
@@ -113,8 +122,17 @@ namespace Grove
                 // the pin is the only thing they have.
                 if (!zones.IsZoneLoaded(pin.m_pos)) continue;
 
-                if (Standing(pin.m_pos)) continue;
+                if (Standing(pin.m_pos)) { _missing.Remove(Key(pin.m_pos)); continue; }
 
+                // Two strikes, a second apart. A zone reports itself loaded a moment before
+                // the objects in it have been instantiated, so a single sweep landing in
+                // that window finds the pin with no sapling under it and removes one that
+                // is about to exist - the log showed an Unpinned immediately followed by a
+                // Pinned at the same spot on every world load.
+                var key = Key(pin.m_pos);
+                if (!_missing.Contains(key)) { _missing.Add(key); continue; }
+
+                _missing.Remove(key);
                 map.RemovePin(pin);
 
                 if (GroveConfig.Verbose.Value)

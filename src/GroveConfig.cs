@@ -45,6 +45,7 @@ namespace Grove
         public static ConfigEntry<string> BaseRefusal;
         public static ConfigEntry<string> BeckonDistance;
         public static ConfigEntry<float> BeckonRange;
+        public static ConfigEntry<float> BeckonArea;
         public static ConfigEntry<int> BeckonMaxNear;
         public static ConfigEntry<int> BeckonMaxTotal;
 
@@ -315,6 +316,15 @@ namespace Grove
                 + "which would have a sapling filling a forest you are nowhere near - and "
                 + "quietly getting itself killed by what it summoned. Close enough to hear "
                 + "is the intent.");
+
+            BeckonArea = config.Bind("Sapling", "BeckonArea", 96f,
+                "How wide the neighbourhood is that BeckonMaxTotal counts inside.\n"
+                + "This was effectively the whole loaded world, and it broke the feature "
+                + "outright: the count matches creatures by prefab name, so every wild "
+                + "greydwarf for a kilometre filled the cap and a sapling in the Black "
+                + "Forest called nothing at all, silently and for ever.\n"
+                + "The cap should mean this clearing is already crowded, not this half of "
+                + "the map contains greydwarfs.");
 
             BeckonMaxNear = config.Bind("Sapling", "BeckonMaxNear", 10,
                 "Most it will have standing around it at once.\n"
