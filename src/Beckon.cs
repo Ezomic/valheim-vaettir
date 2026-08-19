@@ -487,13 +487,32 @@ namespace Grove
 
         private static bool _inWave;
 
+        /// <summary>
+        /// Picks the bearing for the wave, and refuses it outright inside a base.
+        ///
+        /// The refusal lives here rather than at planting alone, because a base can grow
+        /// around a sapling that was planted in open ground - honestly, by somebody who
+        /// built a workbench nearby, or deliberately, by someone hoping to keep a siege
+        /// running next to a home. Either way the answer is the same: the seed stays where
+        /// it is and stops calling. Nothing is destroyed and nobody loses a seed.
+        ///
+        /// Returning false with __result false skips vanilla's spawn as well as our wave,
+        /// since the postfix only runs on a successful one.
+        /// </summary>
         [HarmonyPrefix]
-        private static void Direction(SpawnArea __instance)
+        private static bool Direction(SpawnArea __instance, ref bool __result)
         {
-            if (_inWave || __instance == null) return;
-            if (__instance.GetComponent<Beckon>() == null) return;
+            if (_inWave || __instance == null) return true;
+            if (__instance.GetComponent<Beckon>() == null) return true;
+
+            if (Wilderness.InsideBase(__instance.transform.position))
+            {
+                __result = false;
+                return false;
+            }
 
             Beckon.WaveAngle = Random.Range(0f, 360f);
+            return true;
         }
 
         [HarmonyPostfix]

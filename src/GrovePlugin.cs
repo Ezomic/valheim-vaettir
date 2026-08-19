@@ -119,6 +119,10 @@ namespace Grove
             _harmony.PatchAll(typeof(BeckonSpawnPoint));
             _harmony.PatchAll(typeof(BeckonWave));
 
+            // Keeps the sapling out of people's homes. Without it applying, the ghost stays
+            // green over a longhouse and the seed goes in.
+            _harmony.PatchAll(typeof(Wilderness));
+
             // Everything this mod puts into a world, declared once and kept there by the
             // suite's shared registry. Prefabs re-registers all four into every world that
             // loads and asks the live scene each time rather than trusting a flag of ours,

@@ -83,6 +83,13 @@ holding a place, and a raid you walk away from halfway through takes the seed wi
 only ever calls while a player is within 48 metres, so nothing happens while you are away.
 Turn it off with `Beckon` and the sapling goes back to waiting for kills you bring it.
 
+**It will not go in anybody's base.** A ward already refuses it, because it is an ordinary
+piece - and beyond that it cannot be planted inside the area a workbench or fire radiates,
+which is the same test the game uses to keep creatures from spawning in your house. One
+already standing goes quiet if a base grows around it. That matters because of what the seed
+does now: a dozen of these around a stranger's longhouse would be a siege engine, and the
+counter-play to one planted next to you is to put a workbench down rather than to fight it.
+
 **It goes on your map** when you plant it, and the pin comes off once there is no longer a
 sapling standing there. That pin is yours alone and is saved in your own profile.
 

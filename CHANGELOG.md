@@ -76,6 +76,27 @@ The sapling half. Four things, and the first of them is the one that matters.
   out to find it, and the price is having to hold the ground.
 - All of it is off with one setting, and every number above is config.
 
+### It will not go in anybody's base
+
+- **A sapling cannot be planted inside a base, and one already standing goes quiet if a base
+  grows around it.** This is the price of the seed calling: passive, one planted in someone
+  else's home was rude; summoning waves of greydwarfs at it is a weapon, and a dozen around a
+  stranger's longhouse is the obvious grief on a public server.
+- A ward already refused it and always did - the sapling is an ordinary piece, so PrivateArea
+  turns it down like anything else. The gap was unwarded bases, which is most of them.
+- Filled with the game's own EffectArea.PlayerBase, which is what a workbench or fire
+  radiates and the same test vanilla uses to keep creatures from spawning in your house. So
+  the counter-play to a sapling planted next to you is to put a workbench down rather than to
+  fight it, and "is this someone's home" stays the game's question rather than a guess of
+  ours.
+- Any base, including your own. Working out whose it is means reading Piece.m_creator off
+  whatever is nearby, which is more code for a worse answer - it would still stop you at a
+  friend's base in co-op - and a wilderness ritual has no business in your own hall either.
+- The refusal says which reason. Vanilla would show "invalid placement", which is true and
+  useless to somebody standing in their own garden.
+- Client-side, honestly. A modded client could ignore it; what makes it stick on a server is
+  Core's version gate.
+
 ### Everyone defending it can see the count
 
 - **Fixed: only whoever landed the killing blow saw the counter.** `Character.OnDeath` runs

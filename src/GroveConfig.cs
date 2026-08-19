@@ -40,6 +40,9 @@ namespace Grove
         public static ConfigEntry<string> BeckonInterval;
         public static ConfigEntry<string> BeckonPack;
         public static ConfigEntry<string> BeckonMessage;
+        public static ConfigEntry<bool> NotInBases;
+        public static ConfigEntry<float> BaseMargin;
+        public static ConfigEntry<string> BaseRefusal;
         public static ConfigEntry<string> BeckonDistance;
         public static ConfigEntry<float> BeckonRange;
         public static ConfigEntry<int> BeckonMaxNear;
@@ -254,6 +257,36 @@ namespace Grove
                 + "The caps still apply. Each of a wave is spawned through the game's own "
                 + "SpawnOne, which checks MaxNear and MaxTotal for itself, so a wave that "
                 + "would breach them simply comes up short.");
+
+            NotInBases = config.Bind("Sapling", "NotInBases", true,
+                "A sapling cannot be planted in anybody's base, and one already standing "
+                + "goes quiet if a base grows around it.\n"
+                + "This is the anti-grief. A passive sapling planted in someone else's "
+                + "home was rude; one that summons waves of greydwarfs at it is a weapon, "
+                + "and planting a dozen around a stranger's longhouse is the obvious grief "
+                + "on a public server.\n"
+                + "A base is the game's own EffectArea.PlayerBase - what a workbench or a "
+                + "fire radiates, and the same test vanilla uses to keep creatures from "
+                + "spawning in your house. So the counter-play to a sapling planted next to "
+                + "you is to put a workbench down rather than to fight it.\n"
+                + "Any base, including your own. Working out whose it is would mean reading "
+                + "Piece.m_creator off whatever happens to be nearby, which is more code for "
+                + "a worse answer - it would still stop you at a friend's base in co-op - "
+                + "and a wilderness ritual has no business in your own hall either.\n"
+                + "A ward already refuses the sapling with no help from this: it is an "
+                + "ordinary piece, so PrivateArea turns it down like anything else.");
+
+            BaseMargin = config.Bind("Sapling", "BaseMargin", 8f,
+                "Extra metres on top of the game's own base radius. Nought means exactly "
+                + "the area a workbench already covers; larger pushes saplings further out "
+                + "than the ground a base actually protects.");
+
+            BaseRefusal = config.Bind("Sapling", "BaseRefusal",
+                "Too close to a hearth. This belongs in the wild.",
+                "Said when a sapling is refused for being in a base. Vanilla would say "
+                + "'invalid placement', which is true and useless - somebody standing in "
+                + "their own garden needs to be told it is the workbench, because that is "
+                + "also how they defend against one.");
 
             BeckonMessage = config.Bind("Sapling", "BeckonMessage",
                 "The forest is enraged.",
