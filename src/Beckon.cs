@@ -158,6 +158,14 @@ namespace Grove
                                Localization.instance.Localize(line));
             }
 
+            // Logged as well as shown, and not behind Verbose. A centre-screen message is
+            // the one kind of output that can fire perfectly and still be missed - it shares
+            // that slot with the game's own placement and pickup lines, and it is gone in
+            // three seconds. Without this line "I did not see it" and "it never ran" are the
+            // same observation, and they need completely different fixes.
+            GrovePlugin.Log.LogInfo("Roused: told " + Nearby.Count + " player(s) at "
+                                    + transform.position + ".");
+
             Nearby.Clear();
         }
 
@@ -501,6 +509,11 @@ namespace Grove
             beckon.Rouse();
 
             var wanted = Beckon.Pack(beckon.Progress) - 1;
+
+            if (GroveConfig.Verbose.Value)
+                GrovePlugin.Log.LogInfo("Wave of " + (wanted + 1) + " at progress "
+                                        + beckon.Progress.ToString("0.00") + ".");
+
             if (wanted <= 0 || SpawnOne == null) return;
 
             _inWave = true;
