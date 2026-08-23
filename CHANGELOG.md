@@ -3,7 +3,7 @@
 Notable changes to Vaettir. Format follows [Keep a Changelog](https://keepachangelog.com),
 and the mod uses [semantic versioning](https://semver.org).
 
-## [Unreleased] - 1.1
+## [1.1.0] - 2026-08-23
 
 The sapling half. Four things, and the first of them is the one that matters.
 
