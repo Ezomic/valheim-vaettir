@@ -363,18 +363,53 @@ namespace Grove
         /// </summary>
         private void Part(ZNetView nview)
         {
-            var effect = GroveConfig.PartingEffect.Value;
-            if (!string.IsNullOrEmpty(effect) && ZNetScene.instance != null)
-            {
-                var prefab = ZNetScene.instance.GetPrefab(effect);
-                if (prefab != null)
-                    Instantiate(prefab, transform.position, Quaternion.identity);
-                else
-                    GrovePlugin.LogOnce("Parting effect '" + effect + "' does not exist.");
-            }
+            Flourish();
 
             nview.ClaimOwnership();
             nview.Destroy();
+        }
+
+        /// <summary>
+        /// The one effect the parting gets, from the first name in the list that exists.
+        ///
+        /// A list walked in order rather than a single name, and cached once it lands. The
+        /// setting used to be one name and shipped blank for the whole of 1.0, because
+        /// which effect prefab is actually loaded is a question for the game and the only
+        /// honest answer to it was "not yet confirmed" - so a guess would have cost the
+        /// moment its flourish with a warning in the log that nobody reads. Several names
+        /// makes the guess cheap: the wrong ones are skipped in silence and the first
+        /// right one is used.
+        ///
+        /// PropIndex as well as ZNetScene, because plenty of effect prefabs carry no
+        /// ZNetView at all - they are spawned locally and never networked - and are
+        /// therefore invisible to ZNetScene however loaded they are. Skins already learned
+        /// this the same way.
+        /// </summary>
+        private void Flourish()
+        {
+            var names = (GroveConfig.PartingEffect.Value ?? "").Split(',');
+
+            foreach (var entry in names)
+            {
+                var name = entry.Trim();
+                if (name.Length == 0) continue;
+
+                var prefab = ZNetScene.instance != null
+                    ? ZNetScene.instance.GetPrefab(name)
+                    : null;
+
+                if (prefab == null) prefab = PropIndex.Find(name);
+                if (prefab == null) continue;
+
+                Instantiate(prefab, transform.position, Quaternion.identity);
+                GrovePlugin.LogOnce("Parting effect: " + name + ".");
+                return;
+            }
+
+            // Only worth saying when the setting was not deliberately emptied.
+            if (!string.IsNullOrWhiteSpace(GroveConfig.PartingEffect.Value))
+                GrovePlugin.LogOnce("None of the parting effects named in config exist in "
+                                    + "this world, so the spirit goes without one.");
         }
     }
 }

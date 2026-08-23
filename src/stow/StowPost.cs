@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using HarmonyLib;
 using UnityEngine;
 using Grove;
+using Ezomic.Shared;
 
 namespace Stow
 {
@@ -26,36 +27,10 @@ namespace Stow
 
         private static readonly List<StowPost> All = new List<StowPost>();
 
-        private static GameObject _prefab;
-        private static GameObject _holder;
-
         private Piece _piece;
         private Container _container;
         private CarryRun _run;
         private SpiritView _view;
-
-        /// <summary>
-        /// Registered with the ZNetScene that exists *now*, not "we built a prefab once".
-        ///
-        /// This distinction destroyed a post. Loading a second world - which includes
-        /// logging out to the menu and back in - tears down ZNetScene and builds a new
-        /// one, and the new one's m_namedPrefabs is rebuilt in Awake from its own
-        /// serialised list. Our prefab was added to the *old* instance. Asking a static
-        /// field whether we are ready then answers yes, Register early-returns, the new
-        /// scene has never heard of stow_post, and ZNetScene discards every ZDO whose
-        /// prefab name it cannot resolve - silently, and permanently.
-        ///
-        /// Vaettir's SpiritPrefab.Ready asks the live scene for exactly this reason.
-        /// Anything cached across a world load has to be re-checked against the world.
-        /// </summary>
-        public static bool Ready
-        {
-            get
-            {
-                return ZNetScene.instance != null
-                       && ZNetScene.instance.GetPrefab(Name) != null;
-            }
-        }
 
         public Container Container { get { return _container; } }
 
@@ -182,33 +157,14 @@ namespace Stow
         // ------------------------------------------------------------------ building
 
         /// <summary>
-        /// Idempotent, and safe to call every frame until it takes - where "it takes"
-        /// means *against the current world*, not once per process.
+        /// Builds the post once. Registering it - into the scene, into the hammer's build
+        /// menu, and into both again on every world load - is Ezomic.Shared.Prefabs' job.
         ///
-        /// The early-out deliberately does not consult any static flag. Both AddToScene
-        /// and AddToHammer check the live object they are about to write to, so calling
-        /// them again on a world that already has the post costs two dictionary lookups
-        /// and does nothing. Guarding them with a bool instead is what lost a post: the
-        /// second world of a session was never told about the prefab, and discarded it.
+        /// That split is not tidiness. This piece is the reason the shared file exists: a
+        /// static "already registered" flag survived a world load here, the second world of
+        /// a session was never told about stow_post, and ZNetScene discarded every ZDO whose
+        /// prefab name it could not resolve. Silently, and permanently, on 2026-08-16.
         /// </summary>
-        public static bool Register()
-        {
-            if (!StowConfig.PostEnabled.Value) return true;
-
-            if (ZNetScene.instance == null || ObjectDB.instance == null) return false;
-            if (Ready && InHammer()) return true;
-
-            if (_prefab == null)
-            {
-                _prefab = Build();
-                if (_prefab == null) return false;
-            }
-
-            AddToScene();
-            AddToHammer();
-            return Ready;
-        }
-
         private static GameObject Donor()
         {
             var scene = ZNetScene.instance;
@@ -236,26 +192,14 @@ namespace Stow
         /// avoid. Here the inventory *is* the feature, so the donor is left almost intact
         /// and only its appearance and its label change.
         /// </summary>
-        private static GameObject Build()
+        internal static GameObject Build()
         {
             var source = Donor();
             if (source == null) return null;
 
-            if (_holder == null)
-            {
-                _holder = new GameObject("StowPostHolder");
-                _holder.SetActive(false);
-                Object.DontDestroyOnLoad(_holder);
-            }
+            var clone = Prefabs.Clone(source, Name);
+            if (clone == null) return null;
 
-            var previous = ZNetView.m_forceDisableInit;
-            ZNetView.m_forceDisableInit = true;
-
-            GameObject clone;
-            try { clone = Object.Instantiate(source, _holder.transform); }
-            finally { ZNetView.m_forceDisableInit = previous; }
-
-            clone.name = Name;
             clone.transform.localRotation = Quaternion.identity;
 
             var container = clone.GetComponent<Container>();
@@ -340,64 +284,5 @@ namespace Stow
             return list.ToArray();
         }
 
-        private static void AddToScene()
-        {
-            var scene = ZNetScene.instance;
-            if (_prefab == null || scene.GetPrefab(Name) != null) return;
-
-            if (!scene.m_prefabs.Contains(_prefab)) scene.m_prefabs.Add(_prefab);
-
-            try
-            {
-                var named = (Dictionary<int, GameObject>)
-                    AccessTools.Field(typeof(ZNetScene), "m_namedPrefabs").GetValue(scene);
-                named[Name.GetStableHashCode()] = _prefab;
-            }
-            catch (System.Exception e)
-            {
-                StowRuntime.Log.LogError("Could not register " + Name + ": " + e.Message);
-            }
-        }
-
-        /// <summary>
-        /// The hammer's piece table, for the ObjectDB that exists now.
-        ///
-        /// Asked of the table rather than remembered in a bool, for the same reason
-        /// Ready asks the scene: ObjectDB is rebuilt per world, and a Hammer from the
-        /// last one is a different object with a different list. Remembering meant the
-        /// post left the build menu on the second world of a session.
-        /// </summary>
-        private static bool InHammer()
-        {
-            var table = HammerPieces();
-            return table != null && _prefab != null && table.m_pieces.Contains(_prefab);
-        }
-
-        private static PieceTable HammerPieces()
-        {
-            if (ObjectDB.instance == null) return null;
-
-            var hammer = ObjectDB.instance.GetItemPrefab("Hammer");
-            var drop = hammer != null ? hammer.GetComponent<ItemDrop>() : null;
-            if (drop == null || drop.m_itemData == null || drop.m_itemData.m_shared == null)
-                return null;
-
-            var table = drop.m_itemData.m_shared.m_buildPieces;
-            return table != null && table.m_pieces != null ? table : null;
-        }
-
-        private static void AddToHammer()
-        {
-            if (_prefab == null) return;
-
-            var table = HammerPieces();
-            if (table == null || table.m_pieces.Contains(_prefab)) return;
-
-            table.m_pieces.Add(_prefab);
-
-            // Logged on the add rather than on the call, or a per-frame retry that is
-            // already satisfied would write a line every frame.
-            StowRuntime.Log.LogInfo("Stowing post added to the hammer.");
-        }
     }
 }

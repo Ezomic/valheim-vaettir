@@ -48,6 +48,9 @@
          netstandard 2.1 and this builds against net462, so referencing it fails with
          CS1705. Texture2D.LoadImage is reached by reflection instead - see
          HeartwoodPrefab.LoadIcon. -->
+    <!-- Minimap.AddPin carries an optional PlatformUserID author parameter, and that type
+         lives here. Referenced only so the call compiles; nothing of ours touches it. -->
+    <Reference Include="Splatform"><HintPath>$(ManagedDir)\Splatform.dll</HintPath><Private>false</Private></Reference>
     <Reference Include="BepInEx"><HintPath>$(BepInExCore)\BepInEx.dll</HintPath><Private>false</Private></Reference>
     <Reference Include="0Harmony"><HintPath>$(BepInExCore)\0Harmony.dll</HintPath><Private>false</Private></Reference>
   </ItemGroup>
@@ -59,6 +62,14 @@
     <ProjectReference Include="..\core\Core.csproj">
       <Private>false</Private>
     </ProjectReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Shared source, not a reference. Prefabs.cs is the suite's runtime prefab registry and
+         lives in the core repo, but it is deliberately not in EzomicCore.dll: Core is a soft
+         dependency, and a mod that could not register its prefab would load and do nothing at
+         all. Linking the file keeps one copy of the code without making Core mandatory. -->
+    <Compile Include="..\core\shared\Prefabs.cs" Link="shared\Prefabs.cs" />
   </ItemGroup>
 
   <Target Name="Deploy" AfterTargets="Build" Condition="Exists('$(ProfileDir)\BepInEx\plugins')">

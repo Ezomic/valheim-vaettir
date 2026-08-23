@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.IO;
 using HarmonyLib;
 using UnityEngine;
+using Ezomic.Shared;
 
 namespace Grove
 {
@@ -39,38 +40,17 @@ namespace Grove
         private const string Mesh = "grove_heartwood.obj";
         private const string Icon = "grove_heartwood_icon.png";
 
-        private static GameObject _prefab;
-        private static GameObject _holder;
-
-        public static bool Ready
-        {
-            get
-            {
-                return ObjectDB.instance != null
-                       && ObjectDB.instance.GetItemPrefab(Name) != null;
-            }
-        }
-
-        /// <summary>Idempotent, and safe to call every frame until it takes.</summary>
-        public static bool Register()
-        {
-            if (Ready) return true;
-            if (ZNetScene.instance == null || ObjectDB.instance == null) return false;
-
-            if (_prefab == null)
-            {
-                _prefab = Build();
-                if (_prefab == null) return false;
-            }
-
-            AddToObjectDB();
-            AddToScene();
-            return Ready;
-        }
-
+        /// <summary>
+        /// Builds the heartwood once. Everything that happens to it afterwards - the scene,
+        /// ObjectDB, and being put back into both on every world load - belongs to
+        /// Ezomic.Shared.Prefabs, which GrovePlugin hands this method to in Awake.
+        ///
+        /// Called with a scene and an item database in existence, so it may look donors and
+        /// materials up freely.
+        /// </summary>
         // ------------------------------------------------------------------ building
 
-        private static GameObject Build()
+        internal static GameObject Build()
         {
             var directory = Path.GetDirectoryName(typeof(HeartwoodPrefab).Assembly.Location);
 
@@ -85,21 +65,12 @@ namespace Grove
             var source = Donor();
             if (source == null) return null;
 
-            if (_holder == null)
-            {
-                _holder = new GameObject("GroveHeartwoodHolder");
-                _holder.SetActive(false);
-                Object.DontDestroyOnLoad(_holder);
-            }
+            // The hidden holder and the init suppression both come from Prefabs now. The
+            // suppression is the load-bearing half: a clone taken under an active parent runs
+            // its ZNetView's Awake and tries to network-register itself while half-built.
+            var clone = Prefabs.Clone(source, Name);
+            if (clone == null) return null;
 
-            var previous = ZNetView.m_forceDisableInit;
-            ZNetView.m_forceDisableInit = true;
-
-            GameObject clone;
-            try { clone = Object.Instantiate(source, _holder.transform); }
-            finally { ZNetView.m_forceDisableInit = previous; }
-
-            clone.name = Name;
             clone.transform.localRotation = Quaternion.identity;
 
             Visual(clone, model);
@@ -223,49 +194,5 @@ namespace Grove
 
         // ------------------------------------------------------------------ registering
 
-        /// <summary>
-        /// Into ObjectDB, and then its lookup tables rebuilt.
-        ///
-        /// m_items alone is not enough: GetItemPrefab reads m_itemByHash, which is
-        /// built once in UpdateRegisters and never again. Without the rebuild the item
-        /// exists in the list and cannot be found by name - which looks exactly like it
-        /// was never added.
-        /// </summary>
-        private static void AddToObjectDB()
-        {
-            var db = ObjectDB.instance;
-            if (_prefab == null || db == null || db.GetItemPrefab(Name) != null) return;
-
-            if (!db.m_items.Contains(_prefab)) db.m_items.Add(_prefab);
-
-            try
-            {
-                AccessTools.Method(typeof(ObjectDB), "UpdateRegisters").Invoke(db, null);
-            }
-            catch (System.Exception e)
-            {
-                GrovePlugin.Log.LogError("Could not refresh ObjectDB for " + Name + ": "
-                                         + e.Message);
-            }
-        }
-
-        private static void AddToScene()
-        {
-            var scene = ZNetScene.instance;
-            if (_prefab == null || scene.GetPrefab(Name) != null) return;
-
-            if (!scene.m_prefabs.Contains(_prefab)) scene.m_prefabs.Add(_prefab);
-
-            try
-            {
-                var named = (Dictionary<int, GameObject>)
-                    AccessTools.Field(typeof(ZNetScene), "m_namedPrefabs").GetValue(scene);
-                named[Name.GetStableHashCode()] = _prefab;
-            }
-            catch (System.Exception e)
-            {
-                GrovePlugin.Log.LogError("Could not register " + Name + ": " + e.Message);
-            }
-        }
     }
 }

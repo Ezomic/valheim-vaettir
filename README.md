@@ -7,10 +7,12 @@ that sorts your storage.
 
 1. Kill greydwarf brutes and shamans until one drops an **ancient seed**. Vanilla loot; it
    needs nothing from this mod.
-2. Plant it with the **cultivator**, in bare ground, somewhere greydwarfs will come.
+2. Plant it with the **cultivator**, in bare ground, well inside the Black Forest and
+   away from any base.
 3. Kill greydwarfs **within 24 metres of it**. It grows on those deaths and nothing else.
-   Roughly thirty ordinary ones, and elites count as four and shamans as three, so a "Forest
-   is moving" raid arriving on top of it can finish it alone.
+   You do not have to go looking for them: **a planted seed calls them to it** in waves,
+   which get bigger and closer together the nearer it is to opening.
+   Roughly fifty ordinary ones, and elites count as four and shamans as three.
 4. **Defend it.** It has real health and can be destroyed, and the seed is not refunded. It
    tells you when something is hitting it.
 5. When it opens, a **forest spirit** rises out of it. Press use once and it folds itself
@@ -29,8 +31,10 @@ down gives the heartwood back.
 | --- | --- |
 | Seed | One ancient seed, not refunded if the sapling dies |
 | Where | Anywhere you like; greydwarfs are the requirement, not the biome |
-| To open it | 30 points of greydwarf death. Greydwarf 1, shaman 3, elite 4, greyling 0 |
+| To open it | 50 points of greydwarf death. Greydwarf 1, shaman 3, elite 4, greyling 0 |
 | Range | 24m, and only the nearest sapling is fed by a kill |
+| Calling | The first wave leaves at once; waves of 2-5 arrive together from 25-40m out and come running, every 20s falling to 6s as it fills. Ten at once, twenty-four in the area, and only while you are within 48m |
+| On the map | Pinned where you planted it, unpinned when it opens or dies |
 | Sapling health | 500, about ten hits from a brute |
 | Yield | One heartwood per spirit, always |
 | Stowing post | 20 fine wood, 20 iron nails, 1 heartwood. 12 slots, 6 across by 2 down |
@@ -66,6 +70,34 @@ setting most likely to be left on by accident.
 ## Mechanics
 
 ### The sapling
+
+**It calls the forest to it.** A planted seed draws greydwarfs out of the woods around it,
+faster as it fills, and what it summons is what feeds it. They come from 25 to 40 metres
+away and run in, so you hear and see them coming rather than finding them already on top of
+you, and the first wave leaves the moment you plant. Everyone
+nearby is told once that the forest is enraged, because on the frame it starts there is
+nothing on screen to account for the noise coming out of the trees. They arrive in waves, out of the trees on one side rather than scattered around you, and
+the waves get bigger and closer together as it fills. It is a siege rather than wildlife
+wandering past -
+and that is what the sapling's health is for: you are not looking for a fight, you are
+holding a place, and a raid you walk away from halfway through takes the seed with it. It
+only ever calls while a player is within 48 metres, so nothing happens while you are away.
+Turn it off with `Beckon` and the sapling goes back to waiting for kills you bring it.
+
+**Black Forest only, and not on the edge of it.** The seed is a greydwarf ritual - what it
+calls and what feeds it both live there - so it refuses anywhere else, and refuses the last
+five metres before the boundary as well. Planting one step inside the treeline would put half
+the fight in the meadow.
+
+**It will not go in anybody's base.** A ward already refuses it, because it is an ordinary
+piece - and beyond that it cannot be planted inside the area a workbench or fire radiates,
+which is the same test the game uses to keep creatures from spawning in your house. One
+already standing goes quiet if a base grows around it. That matters because of what the seed
+does now: a dozen of these around a stranger's longhouse would be a siege engine, and the
+counter-play to one planted next to you is to put a workbench down rather than to fight it.
+
+**It goes on your map** when you plant it, and the pin comes off once there is no longer a
+sapling standing there. That pin is yours alone and is saved in your own profile.
 
 It keeps a count, not a clock. Only the creatures on its list feed it, only kills within range
 count, and only the nearest sapling is fed, so a heap of them planted together does not all

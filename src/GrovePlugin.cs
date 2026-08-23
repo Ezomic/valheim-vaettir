@@ -4,6 +4,7 @@ using BepInEx;
 using BepInEx.Bootstrap;
 using BepInEx.Logging;
 using Ezomic.Core;
+using Ezomic.Shared;
 using HarmonyLib;
 
 namespace Grove
@@ -43,42 +44,6 @@ namespace Grove
         private bool _diagnosticsDone;
 
         /// <summary>
-        /// One thing that has to be retried until it takes, and whether it has given up.
-        /// </summary>
-        private sealed class Step
-        {
-            public string Name;
-            public System.Func<bool> Run;
-            public bool Abandoned;
-        }
-
-        private Step[] _steps;
-
-        /// <summary>
-        /// Runs one registration step, and stops running it for good if it ever throws.
-        ///
-        /// Retrying every frame is right for a step that is merely not ready yet - that is
-        /// the whole design below. It is badly wrong for one that is broken, because the
-        /// throw comes back every frame with it. That is not hypothetical: a null deref in
-        /// SaplingPrefab.Strip, since fixed, wrote 46,457 identical stack traces in a
-        /// single session and a 50MB log, and the frame cost of that was a far worse
-        /// symptom than the missing sapling it was reporting.
-        ///
-        /// So a step that throws is abandoned rather than retried. The mod comes up short
-        /// one prefab and says so once, which is a thing you can read and act on.
-        /// </summary>
-        /// <summary>
-        /// StowCoupling.Apply returns nothing, and a Step wants a bool. It is never "done"
-        /// in the sense the others are anyway - the post can appear at any point - so it
-        /// reports false and simply keeps being called.
-        /// </summary>
-        private static bool StowApply()
-        {
-            StowCoupling.Apply();
-            return false;
-        }
-
-        /// <summary>
         /// Registers everything right now, rather than on the next frame.
         ///
         /// This exists because a heartwood was deleted out of a saved inventory, and
@@ -109,29 +74,11 @@ namespace Grove
 
             try
             {
-                HeartwoodPrefab.Register();
-                SpiritPrefab.Register();
-                SaplingPrefab.Register();
+                Prefabs.Tick();
             }
             catch (System.Exception e)
             {
                 Log.LogError("Early registration failed; Update will retry. " + e);
-            }
-        }
-
-        private void Run(Step step)
-        {
-            if (step.Abandoned) return;
-
-            try
-            {
-                step.Run();
-            }
-            catch (System.Exception e)
-            {
-                step.Abandoned = true;
-                Log.LogError(step.Name + " could not be registered and will not be retried "
-                             + "again this session. " + e);
             }
         }
 
@@ -166,14 +113,39 @@ namespace Grove
             _harmony.PatchAll(typeof(GrovePatches));
             _harmony.PatchAll(typeof(Stow.StowPatches));
 
-            // Built once rather than per frame, so Update allocates nothing to iterate.
-            _steps = new[]
-            {
-                new Step { Name = "Heartwood", Run = HeartwoodPrefab.Register },
-                new Step { Name = "Forest spirit", Run = SpiritPrefab.Register },
-                new Step { Name = "Ancient sapling", Run = SaplingPrefab.Register },
-                new Step { Name = "Stow coupling", Run = StowApply },
-            };
+            // Without this the sapling still calls, and every one of them appears on top of
+            // it: the band is enforced by a prefix on SpawnArea.FindSpawnPoint, and an
+            // unapplied patch is a silent fallback to vanilla's uniform disc.
+            _harmony.PatchAll(typeof(BeckonSpawnPoint));
+            _harmony.PatchAll(typeof(BeckonWave));
+
+            // Keeps the sapling out of people's homes. Without it applying, the ghost stays
+            // green over a longhouse and the seed goes in.
+            _harmony.PatchAll(typeof(Wilderness));
+
+            // Everything this mod puts into a world, declared once and kept there by the
+            // suite's shared registry. Prefabs re-registers all four into every world that
+            // loads and asks the live scene each time rather than trusting a flag of ours,
+            // which is the whole reason that file exists - a post standing in a world was
+            // destroyed for want of exactly this.
+            Prefabs.Log = Logger;
+
+            // Heartwood first: it is the only item of the four, the sapling's cost names it
+            // and the spirit hands one over, and an item ObjectDB cannot find by name is an
+            // item that quietly does not exist.
+            Prefabs.Keep(HeartwoodPrefab.Name, HeartwoodPrefab.Build, item: true);
+
+            // The cultivator, not the hammer. It is a seed, so it belongs under the tool
+            // already in your hand when you think "I want to plant this".
+            Prefabs.Keep(SaplingPrefab.Name, SaplingPrefab.Build, buildTool: "Cultivator");
+
+            Prefabs.Keep(SpiritPrefab.Name, SpiritPrefab.Build);
+
+            // Declared only when the post is wanted. The old Register read this setting on
+            // every call and returned early; a builder answering "disabled" with a null
+            // would instead be retried five times and then reported as broken.
+            if (Stow.StowConfig.PostEnabled.Value)
+                Prefabs.Keep(Stow.StowPost.Name, Stow.StowPost.Build, buildTool: "Hammer");
 
             Log.LogInfo(PluginName + " " + PluginVersion + " by " + PluginAuthor + " - ready.");
 
@@ -239,12 +211,19 @@ namespace Grove
         /// </summary>
         private void Update()
         {
-            // Ordered, and the order matters: Heartwood first, because the sapling's cost
-            // and the spirit's gift both name it, and an item that is not in ObjectDB yet
-            // is an item that silently is not there. Stow last, because it builds its post
-            // on its own schedule - the piece simply appears in ZNetScene at some point
-            // and this notices.
-            foreach (var step in _steps) Run(step);
+            // One call, and cheap once satisfied: every check inside it is a live lookup
+            // that returns immediately when the world already has the prefab.
+            Prefabs.Tick();
+
+            // Not a registration, and so not part of the above. The post can appear at any
+            // moment - it is a piece somebody builds - and this reprices its recipe when it
+            // does, so it is never "done" and simply keeps being called.
+            StowCoupling.Apply();
+
+            // Takes map pins off saplings that are no longer there. Throttled to one sweep
+            // a second inside, and it runs from here rather than from the sapling because
+            // by the time a sapling could tell you it has gone, it is gone.
+            SaplingPin.Reconcile(GroveConfig.SaplingName.Value);
 
             // The post registers itself on the same retry-until-it-takes footing as the
             // pieces above, and reads the two stow keys. Last, because it is the half of

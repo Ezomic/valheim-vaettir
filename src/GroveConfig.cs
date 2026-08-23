@@ -32,6 +32,26 @@ namespace Grove
         public static ConfigEntry<string> SaplingIcon;
         public static ConfigEntry<bool> NeedsCultivated;
 
+        public static ConfigEntry<bool> PinSaplings;
+        public static ConfigEntry<Minimap.PinType> PinIcon;
+
+        public static ConfigEntry<bool> Beckon;
+        public static ConfigEntry<string> BeckonRoster;
+        public static ConfigEntry<string> BeckonInterval;
+        public static ConfigEntry<string> BeckonPack;
+        public static ConfigEntry<string> BeckonMessage;
+        public static ConfigEntry<bool> NotInBases;
+        public static ConfigEntry<float> BaseMargin;
+        public static ConfigEntry<string> BaseRefusal;
+        public static ConfigEntry<string> SaplingBiomes;
+        public static ConfigEntry<float> BiomeMargin;
+        public static ConfigEntry<string> BiomeRefusal;
+        public static ConfigEntry<string> BeckonDistance;
+        public static ConfigEntry<float> BeckonRange;
+        public static ConfigEntry<float> BeckonArea;
+        public static ConfigEntry<int> BeckonMaxNear;
+        public static ConfigEntry<int> BeckonMaxTotal;
+
         public static ConfigEntry<float> BloodNeeded;
         public static ConfigEntry<float> FeedRange;
         public static ConfigEntry<string> FeedWeights;
@@ -105,21 +125,22 @@ namespace Grove
             SpiritRise = config.Bind("Spirit", "SpiritRise", 0.4f,
                 "How far above the sapling the spirit appears.");
 
-            PartingEffect = config.Bind("Spirit", "PartingEffect", "",
-                "A vanilla effect played once, where the spirit stood, at the moment it "
-                + "folds into the heartwood and goes. Blank for none.\n"
-                + "Not the glow: the spirit's breathing is a light and an emission "
-                + "colour driven in code, always on, and nothing to do with this "
-                + "setting. This was called FadeEffect and that name cost a "
-                + "conversation, because the spirit visibly fades in and out on its own "
-                + "and the two are unrelated.\n"
-                + "Named rather than built, because a particle system authored here "
-                + "would look like a mod and the game's own does not - but which effect "
-                + "is right is a question for the game rather than a guess made here, so "
-                + "a name that does not resolve costs the moment its flourish and does "
-                + "not break it. Empty by default until a name is confirmed loaded: "
-                + "vfx_prayer was the guess and it does not exist, which is a warning "
-                + "in the log on every commune and nothing on screen.");
+            PartingEffect = config.Bind("Spirit", "PartingEffect",
+                "vfx_ghost_death,vfx_HealthUpgrade,vfx_DraugrSpawn",
+                "Vanilla effects played once, where the spirit stood, at the moment it "
+                + "folds into the heartwood and goes. A list, best first: the first name "
+                + "that resolves in this world is used and the rest are ignored.\n"
+                + "A list rather than one name because which prefab is actually loaded is "
+                + "a question for the game rather than a guess made here - the shipped "
+                + "manifest lists what exists on disk, not what a session has - and the "
+                + "cost of guessing wrong used to be that this shipped blank for a whole "
+                + "release. vfx_ghost_death leads because a wisp coming apart is the "
+                + "nearest thing vanilla has to a spirit folding itself away.\n"
+                + "Not the glow: the spirit's breathing is a light and an emission colour "
+                + "driven in code, always on, and nothing to do with this setting. This "
+                + "was called FadeEffect and that name cost a conversation, because the "
+                + "spirit visibly fades in and out on its own and the two are unrelated.\n"
+                + "Blank for none.");
 
             // ---------------------------------------------------------- heartwood
 
@@ -181,18 +202,180 @@ namespace Grove
                 + "answering to a forest is a stranger idea than a crop, and making it "
                 + "want a vegetable patch shrinks it.");
 
+            // ---------------------------------------------------------- finding it again
+
+            PinSaplings = config.Bind("Sapling", "PinSaplings", true,
+                "Put a marker on the map where a sapling is standing, and take it off "
+                + "again when the sapling opens or is destroyed.\n"
+                + "The sapling is the one piece here you are meant to walk away from - it "
+                + "grows on kills rather than on a clock - and a seed in bare ground is "
+                + "not findable from fifty metres away. The pin is yours alone, saved in "
+                + "your own profile like any pin you place by hand, and nothing about it "
+                + "is networked.");
+
+            PinIcon = config.Bind("Sapling", "PinIcon", Minimap.PinType.Icon3,
+                "Which of the game's own map icons to use.");
+
+            // ---------------------------------------------------------- calling them in
+
+            Beckon = config.Bind("Sapling", "Beckon", true,
+                "Whether a planted seed draws greydwarfs to itself.\n"
+                + "Off, the sapling is passive and the quest is really 'find somewhere "
+                + "greydwarfs already walk, then wait there', which is a scouting problem "
+                + "rather than a defending one. On, the place you chose becomes the thing "
+                + "that matters, and what it calls is what feeds it.\n"
+                + "It rides vanilla's own SpawnArea - the component a greydwarf nest is "
+                + "made of - so it only ever runs on the owner, inside the active area, "
+                + "with a player in range. Nothing happens while you are asleep.");
+
+            BeckonRoster = config.Bind("Sapling", "BeckonRoster",
+                "Greydwarf:10,Greydwarf_Shaman:3,Greydwarf_Elite:2",
+                "What it calls, as Prefab:Weight, comma separated. Weights are relative, "
+                + "so these are ten ordinary ones to three shamans to two elites.\n"
+                + "Deliberately a separate list from FeedWeights, which says what a death "
+                + "is worth. Tying the two together would mean a shaman worth three points "
+                + "had to arrive three times as often as it should.");
+
+            BeckonInterval = config.Bind("Sapling", "BeckonInterval", "20-6",
+                "Seconds between arrivals, slowest first: the first number is a seed "
+                + "nobody has fed and the second is one about to open.\n"
+                + "This is meant to read as a raid on the clearing rather than as wildlife "
+                + "wandering past it. 90 and 30 were the first numbers here and they were "
+                + "far too polite: one greydwarf every minute and a half is something you "
+                + "deal with between other jobs, not something you hold ground against.\n"
+                + "It still ramps, because a constant rate is a wave you learn to stand in, "
+                + "and getting louder as it fills means you can hear how close it is without "
+                + "looking at anything. Both ends simply moved.\n"
+                + "Below about two seconds nothing more happens whatever is written here: "
+                + "SpawnArea wakes on its own two-second repeat and spawns at most one "
+                + "creature each time, so two is the floor.");
+
+            BeckonPack = config.Bind("Sapling", "BeckonPack", "2-5",
+                "How many arrive together, fewest first: the first number is a seed nobody "
+                + "has fed and the second is one about to open.\n"
+                + "Vanilla's spawner produces exactly one creature per interval, which is a "
+                + "queue rather than a raid - you fight a greydwarf, then wait, then fight "
+                + "another greydwarf. A wave arrives from one direction together and has to "
+                + "be handled as a group, which is the difference between a chore and a "
+                + "fight.\n"
+                + "The caps still apply. Each of a wave is spawned through the game's own "
+                + "SpawnOne, which checks MaxNear and MaxTotal for itself, so a wave that "
+                + "would breach them simply comes up short.");
+
+            SaplingBiomes = config.Bind("Sapling", "SaplingBiomes", "BlackForest",
+                "Which biomes will take an ancient seed at all, comma separated, using "
+                + "Valheim's own biome names. Blank for anywhere.\n"
+                + "Black Forest alone by default. It is a greydwarf ritual - what it calls "
+                + "and what feeds it both live there - and a seed that works in the meadows "
+                + "makes the biome a backdrop rather than the reason.");
+
+            BiomeMargin = config.Bind("Sapling", "BiomeMargin", 5f,
+                "How far inside its biome the seed has to be, in metres. Checked on a ring "
+                + "as well as under the cursor, so the whole ring has to be in.\n"
+                + "Standing one step into the forest and planting a thing that summons the "
+                + "forest is the case this refuses: the fight would happen half in the "
+                + "meadow, and a boundary is where a raid is least interesting. Nought "
+                + "checks only the spot itself.");
+
+            BiomeRefusal = config.Bind("Sapling", "BiomeRefusal",
+                "Too far from its own wood to grow.",
+                "Said when a seed is refused for being outside its biome, or too near the "
+                + "edge of it.");
+
+            NotInBases = config.Bind("Sapling", "NotInBases", true,
+                "A sapling cannot be planted in anybody's base, and one already standing "
+                + "goes quiet if a base grows around it.\n"
+                + "This is the anti-grief. A passive sapling planted in someone else's "
+                + "home was rude; one that summons waves of greydwarfs at it is a weapon, "
+                + "and planting a dozen around a stranger's longhouse is the obvious grief "
+                + "on a public server.\n"
+                + "A base is the game's own EffectArea.PlayerBase - what a workbench or a "
+                + "fire radiates, and the same test vanilla uses to keep creatures from "
+                + "spawning in your house. So the counter-play to a sapling planted next to "
+                + "you is to put a workbench down rather than to fight it.\n"
+                + "Any base, including your own. Working out whose it is would mean reading "
+                + "Piece.m_creator off whatever happens to be nearby, which is more code for "
+                + "a worse answer - it would still stop you at a friend's base in co-op - "
+                + "and a wilderness ritual has no business in your own hall either.\n"
+                + "A ward already refuses the sapling with no help from this: it is an "
+                + "ordinary piece, so PrivateArea turns it down like anything else.");
+
+            BaseMargin = config.Bind("Sapling", "BaseMargin", 8f,
+                "Extra metres on top of the game's own base radius. Nought means exactly "
+                + "the area a workbench already covers; larger pushes saplings further out "
+                + "than the ground a base actually protects.");
+
+            BaseRefusal = config.Bind("Sapling", "BaseRefusal",
+                "Too close to a hearth. This belongs in the wild.",
+                "Said when a sapling is refused for being in a base. Vanilla would say "
+                + "'invalid placement', which is true and useless - somebody standing in "
+                + "their own garden needs to be told it is the workbench, because that is "
+                + "also how they defend against one.");
+
+            BeckonMessage = config.Bind("Sapling", "BeckonMessage",
+                "The forest is enraged.",
+                "Said once, centre screen, when a sapling starts calling. Blank for "
+                + "nothing.\n"
+                + "Everyone within BeckonRange is told, not only whoever planted it, "
+                + "because it is a warning about a place rather than a note to an owner - "
+                + "and on the frame it appears there is nothing on screen yet to account "
+                + "for the noise coming out of the trees.\n"
+                + "Said again if you leave and come back, since the sapling goes quiet "
+                + "while nobody is near it and starts over when someone is.");
+
+            BeckonDistance = config.Bind("Sapling", "BeckonDistance", "25-40",
+                "How far out they appear, nearest first. They walk in from there.\n"
+                + "A band rather than one radius, and that is the whole of why they arrive "
+                + "instead of materialising: vanilla picks its spawn point at a random "
+                + "distance between nought and the radius, which is uniform across a disc, "
+                + "so most of them land near the middle however wide it is set. This was 12 "
+                + "metres and they appeared in your face.\n"
+                + "Kept under about 70. Past that the ground at the spawn point may not be "
+                + "loaded yet, the floor test simply fails, and the sapling reads as having "
+                + "stopped calling.");
+
+            BeckonRange = config.Bind("Sapling", "BeckonRange", 48f,
+                "How close you have to be for it to call at all. Vanilla nests use 256m, "
+                + "which would have a sapling filling a forest you are nowhere near - and "
+                + "quietly getting itself killed by what it summoned. Close enough to hear "
+                + "is the intent.");
+
+            BeckonArea = config.Bind("Sapling", "BeckonArea", 96f,
+                "How wide the neighbourhood is that BeckonMaxTotal counts inside.\n"
+                + "This was effectively the whole loaded world, and it broke the feature "
+                + "outright: the count matches creatures by prefab name, so every wild "
+                + "greydwarf for a kilometre filled the cap and a sapling in the Black "
+                + "Forest called nothing at all, silently and for ever.\n"
+                + "The cap should mean this clearing is already crowded, not this half of "
+                + "the map contains greydwarfs.");
+
+            BeckonMaxNear = config.Bind("Sapling", "BeckonMaxNear", 10,
+                "Most it will have standing around it at once.\n"
+                + "Ten is a fight rather than an encounter, and it is deliberately more "
+                + "than the sapling survives being ignored for: it has 500 health and about "
+                + "ten brute hits in it, so a raid you wander off halfway through takes the "
+                + "seed with it. That is the trade - the forest comes to you instead of you "
+                + "going out to find it, and the price is having to hold the ground.\n"
+                + "Three was the first number here and it was tuned for a sapling that "
+                + "trickled. Put it back if a raid is more than you wanted.");
+
+            BeckonMaxTotal = config.Bind("Sapling", "BeckonMaxTotal", 24,
+                "Most it will have alive in the wider area. The ceiling that stops a "
+                + "sapling left alone from being the reason a whole zone is full of "
+                + "greydwarfs - it is a raid on a clearing, and a raid ends.");
+
             // ---------------------------------------------------------- feeding
 
-            BloodNeeded = config.Bind("Sapling", "BloodNeeded", 30f,
-                "How much death it takes. With the default weights that is about thirty "
-                + "greydwarfs, or rather fewer if you go and find a nest - elites are "
-                + "worth four and shamans three.\n"
-                + "Thirty, so that one greydwarf raid arriving on a planted sapling is "
-                + "enough to finish it on its own. Sixty was two or three evenings of "
-                + "going out to look for kills, which made the sapling a chore you "
-                + "topped up. A raid turning up at a grove you planted is the best "
-                + "thing that happens in this whole chain - the forest coming to you "
-                + "instead - and it should be the payoff rather than a fifth of one.");
+            BloodNeeded = config.Bind("Sapling", "BloodNeeded", 50f,
+                "How much death it takes. With the default weights that is about fifty "
+                + "greydwarfs - rather fewer if elites turn up, since they are worth four "
+                + "and shamans three.\n"
+                + "This was thirty, chosen when the sapling was passive and thirty was "
+                + "roughly one raid arriving on its own. It does not wait for a raid any "
+                + "more, it makes one: the seed calls the forest to itself in waves that "
+                + "get heavier as it fills, so the number is now the length of a fight you "
+                + "have started rather than the odds of one finding you. Fifty is a siege "
+                + "you have to hold rather than an errand you complete.");
 
             FeedRange = config.Bind("Sapling", "FeedRange", 24f,
                 "How close a kill must be to count. Only the nearest sapling is fed - "

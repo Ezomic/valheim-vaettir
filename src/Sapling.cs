@@ -155,6 +155,19 @@ namespace Grove
                 Localization.instance.Localize(GetHoverName() + " was destroyed."));
         }
 
+        /// <summary>
+        /// Nothing about the map pin happens here, and that is the fix rather than an
+        /// omission.
+        ///
+        /// This fired on a destroyed sapling and on an unloaded one alike, and the two had
+        /// to be told apart - so it asked whether the ZDO was still in ZDOMan. That test
+        /// cannot work: ZDOMan.DestroyZDO only adds the uid to m_destroySendList, and the
+        /// ZDO leaves m_objectsByID some frames later, so on this frame a sapling that has
+        /// just opened is indistinguishable from one whose zone went quiet. Both endings
+        /// read as "merely unloaded" and the pin stayed on the map forever.
+        ///
+        /// SaplingPin reconciles against the world instead - see the header of that file.
+        /// </summary>
         private void OnDestroy()
         {
             All.Remove(this);
@@ -163,6 +176,12 @@ namespace Grove
         private void Start()
         {
             Show();
+
+            // In Start rather than Awake: the Minimap does not exist during the first
+            // frames of a world load, and this simply does nothing then - the sapling gets
+            // its pin the next time its zone loads, which is the frame you could see it
+            // anyway.
+            SaplingPin.Mark(transform.position, GetHoverName());
         }
 
         // ------------------------------------------------------------------ progress
