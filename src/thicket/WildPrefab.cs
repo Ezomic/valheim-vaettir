@@ -38,6 +38,17 @@ namespace Thicket
 
         private static GameObject _holder;
 
+        private static GameObject Holder()
+        {
+            if (_holder == null)
+            {
+                _holder = new GameObject("ThicketHolder");
+                _holder.SetActive(false);
+                Object.DontDestroyOnLoad(_holder);
+            }
+            return _holder;
+        }
+
         /// <summary>
         /// One shared cache of loaded meshes, because four of the eight plants wear the
         /// same one. Loading thicket_bush.obj three times would parse the same file three
@@ -80,12 +91,7 @@ namespace Thicket
             var model = Mesh(plant);
             if (model == null) return null;
 
-            if (_holder == null)
-            {
-                _holder = new GameObject("ThicketHolder");
-                _holder.SetActive(false);
-                Object.DontDestroyOnLoad(_holder);
-            }
+            Holder();
 
             // Inside an inactive holder with init suppressed, or the clone tries to
             // network-register itself while it is still half-built.
@@ -310,7 +316,8 @@ namespace Thicket
         /// </summary>
         private static string Describe(WildPlant plant)
         {
-            var text = "Plant it where it grows wild, and it will come up in its own time.";
+            var text = "Replant an uprooted one where it grows wild, and it will take "
+                       + "root again in its own time. Dig one up with the cultivator.";
             if (!ThicketConfig.SayTheLevel.Value || plant.Level <= 0) return text;
 
             return text + "\nNeeds Farming " + plant.Level + ".";
@@ -342,6 +349,94 @@ namespace Thicket
                     m_recover = false
                 }
             };
+        }
+
+        // ------------------------------------------------------------------ the item
+
+        /// <summary>
+        /// The uprooted plant: what a dig drops and what replanting costs. Cloned from
+        /// the Wood item because that donor is certain to exist, keeps its collider (an
+        /// item with none falls through the world and is gone without a message), and
+        /// carries nothing that needs stripping beyond its visual.
+        /// </summary>
+        public static GameObject BuildItem(WildPlant plant)
+        {
+            var donor = ZNetScene.instance.GetPrefab("Wood");
+            if (donor == null)
+            {
+                WildPlants.Warn(plant.Id + ": no Wood prefab to clone the item from.");
+                return null;
+            }
+
+            var model = Mesh(plant);
+            if (model == null) return null;
+
+            var previous = ZNetView.m_forceDisableInit;
+            ZNetView.m_forceDisableInit = true;
+
+            GameObject clone;
+            try { clone = Object.Instantiate(donor, Holder().transform); }
+            finally { ZNetView.m_forceDisableInit = previous; }
+
+            clone.name = plant.ItemName;
+
+            // Components, not their GameObjects: the donor's collider lives beside its
+            // renderer, and taking the object would take the collision with it. The
+            // heartwood item paid for this lesson by falling through a floor.
+            foreach (var renderer in clone.GetComponentsInChildren<MeshRenderer>(true))
+            {
+                if (renderer == null) continue;
+
+                var filter = renderer.GetComponent<MeshFilter>();
+                if (filter != null) Object.DestroyImmediate(filter);
+                Object.DestroyImmediate(renderer);
+            }
+
+            var visual = new GameObject(plant.ItemName + "_visual");
+            visual.transform.SetParent(clone.transform, false);
+            visual.AddComponent<MeshFilter>().sharedMesh = model.Mesh;
+            visual.AddComponent<MeshRenderer>().sharedMaterials = Skins.Skin(model.Groups);
+            if (Remapped.Add(model.Mesh.GetInstanceID()))
+                Skins.Remap(model.Mesh, model.Groups);
+
+            var drop = clone.GetComponent<ItemDrop>();
+            if (drop == null || drop.m_itemData == null || drop.m_itemData.m_shared == null)
+            {
+                WildPlants.Warn(plant.Id + ": the Wood donor has no usable ItemDrop.");
+                return null;
+            }
+
+            // Instantiate deep-copies SharedData, so this writes to our own copy.
+            var shared = drop.m_itemData.m_shared;
+            shared.m_name = "Uprooted " + Lower(plant.Title);
+            shared.m_description = "Roots and all. It will not keep forever in a pocket, "
+                                   + "but it asks nothing except to be put back in the "
+                                   + "ground where its kind grows. Replant it with the "
+                                   + "cultivator.";
+            shared.m_itemType = ItemDrop.ItemData.ItemType.Material;
+
+            // A bush over your shoulder is a bush over your shoulder: one to a slot and
+            // heavy. The small plants carry like any gathered material.
+            var bush = plant.Form == WildPlant.Shape.Bush;
+            shared.m_maxStackSize = bush ? 1 : 10;
+            shared.m_weight = bush ? 4f : 0.5f;
+            shared.m_teleportable = true;
+            shared.m_questItem = false;
+
+            var icon = Icons.Load(plant.Icon, plant.ItemName);
+            if (icon != null) shared.m_icons = new[] { icon };
+
+            drop.m_itemData.m_stack = 1;
+            drop.m_itemData.m_dropPrefab = clone;
+
+            return clone;
+        }
+
+        private static string Lower(string title)
+        {
+            return string.IsNullOrEmpty(title)
+                ? title
+                : char.ToLowerInvariant(title[0]) + title.Substring(1);
         }
     }
 }

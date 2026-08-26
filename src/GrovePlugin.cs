@@ -178,6 +178,7 @@ namespace Grove
             _harmony.PatchAll(typeof(GrovePatches));
             _harmony.PatchAll(typeof(Stow.StowPatches));
             _harmony.PatchAll(typeof(Thicket.SkillGate));
+            _harmony.PatchAll(typeof(Thicket.Transplant));
 
             // Built once rather than per frame, so Update allocates nothing to iterate.
             _steps = new[]

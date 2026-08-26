@@ -40,6 +40,13 @@ namespace Thicket
         /// <summary>What the hover text and the build menu call it.</summary>
         public string Title;
 
+        /// <summary>
+        /// The uprooted item's network identity - as permanent as PieceName, and for the
+        /// same reason: a dropped item is a ZDO keyed on this name, and renaming it
+        /// silently deletes every uprooted plant lying in a chest or on the ground.
+        /// </summary>
+        public string ItemName;
+
         /// <summary>The vanilla prefab it grows into. Already in ZNetScene - nothing new is
         /// registered for the grown plant, which is why this feature adds no risk at all to
         /// the bushes themselves.</summary>
@@ -193,11 +200,11 @@ namespace Thicket
         /// once you are living in the Plains, and the blue mushroom last because it is the
         /// only one whose home wants a cape.
         ///
-        /// Costs are the pickable itself, five of it for the bushes and three for the
-        /// smaller things. That needs no new item and no recipe, and it reads without a word
-        /// of explanation: a handful of raspberries becomes a raspberry bush. It prices
-        /// itself honestly too, since a bush that bears forever is worth a couple of
-        /// pickings.
+        /// The cost is the uprooted plant itself, and only digging a wild one up with the
+        /// cultivator produces one. That is the conservation law the first design lacked:
+        /// berries-buy-a-bush let the world's bush count grow without bound, where moving
+        /// one only ever changes where it stands. The grow times are short because this is
+        /// a transplant taking root again, not a seed becoming a plant.
         /// </summary>
         public static List<WildPlant> Roster()
         {
@@ -207,12 +214,13 @@ namespace Thicket
                 {
                     Id = "Dandelion",
                     PieceName = "thicket_dandelion",
+                    ItemName = "thicket_uprooted_dandelion",
                     Title = "Dandelion",
                     Grown = "Pickable_Dandelion",
                     Form = Shape.Dandelion,
                     Model = "thicket_dandelion.obj",
                     Icon = "thicket_dandelion.png",
-                    DefaultRow = "5 | Dandelion:3 | Meadows | 600-1200",
+                    DefaultRow = "5 | thicket_uprooted_dandelion:1 | Meadows | 60-120",
                     Note = "The first one, and cheap. A meadow flower at Farming 5 is the "
                            + "rung that tells you the ladder is there at all."
                 },
@@ -220,36 +228,39 @@ namespace Thicket
                 {
                     Id = "Raspberry",
                     PieceName = "thicket_raspberry",
+                    ItemName = "thicket_uprooted_raspberry",
                     Title = "Raspberry bush",
                     Grown = "RaspberryBush",
                     Form = Shape.Bush,
                     Model = "thicket_bush.obj",
                     Icon = "thicket_raspberry.png",
-                    DefaultRow = "10 | Raspberry:5 | Meadows,BlackForest | 1800-3000",
+                    DefaultRow = "10 | thicket_uprooted_raspberry:1 | Meadows,BlackForest | 240-420",
                     Note = "The one everybody wants first, so it is early and it is cheap."
                 },
                 new WildPlant
                 {
                     Id = "Mushroom",
                     PieceName = "thicket_mushroom",
+                    ItemName = "thicket_uprooted_mushroom",
                     Title = "Mushrooms",
                     Grown = "Pickable_Mushroom",
                     Form = Shape.Mushroom,
                     Model = "thicket_mushroom.obj",
                     Icon = "thicket_mushroom.png",
-                    DefaultRow = "15 | Mushroom:3 | Meadows,BlackForest | 600-1200",
+                    DefaultRow = "15 | thicket_uprooted_mushroom:1 | Meadows,BlackForest | 90-180",
                     Note = "Fast, because mushrooms are eaten about as fast as they are found."
                 },
                 new WildPlant
                 {
                     Id = "Blueberry",
                     PieceName = "thicket_blueberry",
+                    ItemName = "thicket_uprooted_blueberry",
                     Title = "Blueberry bush",
                     Grown = "BlueberryBush",
                     Form = Shape.Bush,
                     Model = "thicket_bush.obj",
                     Icon = "thicket_blueberry.png",
-                    DefaultRow = "25 | Blueberry:5 | BlackForest | 1800-3000",
+                    DefaultRow = "25 | thicket_uprooted_blueberry:1 | BlackForest | 240-420",
                     Note = "Black Forest only. A blueberry hedge in the meadows would be the "
                            + "point at which the biomes stop meaning anything."
                 },
@@ -257,12 +268,13 @@ namespace Thicket
                 {
                     Id = "Thistle",
                     PieceName = "thicket_thistle",
+                    ItemName = "thicket_uprooted_thistle",
                     Title = "Thistle",
                     Grown = "Pickable_Thistle",
                     Form = Shape.Thistle,
                     Model = "thicket_thistle.obj",
                     Icon = "thicket_thistle.png",
-                    DefaultRow = "35 | Thistle:5 | BlackForest,Swamp | 1200-1800",
+                    DefaultRow = "35 | thicket_uprooted_thistle:1 | BlackForest,Swamp | 120-240",
                     Note = "Mid-ladder, because thistle is the first of these that is a chore "
                            + "to gather rather than a pleasure."
                 },
@@ -270,12 +282,13 @@ namespace Thicket
                 {
                     Id = "MushroomYellow",
                     PieceName = "thicket_mushroom_yellow",
+                    ItemName = "thicket_uprooted_mushroom_yellow",
                     Title = "Yellow mushrooms",
                     Grown = "Pickable_Mushroom_yellow",
                     Form = Shape.Mushroom,
                     Model = "thicket_mushroom.obj",
                     Icon = "thicket_mushroom_yellow.png",
-                    DefaultRow = "45 | MushroomYellow:3 | BlackForest | 1200-1800",
+                    DefaultRow = "45 | thicket_uprooted_mushroom_yellow:1 | BlackForest | 90-180",
                     Note = "Grown outdoors in the Black Forest, which is not where you find "
                            + "them - they are a burial chamber crop and a chamber has a roof. "
                            + "Plant refuses anything under one, so the only place these can "
@@ -285,12 +298,13 @@ namespace Thicket
                 {
                     Id = "Cloudberry",
                     PieceName = "thicket_cloudberry",
+                    ItemName = "thicket_uprooted_cloudberry",
                     Title = "Cloudberry bush",
                     Grown = "CloudberryBush",
                     Form = Shape.Bush,
                     Model = "thicket_bush.obj",
                     Icon = "thicket_cloudberry.png",
-                    DefaultRow = "60 | Cloudberry:5 | Plains | 2400-3600",
+                    DefaultRow = "60 | thicket_uprooted_cloudberry:1 | Plains | 240-420",
                     Note = "Late, and Plains only. Cloudberries are most of what makes the "
                            + "Plains worth farming in, and a Meadows cloudberry patch would "
                            + "quietly delete that reason."
@@ -299,13 +313,14 @@ namespace Thicket
                 {
                     Id = "MushroomBlue",
                     PieceName = "thicket_mushroom_blue",
+                    ItemName = "thicket_uprooted_mushroom_blue",
                     Title = "Blue mushrooms",
                     Grown = "Pickable_Mushroom_blue",
                     Form = Shape.Mushroom,
                     Model = "thicket_mushroom.obj",
                     Icon = "thicket_mushroom_blue.png",
                     TolerateCold = true,
-                    DefaultRow = "75 | MushroomBlue:3 | Mountain | 1800-2700",
+                    DefaultRow = "75 | thicket_uprooted_mushroom_blue:1 | Mountain | 90-180",
                     Note = "Last, and the only one that needs the cold tolerance: the "
                            + "mountain is refused by Plant outright otherwise, and a plant "
                            + "that can never be healthy can never grow."

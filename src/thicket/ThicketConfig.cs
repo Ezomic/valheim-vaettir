@@ -38,7 +38,7 @@ namespace Thicket
         /// I, what does it cost, where does it live, how long does it take.
         /// </summary>
         private const string Format =
-            "Farming level | cost | biomes | seconds to grow (min-max).\n"
+            "Farming level | cost | biomes | seconds to take root (min-max).\n"
             + "Level 0 means no gate. Biomes are Valheim's own names, comma separated. "
             + "The grow time is a range and each seedling picks its own point in it from "
             + "its ZDO seed, so a row planted together does not come up all at once.";
@@ -46,10 +46,12 @@ namespace Thicket
         public static void Bind(ConfigFile config)
         {
             Enabled = config.Bind("Thicket", "Enabled", true,
-                "Plant the things the game does not let you plant: berry bushes, thistle, "
-                + "dandelion and mushrooms. Off and none of the pieces are registered at "
-                + "all - which is safe to do only before any have been planted, because a "
-                + "prefab that no longer resolves takes every one already standing with it.");
+                "Move the things the game does not let you move: dig wild berry bushes, "
+                + "thistle, dandelion and mushrooms up with the cultivator and replant "
+                + "them where you want them. Off and none of the pieces or items are "
+                + "registered at all - which is safe to do only before any have been "
+                + "replanted or dug up, because a prefab that no longer resolves takes "
+                + "every standing seedling and every uprooted item in a chest with it.");
 
             Donor = config.Bind("Thicket", "Donor", "sapling_carrot",
                 "The vanilla plant each seedling is cloned from, for its Piece, its "

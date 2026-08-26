@@ -32,6 +32,15 @@ namespace Thicket
         private static readonly Dictionary<string, WildPlant> ByPiece =
             new Dictionary<string, WildPlant>();
 
+        /// <summary>Grown prefab name to plant, for the dig-up hover and interact -
+        /// asked on every hover, so a dictionary and never a scan.</summary>
+        private static readonly Dictionary<string, WildPlant> ByGrown =
+            new Dictionary<string, WildPlant>();
+
+        /// <summary>Built uprooted items by plant, kept across worlds like Prefabs.</summary>
+        private static readonly Dictionary<WildPlant, GameObject> Items =
+            new Dictionary<WildPlant, GameObject>();
+
         private static readonly HashSet<string> Said = new HashSet<string>();
 
         /// <summary>Plants whose prefab could not be built at all - a missing model, a bush
@@ -53,6 +62,7 @@ namespace Thicket
                 ThicketConfig.Row(config, plant);
                 Plants.Add(plant);
                 ByPiece[plant.PieceName] = plant;
+                ByGrown[plant.Grown] = plant;
             }
         }
 
@@ -76,6 +86,20 @@ namespace Thicket
             if (clone <= 0) return null;
 
             return ByPiece.TryGetValue(name.Substring(0, clone), out plant) ? plant : null;
+        }
+
+        /// <summary>The plant whose grown prefab this is, or null. For the dig.</summary>
+        public static WildPlant OfGrown(string prefabName)
+        {
+            WildPlant plant;
+            return ByGrown.TryGetValue(prefabName, out plant) ? plant : null;
+        }
+
+        /// <summary>The plant whose piece this is, by bare prefab name.</summary>
+        public static WildPlant OfPieceName(string prefabName)
+        {
+            WildPlant plant;
+            return ByPiece.TryGetValue(prefabName, out plant) ? plant : null;
         }
 
         /// <summary>
@@ -112,6 +136,38 @@ namespace Thicket
             var scene = ZNetScene.instance;
             var live = scene.GetPrefab(plant.PieceName);
 
+            // The uprooted item first, because the piece cost row resolves it through
+            // ObjectDB and a piece registered before its currency reads as free.
+            GameObject item;
+            if (!Items.TryGetValue(plant, out item) || item == null)
+            {
+                item = WildPrefab.BuildItem(plant);
+                if (item == null)
+                {
+                    Refused.Add(plant);
+                    return true;
+                }
+                Items[plant] = item;
+                ThicketConfig.Say(GrovePlugin.Log, plant.ItemName + " built.");
+            }
+            if (scene.GetPrefab(plant.ItemName) == null) AddToScene(plant.ItemName, item);
+            var db = ObjectDB.instance;
+            if (db.GetItemPrefab(plant.ItemName) == null)
+            {
+                if (!db.m_items.Contains(item)) db.m_items.Add(item);
+                try
+                {
+                    // m_itemByHash is built once in UpdateRegisters and never again -
+                    // the list alone leaves the item unfindable by name.
+                    AccessTools.Method(typeof(ObjectDB), "UpdateRegisters").Invoke(db, null);
+                }
+                catch (System.Exception e)
+                {
+                    GrovePlugin.Log.LogError("Could not refresh ObjectDB for "
+                                             + plant.ItemName + ": " + e.Message);
+                }
+            }
+
             GameObject prefab;
             if (!Prefabs.TryGetValue(plant, out prefab) || prefab == null)
             {
@@ -138,13 +194,15 @@ namespace Thicket
                 ThicketConfig.Say(GrovePlugin.Log, plant.Id + " built.");
             }
 
-            if (live == null) AddToScene(plant, prefab);
+            if (live == null) AddToScene(plant.PieceName, prefab);
             if (!table.m_pieces.Contains(prefab)) AddToCultivator(plant, prefab, table);
 
-            return scene.GetPrefab(plant.PieceName) != null && table.m_pieces.Contains(prefab);
+            return scene.GetPrefab(plant.PieceName) != null
+                && scene.GetPrefab(plant.ItemName) != null
+                && table.m_pieces.Contains(prefab);
         }
 
-        private static void AddToScene(WildPlant plant, GameObject prefab)
+        private static void AddToScene(string name, GameObject prefab)
         {
             var scene = ZNetScene.instance;
 
@@ -157,11 +215,11 @@ namespace Thicket
                 // list and never rebuilt.
                 var named = (Dictionary<int, GameObject>)
                     AccessTools.Field(typeof(ZNetScene), "m_namedPrefabs").GetValue(scene);
-                named[plant.PieceName.GetStableHashCode()] = prefab;
+                named[name.GetStableHashCode()] = prefab;
             }
             catch (System.Exception e)
             {
-                GrovePlugin.Log.LogError("Could not register " + plant.PieceName + ": " + e.Message);
+                GrovePlugin.Log.LogError("Could not register " + name + ": " + e.Message);
             }
         }
 

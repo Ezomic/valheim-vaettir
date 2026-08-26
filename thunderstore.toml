@@ -7,7 +7,7 @@ schemaVersion = "0.0.1"
 [package]
 namespace = "Ezomic"
 name = "Vaettir"
-versionNumber = "1.0.0"
+versionNumber = "1.1.0"
 description = "Plant an ancient seed, feed it greydwarf blood, and a forest spirit answers. Build it a home and it sorts your chests."
 websiteUrl = "https://github.com/Ezomic/valheim-vaettir"
 containsNsfwContent = false
