@@ -152,6 +152,11 @@ def sack():
     # Triangulated, or the lathe's neat rings read as rows of rectangles - which
     # is exactly what they are until the quads are split and jittered.
     bmesh.ops.triangulate(bm, faces=bm.faces[:])
+
+    # Outward, explicitly. A spun profile can face inward, and the split symptom
+    # is exactly what it produces: Blender's renderer draws both sides so every
+    # preview looked whole, while the game culls backfaces and the body vanished.
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
     bm.to_mesh(mesh)
     bm.free()
 
