@@ -108,15 +108,17 @@ namespace Grove
             BonemealName = config.Bind("Bonemeal", "BonemealName", "Bonemeal",
                 "What the item is called.");
 
-            BonemealDonor = config.Bind("Bonemeal", "BonemealDonor", "BoneFragments",
-                "The vanilla item it is cloned from, for its ItemDrop, Rigidbody, colliders "
-                + "and float-in-water behaviour. Only the mesh, the icon, the name and the "
-                + "item type change.");
+            BonemealDonor = config.Bind("Bonemeal", "BonemealDonor", "BarleyFlour",
+                "The vanilla item it is cloned from - visual included. Barley flour is "
+                + "the game's own meal-in-a-sack, so bonemeal wears vanilla art instead "
+                + "of a hand-built shape that never earned its place; the name and icon "
+                + "are what tell them apart.");
 
-            BonemealModel = config.Bind("Bonemeal", "BonemealModel", "grove_bonemeal.obj",
-                "The mesh, read from beside the dll. Optional: without it the item keeps "
-                + "the donor's, which looks wrong rather than being broken - the mechanic "
-                + "is playable before the model pass has happened.");
+            BonemealModel = config.Bind("Bonemeal", "BonemealModel", "",
+                "An override mesh read from beside the dll, for the day a hand-built "
+                + "shape earns its place. Blank keeps the donor's own sack, which is the "
+                + "default on purpose: six custom shapes were judged and every one read "
+                + "as random parts.");
 
             BonemealIcon = config.Bind("Bonemeal", "BonemealIcon", "grove_bonemeal_icon.png",
                 "The inventory picture, read from beside the dll. Optional in the same way.");

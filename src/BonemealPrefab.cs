@@ -125,11 +125,16 @@ namespace Grove
             // wears its donor's mesh and icon rather than failing to exist - a bag of ground
             // bone that looks like bone fragments is wrong, not broken, and being able to
             // play with the mechanic before the art is the point of loading these at runtime.
-            var directory = Path.GetDirectoryName(typeof(BonemealPrefab).Assembly.Location);
-            var model = ObjMesh.Load(Path.Combine(directory, GroveConfig.BonemealModel.Value));
-            if (model != null) Visual(clone, model);
-            else GrovePlugin.LogOnce("No " + GroveConfig.BonemealModel.Value
-                                     + " beside the dll - " + Name + " keeps the donor's mesh.");
+            // Blank model means the donor's own sack, deliberately and quietly - the
+            // warning only earns its place when a configured override fails to load.
+            if (!string.IsNullOrEmpty(GroveConfig.BonemealModel.Value))
+            {
+                var directory = Path.GetDirectoryName(typeof(BonemealPrefab).Assembly.Location);
+                var model = ObjMesh.Load(Path.Combine(directory, GroveConfig.BonemealModel.Value));
+                if (model != null) Visual(clone, model);
+                else GrovePlugin.LogOnce("No " + GroveConfig.BonemealModel.Value
+                                         + " beside the dll - " + Name + " keeps the donor's mesh.");
+            }
 
             var icon = Icons.Load(GroveConfig.BonemealIcon.Value, Name);
             if (icon != null) shared.m_icons = new[] { icon };
@@ -145,7 +150,7 @@ namespace Grove
         {
             var scene = ZNetScene.instance;
 
-            foreach (var name in new[] { GroveConfig.BonemealDonor.Value, "BoneFragments", "Wood" })
+            foreach (var name in new[] { GroveConfig.BonemealDonor.Value, "BarleyFlour", "Wood" })
             {
                 if (string.IsNullOrEmpty(name)) continue;
 
