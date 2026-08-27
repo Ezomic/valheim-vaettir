@@ -118,6 +118,12 @@ namespace Thicket
             var table = CultivatorPieces();
             if (table == null) return false;
 
+            // The one menu entry the feature has. Asked of the live table, never a
+            // flag: the Cultivator's PieceTable is rebuilt with ObjectDB per world.
+            var tool = WildPrefab.BuildTool();
+            if (tool != null && !table.m_pieces.Contains(tool))
+                table.m_pieces.Add(tool);
+
             var done = true;
 
             foreach (var plant in Plants)

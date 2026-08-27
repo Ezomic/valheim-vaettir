@@ -356,6 +356,51 @@ namespace Thicket
             };
         }
 
+        /// <summary>The tool piece's permanent prefab name.</summary>
+        public const string ToolName = "thicket_transplant";
+
+        private static GameObject _tool;
+
+        /// <summary>
+        /// The Transplant entry on the cultivator: a piece that is never placed. It
+        /// wears m_repairPiece, which is the one kind of selected piece that clicks on
+        /// the world instead of into it - Player.UpdatePlacement routes the press to
+        /// Repair and our prefix takes it from there. No ZNetView, no model: it exists
+        /// only as a button with an icon.
+        /// </summary>
+        public static GameObject BuildTool()
+        {
+            if (_tool != null) return _tool;
+
+            _tool = new GameObject(ToolName);
+            _tool.SetActive(false);
+            Object.DontDestroyOnLoad(_tool);
+
+            var piece = _tool.AddComponent<Piece>();
+            piece.m_name = "Transplant";
+            piece.m_description =
+                "Click a wild plant to dig it up, roots and all. You can only walk "
+                + "while you carry it; click open ground to plant it back down. Each "
+                + "plant asks its own Farming level.";
+            piece.m_repairPiece = true;
+            piece.m_resources = new Piece.Requirement[0];
+            piece.m_groundPiece = false;
+
+            // The cultivator's own picture, so the entry reads as a mode of the tool
+            // rather than as a thing it builds.
+            var cultivator = ObjectDB.instance != null
+                ? ObjectDB.instance.GetItemPrefab("Cultivator")
+                : null;
+            ItemDrop drop;
+            if (cultivator != null && cultivator.TryGetComponent(out drop)
+                && drop.m_itemData != null && drop.m_itemData.m_shared != null
+                && drop.m_itemData.m_shared.m_icons != null
+                && drop.m_itemData.m_shared.m_icons.Length > 0)
+                piece.m_icon = drop.m_itemData.m_shared.m_icons[0];
+
+            return _tool;
+        }
+
         /// <summary>
         /// The plant as a thing in your arms: mesh and skin only, no components, no
         /// network identity. Local-only by design in this version - the carry itself

@@ -107,6 +107,30 @@ namespace Thicket
             }
         }
 
+        /// <summary>
+        /// The tool click while carrying: plant at the ground under the crosshair.
+        /// The same ray the dig uses, because in place mode there is no hover.
+        /// </summary>
+        internal static void TryPlantFromTool(Player player)
+        {
+            var camera = GameCamera.instance;
+            if (camera == null || player == null) return;
+
+            RaycastHit hit;
+            var ray = new Ray(camera.transform.position, camera.transform.forward);
+            if (Physics.Raycast(ray, out hit, 8f,
+                    LayerMask.GetMask("terrain", "Default", "static_solid"))
+                && Vector3.Distance(hit.point, player.transform.position) < 6f
+                && hit.normal.y > 0.5f)
+            {
+                PlantAt(hit.point);
+            }
+            else
+            {
+                player.Message(MessageHud.MessageType.Center, "No open ground there");
+            }
+        }
+
         private static void PlantAt(Vector3 where)
         {
             var prefab = ZNetScene.instance != null
