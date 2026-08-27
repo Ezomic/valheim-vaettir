@@ -57,10 +57,15 @@ namespace Grove
                 // name is the cache key, which is exactly why they cannot share it.
                 { "bloom", new[] { "Pickable_Dandelion", "sapling_carrot" } },
 
-                // The bonemeal sack. Cloth from the hide items (single-material
-                // donors, sackcloth tones), the meal from BoneFragments - the one
-                // honestly bone-white surface in the game - and the rope rides bark.
-                { "cloth", new[] { "LeatherScraps", "DeerHide", "wood_wall" } },
+                // The bonemeal sack. Cloth from the DEER RUG, not the hide items:
+                // LeatherScraps wears Custom/Creature, an alpha-cutout shader over a
+                // ragged atlas whose measured rect is mostly transparent pixels - the
+                // sack body rendered fully invisible while its opaque-donored rope
+                // and meal showed, which cost three rounds of winding archaeology
+                // before the texture was suspected. The rug is opaque hide on
+                // Custom/Piece. The meal keeps BoneFragments - its rect lands on
+                // solid bone - and the rope rides plank.
+                { "cloth", new[] { "rug_deer", "rug_fur", "wood_wall" } },
                 { "meal",  new[] { "BoneFragments", "stone_wall_2x1" } },
                 { "rope",  new[] { "wood_wall", "wood_beam" } },
                 { "bud",   new[] { "Pickable_Thistle", "Pickable_Dandelion",
