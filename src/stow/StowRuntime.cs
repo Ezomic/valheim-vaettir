@@ -173,7 +173,30 @@ namespace Stow
         private static void ShowFilter(Container __instance, ref string __result)
         {
             if (string.IsNullOrEmpty(__result)) return;
-            if (StowPost.Is(__instance)) return;
+
+            // The post gets its own line here rather than through its own Hoverable.
+            // Container implements Hoverable too, and the HUD resolves the text with
+            // GetComponentInParent<Hoverable>(), which returns whichever component sits
+            // first on the object - always Container, since StowPost is added to the
+            // clone afterwards. StowPost.GetHoverText therefore never ran, and a post
+            // holding items nothing had asked for looked exactly like a plain chest.
+            var post = __instance.GetComponent<StowPost>();
+            if (post != null)
+            {
+                var status = post.StatusLine();
+                if (status == null) return;
+
+                // Inserted before the first line break rather than by replacing m_name.
+                // Container.GetHoverText localises its whole string, so by the time it
+                // reaches here the name may be the translation of a token and no longer
+                // equal to m_name. The first line is always the name, whatever it says.
+                var cut = __result.IndexOf((char)10);
+                if (cut < 0) cut = __result.Length;
+
+                __result = __result.Substring(0, cut) + " ( " + status + " )"
+                           + __result.Substring(cut);
+                return;
+            }
 
             var summary = ChestFilter.Summary(__instance);
             if (summary == null) return;

@@ -99,6 +99,17 @@ namespace Stow
         private float _nextScan;
         private int _moved;
 
+        /// <summary>
+        /// What the post held the last time it was reported as having nowhere to go.
+        ///
+        /// Recruit runs every ScanInterval forever, so a post full of homeless items
+        /// would otherwise repeat the message every three seconds until it was emptied
+        /// by hand. Keyed on the contents, so the report comes back the moment they
+        /// change - a new item that also has no home is worth hearing about, the same
+        /// items sitting there are not.
+        /// </summary>
+        private string _homelessSaid;
+
         public CarryRun(StowPost post)
         {
             _post = post;
@@ -467,7 +478,52 @@ namespace Stow
             var courier = new Courier { ReadyAt = now };
             _couriers.Add(courier);
 
-            if (!Dispatch(courier, inventory, now)) _couriers.Remove(courier);
+            if (Dispatch(courier, inventory, now)) return;
+
+            _couriers.Remove(courier);
+
+            // Nothing could be placed. Saying so is the whole difference between "the
+            // chests did not ask for any of this" and "the mod is broken": with the
+            // carrier on, the only other feedback was an Announce that Tick gates behind
+            // _moved > 0, so a post that moved nothing said nothing at all and the
+            // message written for exactly this case had never once been shown.
+            ReportHomeless(inventory);
+        }
+
+        /// <summary>Says the post has nowhere to put things, once per change of contents.</summary>
+        private void ReportHomeless(Inventory inventory)
+        {
+            if (inventory == null || inventory.NrOfItems() == 0) { _homelessSaid = null; return; }
+
+            // Recruit runs earlier in Tick than the "everyone is resting" announce, so a
+            // run that has just delivered something still has _moved pending. Reporting
+            // here would consume it and replace "Stowed 4 items into 2 chests. 3 left
+            // waiting." with the barer homeless line, losing the part that says work
+            // happened. Let that announce go out; this state will still be here next scan.
+            if (_moved > 0) return;
+
+            var signature = Signature(inventory);
+            if (signature == _homelessSaid) return;
+            _homelessSaid = signature;
+
+            Announce(0);
+        }
+
+        /// <summary>
+        /// A cheap fingerprint of what the post is holding, for telling "still the same
+        /// stuck items" from "something new arrived".
+        /// </summary>
+        private static string Signature(Inventory inventory)
+        {
+            var parts = new System.Text.StringBuilder();
+
+            foreach (var item in inventory.GetAllItems())
+            {
+                if (item == null || item.m_shared == null) continue;
+                parts.Append(item.m_shared.m_name).Append(':').Append(item.m_stack).Append('|');
+            }
+
+            return parts.ToString();
         }
 
         private void Retire(Courier courier, int index)
@@ -517,6 +573,11 @@ namespace Stow
             var moved = _moved;
             _moved = 0;
             _touched.Clear();
+
+            // Anything actually moving means the situation changed, so a post that goes
+            // quiet again should say so rather than staying silent because it once said
+            // the same words about the same items.
+            if (moved > 0) _homelessSaid = null;
 
             if (!StowConfig.Messages.Value || Player.m_localPlayer == null) return;
 

@@ -21,7 +21,7 @@ namespace Stow
     /// six things is a post telling you six things have no home yet, which is a more
     /// useful state than a silent failure and reads at a glance from the hover text.
     /// </summary>
-    internal class StowPost : MonoBehaviour, Hoverable
+    internal class StowPost : MonoBehaviour
     {
         public const string Name = "stow_post";
 
@@ -93,14 +93,24 @@ namespace Stow
 
         // ------------------------------------------------------------------ hover
 
-        public string GetHoverName()
+        /// <summary>
+        /// The bracketed status the post adds to its hover line, or null when it has
+        /// nothing to say.
+        ///
+        /// This is NOT reached through Hoverable, and the difference cost a bug report.
+        /// The post carries a Container, Container implements Hoverable itself, and
+        /// Hud.UpdateCrosshair resolves the text with GetComponentInParent<Hoverable>()
+        /// - which returns the FIRST such component on the object. Container is on the
+        /// donor prefab and this is added afterwards, so Container always won and the
+        /// GetHoverText that used to live here was dead code that never ran once. The
+        /// post looked like an ordinary chest, which is exactly when it must not: a post
+        /// full of items with no home is then indistinguishable from a mod doing nothing.
+        ///
+        /// So the words are appended by StowRuntime's postfix on Container.GetHoverText,
+        /// which is the seam that actually gets called, and this only supplies them.
+        /// </summary>
+        public string StatusLine()
         {
-            return _piece != null ? _piece.m_name : StowConfig.PostName.Value;
-        }
-
-        public string GetHoverText()
-        {
-            var name = GetHoverName();
             var waiting = _container != null && _container.GetInventory() != null
                 ? _container.GetInventory().NrOfItems()
                 : 0;
@@ -109,13 +119,9 @@ namespace Stow
             // the same count is mostly things that do have homes and are queued for a
             // trip, and a post reporting them as homeless while a spirit is visibly
             // ferrying them would be the mod contradicting itself on screen.
-            string text;
-            if (_run != null && _run.Working) text = name + " ( carrying " + waiting + " )";
-            else if (waiting == 0) text = name;
-            else text = name + " ( " + waiting + " with nowhere to go )";
-
-            return Localization.instance.Localize(
-                text + "\n[<color=yellow><b>$KEY_Use</b></color>] $piece_container_open");
+            if (_run != null && _run.Working) return "carrying " + waiting;
+            if (waiting == 0) return null;
+            return waiting + " with nowhere to go";
         }
 
         // ------------------------------------------------------------------ emptying

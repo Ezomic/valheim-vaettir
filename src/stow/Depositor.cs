@@ -402,6 +402,7 @@ namespace Stow
             var count = Physics.OverlapSphereNonAlloc(point, range, Hits);
 
             var seen = new List<Container>();
+            var verbose = StowConfig.Verbose.Value;
 
             for (var i = 0; i < count; i++)
             {
@@ -409,11 +410,66 @@ namespace Stow
                 if (container == null || seen.Contains(container)) continue;
                 seen.Add(container);
 
-                if (!Usable(container, point, range)) continue;
+                if (!Usable(container, point, range))
+                {
+                    // Why a chest was passed over is the one question the mod could never
+                    // answer. "The spirit will not sort" is the same symptom whether the
+                    // chests are locked, out of range, or simply never asked for anything,
+                    // and without this the only way to tell them apart was to read the
+                    // source. One line per rejected chest, only when Verbose is on.
+                    if (verbose)
+                        StowRuntime.Log.LogInfo("Stow: skipping "
+                            + Describe(container) + " - " + WhyUnusable(container, point, range));
+                    continue;
+                }
 
                 into.Add(ChestFilter.RuleFor(container,
                     Vector3.Distance(container.transform.position, point)));
             }
+
+            if (verbose)
+                StowRuntime.Log.LogInfo("Stow: " + into.Count + " usable chest(s) within "
+                    + range + "m of the post.");
+        }
+
+        /// <summary>Something to call a chest in a log line.</summary>
+        private static string Describe(Container container)
+        {
+            var name = container.m_name;
+            if (string.IsNullOrEmpty(name)) name = container.name;
+            return name + " at " + container.transform.position.ToString("F0");
+        }
+
+        /// <summary>
+        /// The first reason Usable would refuse this chest, in the same order it checks
+        /// them. Kept beside Usable deliberately: two lists that can disagree would make
+        /// the diagnostic lie, which is worse than having none.
+        /// </summary>
+        private static string WhyUnusable(Container container, Vector3 point, float range)
+        {
+            var nview = container.GetComponent<ZNetView>();
+            if (nview == null || !nview.IsValid()) return "it is not networked yet";
+
+            if (StowPost.Is(container)) return "it is a stowing post, not a destination";
+
+            var distance = Vector3.Distance(container.transform.position, point);
+            if (distance > range)
+                return "it is " + distance.ToString("F1") + "m away, past the "
+                       + range + "m Sorting/Range";
+
+            if (container.GetComponentInParent<Vagon>() != null) return "it is on a cart";
+            if (container.GetComponentInParent<Ship>() != null) return "it is on a ship";
+
+            if (container.m_privacy != Container.PrivacySetting.Public)
+                return "its privacy is " + container.m_privacy + ", and only Public chests are used";
+
+            if (container.IsInUse()) return "somebody has it open";
+
+            if (container.m_checkGuardStone
+                && !PrivateArea.CheckAccess(container.transform.position))
+                return "a ward denies access to it";
+
+            return "no reason found, which should not happen";
         }
 
         /// <summary>
