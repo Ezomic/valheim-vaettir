@@ -13,6 +13,7 @@ namespace Furrow
     internal static class FurrowConfig
     {
         public static ConfigEntry<int> GridLevel;
+        public static ConfigEntry<bool> GridEnabled;
 
         public static ConfigEntry<bool> Enabled;
 
@@ -34,12 +35,18 @@ namespace Furrow
 
         public static void Bind(ConfigFile config)
         {
+            GridEnabled = config.Bind("Furrow", "GridEnabled", true,
+                "From GridLevel up, the cultivator's ghost snaps onto a lattice "
+                + "anchored on the nearest plant of the same kind, so hand-placed "
+                + "plants land in rows and columns. One seed per press stays vanilla; "
+                + "the skill unlock is the alignment.");
+
             GridLevel = config.Bind("Furrow", "GridLevel", 10,
                 "The Farming level that unlocks the grid shape. Below it the shape "
                 + "cycle offers row and circle only; a rank of seeds is a hand skill, "
                 + "a whole field laid out at once is what the levels are for.");
 
-            Enabled = config.Bind("Sowing", "Enabled", true,
+            Enabled = config.Bind("Sowing", "Enabled", false,
                 "Sow more than one seed per click. Turn this off and the mod does nothing, "
                 + "which is also what it does at Farming level 0.");
 
