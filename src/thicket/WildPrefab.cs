@@ -386,25 +386,22 @@ namespace Thicket
             piece.m_resources = new Piece.Requirement[0];
             piece.m_groundPiece = false;
 
-            // The Raspberries ITEM icon - what vanilla itself does for planting
-            // entries, which wear their produce. A live photograph of the bush was
-            // tried first and shot the worst icon in the row: a muddy clod with no
-            // silhouette, because the render rig was tuned for barrels, not foliage,
-            // and vanilla's hand-made art plays by different rules than a camera.
-            // A file beside the dll still wins if anyone draws a better one.
+            // The bush, photographed live and exposed for foliage. The first shot
+            // came out a mud clod (the rig was set for pale timber) and the swap to
+            // the Raspberries item icon lied twice over - fruit for a tool that also
+            // moves blueberries and mushrooms. Boosted exposure fixes the mud; a
+            // thicket_transplant.png beside the dll still wins over the camera.
             var icon = Grove.Icons.Load("thicket_transplant.png", ToolName);
             if (icon == null)
             {
-                var berries = ObjectDB.instance != null
-                    ? ObjectDB.instance.GetItemPrefab("Raspberry")
+                var bush = ZNetScene.instance != null
+                    ? ZNetScene.instance.GetPrefab("RaspberryBush")
                     : null;
-                ItemDrop berriesDrop;
-                if (berries != null && berries.TryGetComponent(out berriesDrop)
-                    && berriesDrop.m_itemData != null
-                    && berriesDrop.m_itemData.m_shared != null
-                    && berriesDrop.m_itemData.m_shared.m_icons != null
-                    && berriesDrop.m_itemData.m_shared.m_icons.Length > 0)
-                    icon = berriesDrop.m_itemData.m_shared.m_icons[0];
+                if (bush != null)
+                {
+                    Grove.IconRender.NextShotBoost = 2.6f;
+                    icon = Grove.IconRender.Shoot(bush, ToolName);
+                }
             }
             if (icon != null) piece.m_icon = icon;
 

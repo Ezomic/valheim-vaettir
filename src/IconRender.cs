@@ -40,8 +40,18 @@ namespace Grove
         /// </summary>
         private const int Layer = 31;
 
+        /// <summary>Exposure multiplier for the next Shoot only. The rig was tuned
+        /// for pale timber; dark foliage at 1x came out as a mud clod. Consumed on
+        /// use so one bright shot cannot leak into the next mod's barrels.</summary>
+        public static float NextShotBoost = 1f;
+
+        private static float _boost = 1f;
+
         public static Sprite Shoot(GameObject prefab, string name)
         {
+            _boost = Mathf.Max(0.1f, NextShotBoost);
+            NextShotBoost = 1f;
+
             GameObject subject = null;
             GameObject rig = null;
             RenderTexture target = null;
@@ -311,7 +321,7 @@ namespace Grove
             var keyLight = key.gameObject.AddComponent<Light>();
             keyLight.type = LightType.Directional;
             keyLight.color = new Color(1f, 0.96f, 0.88f);
-            keyLight.intensity = 1.35f;
+            keyLight.intensity = 1.35f * _boost;
             keyLight.cullingMask = 1 << Layer;
 
             var fill = new GameObject("fill").transform;
@@ -321,7 +331,7 @@ namespace Grove
             var fillLight = fill.gameObject.AddComponent<Light>();
             fillLight.type = LightType.Directional;
             fillLight.color = new Color(0.72f, 0.78f, 0.92f);
-            fillLight.intensity = 0.55f;
+            fillLight.intensity = 0.55f * _boost;
             fillLight.cullingMask = 1 << Layer;
         }
 
