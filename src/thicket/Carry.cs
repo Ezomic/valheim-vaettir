@@ -133,21 +133,32 @@ namespace Thicket
 
         private static void PlantAt(Vector3 where)
         {
+            // The GROWN vanilla prefab, not the seedling piece. The seedling was the
+            // "transplant recovery" design - dig, carry, a seedling regrows into the
+            // bush - and he struck it: "you pickup a bush, it should show im carrying
+            // a bush. when planting it back down it should be that same bush." So the
+            // same bush goes down that came up, immediately, picked-empty because its
+            // berries already dropped into your hands at the dig, and regrowing them
+            // on vanilla's own timer. The seedling prefabs stay registered for any
+            // still standing, but nothing new plants one.
             var prefab = ZNetScene.instance != null
-                ? ZNetScene.instance.GetPrefab(_held.PieceName)
+                ? ZNetScene.instance.GetPrefab(_held.Grown)
                 : null;
 
             if (prefab == null)
             {
-                // Refuse to end the carry rather than eat the plant: the prefab not
-                // resolving is a registration race, and the next press can succeed.
-                GrovePlugin.LogOnce(_held.PieceName + " is not registered; still carrying.");
+                // Refuse to end the carry rather than eat the plant: not resolving is
+                // a registration race, and the next press can succeed.
+                GrovePlugin.LogOnce(_held.Grown + " did not resolve; still carrying.");
                 return;
             }
 
             var rotation = Quaternion.Euler(0f, Random.Range(0f, 360f), 0f);
             var planted = Object.Instantiate(prefab, where, rotation);
-            WildPrefab.WakeStage(planted);
+
+            Pickable pickable;
+            if (planted.TryGetComponent(out pickable))
+                pickable.SetPicked(true);
 
             var player = Player.m_localPlayer;
             if (player != null)
