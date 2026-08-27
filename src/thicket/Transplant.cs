@@ -90,6 +90,12 @@ namespace Thicket
             var player = character as Player;
             if (player == null) return true;
 
+            if (Carry.Carrying)
+            {
+                player.Message(MessageHud.MessageType.Center, "Hands full");
+                return false;
+            }
+
             // The same ladder the replanting piece is gated by, read the same way. A
             // plant you cannot yet replant is a plant you may not uproot - otherwise the
             // gate teaches you to destroy the thing it exists to protect.
@@ -121,23 +127,11 @@ namespace Thicket
                         Quaternion.identity);
             }
 
-            var uprooted = ObjectDB.instance != null
-                ? ObjectDB.instance.GetItemPrefab(plant.ItemName)
-                : null;
-            if (uprooted == null)
-            {
-                // Refuse rather than destroy: a dig that cannot pay out must not run.
-                GrovePlugin.Log.LogWarning(plant.ItemName + " is not registered, so "
-                    + plant.Title + " was not dug up.");
-                return false;
-            }
-
-            Object.Instantiate(uprooted, where + Vector3.up * 0.5f, Quaternion.identity);
-
-            player.Message(MessageHud.MessageType.TopLeft, "Dug up " + plant.Title);
-            player.RaiseSkill(Skills.SkillType.Farming, 1f);
-
             ZNetScene.instance.Destroy(__instance.gameObject);
+
+            // Into the arms, not the inventory - Carry is the whole second half.
+            Carry.Begin(player, plant);
+            player.RaiseSkill(Skills.SkillType.Farming, 1f);
 
             __result = true;
             return false;

@@ -282,7 +282,12 @@ namespace Thicket
 
             piece.m_name = plant.Title;
             piece.m_description = Describe(plant);
-            piece.m_resources = Requirements(plant);
+
+            // No cost and no menu: the seedling is only ever spawned by Carry's E-press,
+            // and the price was paid where it always is now - by digging the wild one
+            // up and walking it here. Resolving the old cost row would also warn about
+            // an uprooted item that no longer exists.
+            piece.m_resources = new Piece.Requirement[0];
 
             var icon = Icons.Load(plant.Icon, plant.PieceName);
             if (icon != null) piece.m_icon = icon;
@@ -349,6 +354,26 @@ namespace Thicket
                     m_recover = false
                 }
             };
+        }
+
+        /// <summary>
+        /// The plant as a thing in your arms: mesh and skin only, no components, no
+        /// network identity. Local-only by design in this version - the carry itself
+        /// is not synced, only its two ends (the dig and the planting) are.
+        /// </summary>
+        public static GameObject CarryVisual(WildPlant plant)
+        {
+            var model = Mesh(plant);
+            if (model == null) return null;
+
+            var go = new GameObject("thicket_carried_" + plant.Id);
+            go.AddComponent<MeshFilter>().sharedMesh = model.Mesh;
+            go.AddComponent<MeshRenderer>().sharedMaterials = Grove.Skins.Skin(model.Groups);
+            if (Remapped.Add(model.Mesh.GetInstanceID()))
+                Grove.Skins.Remap(model.Mesh, model.Groups);
+
+            go.transform.localScale = Vector3.one * 0.8f;
+            return go;
         }
 
         // ------------------------------------------------------------------ the item

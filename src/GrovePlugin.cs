@@ -82,6 +82,7 @@ namespace Grove
                 // heartwood in an inventory. Thicket keeps its own registry because it
                 // registers items AND pieces per plant, which Prefabs.Keep does not model.
                 Thicket.WildPlants.Register();
+                BonemealPrefab.Register();
             }
             catch (System.Exception e)
             {
@@ -116,6 +117,7 @@ namespace Grove
             // beside the plant they describe rather than in a second list here that can
             // drift out of step with it.
             Thicket.ThicketConfig.Bind(Config);
+            Furrow.FurrowConfig.Bind(Config);
             Thicket.WildPlants.Bind(Config);
             Stow.StowRuntime.Log = Logger;
 
@@ -127,6 +129,9 @@ namespace Grove
             _harmony.PatchAll(typeof(Stow.StowPatches));
             _harmony.PatchAll(typeof(Thicket.SkillGate));
             _harmony.PatchAll(typeof(Thicket.Transplant));
+            _harmony.PatchAll(typeof(Thicket.Carry));
+            _harmony.PatchAll(typeof(Fertilise));
+            _harmony.PatchAll(typeof(Furrow.Sowing));
 
             // Without this the sapling still calls, and every one of them appears on top of
             // it: the band is enforced by a prefix on SpawnArea.FindSpawnPoint, and an
@@ -230,6 +235,9 @@ namespace Grove
             // that returns immediately when the world already has the prefab.
             Prefabs.Tick();
             Thicket.WildPlants.Register();
+            BonemealPrefab.Register();
+            Furrow.Sowing.HandleKeys(Player.m_localPlayer);
+            Thicket.Carry.Tick();
 
             // Not a registration, and so not part of the above. The post can appear at any
             // moment - it is a piece somebody builds - and this reprices its recipe when it
@@ -288,6 +296,7 @@ namespace Grove
             // has to be reapplied - otherwise loading a second world after the first
             // leaves the post back at its unmodified cost.
             StowCoupling.Invalidate();
+            BonemealPrefab.Invalidate();
 
             // And the item goes back in immediately, not next frame. The first Awake of
             // a session fires against a stub ObjectDB with no items in it, where this
@@ -316,6 +325,7 @@ namespace Grove
         {
             Skins.Invalidate();
             StowCoupling.Invalidate();
+            BonemealPrefab.Invalidate();
             GrovePlugin.RegisterNow();
         }
     }
