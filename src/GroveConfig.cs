@@ -121,7 +121,7 @@ namespace Grove
                 + "default on purpose: six custom shapes were judged and every one read "
                 + "as random parts.");
 
-            BonemealTint = config.Bind("Bonemeal", "BonemealTint", "0.78,0.70,0.52",
+            BonemealTint = config.Bind("Bonemeal", "BonemealTint", "",
                 "Colour multiplied into the sack, as r,g,b - bone-ivory by default, so "
                 + "bonemeal and barley flour share vanilla's one sack the way the meads "
                 + "share one jug and still read apart at a glance. Blank leaves the "

@@ -137,6 +137,7 @@ namespace Grove
             }
 
             Tint(clone);
+            Garnish(clone);
 
             var icon = Icons.Load(GroveConfig.BonemealIcon.Value, Name);
             if (icon != null) shared.m_icons = new[] { icon };
@@ -171,6 +172,58 @@ namespace Grove
         /// float-in-water behaviour, and only what you look at changes.
         /// </summary>
         /// <summary>
+        /// Bones out of the sack's mouth - the differentiation that colour could not
+        /// deliver. Two tints in, both sacks still read as the same dark bag at ground
+        /// distance, because a multiply darkens the cloth and leaves the pale meal
+        /// alike on both. The BoneFragments mesh itself, small and tilted at the top,
+        /// says "the bone one" from across a yard - the same trick as the carried
+        /// bush: a stripped visual clone of the real thing, no components, no network
+        /// identity.
+        /// </summary>
+        private static void Garnish(GameObject clone)
+        {
+            var source = ZNetScene.instance != null
+                ? ZNetScene.instance.GetPrefab("BoneFragments")
+                : null;
+            if (source == null) return;
+
+            var previous = ZNetView.m_forceDisableInit;
+            ZNetView.m_forceDisableInit = true;
+
+            GameObject bones;
+            try { bones = Object.Instantiate(source, clone.transform); }
+            finally { ZNetView.m_forceDisableInit = previous; }
+
+            bones.name = "bonemeal_garnish";
+
+            foreach (var component in bones.GetComponentsInChildren<MonoBehaviour>(true))
+                if (component != null) Object.DestroyImmediate(component);
+            foreach (var view in bones.GetComponentsInChildren<ZNetView>(true))
+                if (view != null) Object.DestroyImmediate(view);
+            foreach (var body in bones.GetComponentsInChildren<Rigidbody>(true))
+                if (body != null) Object.DestroyImmediate(body);
+            foreach (var collider in bones.GetComponentsInChildren<Collider>(true))
+                if (collider != null) Object.DestroyImmediate(collider);
+
+            // At the mouth of the sack, measured off the sack's own bounds so a donor
+            // swap keeps the bones where the opening is.
+            var bounds = new Bounds(clone.transform.position, Vector3.zero);
+            var any = false;
+            foreach (var renderer in clone.GetComponentsInChildren<Renderer>())
+            {
+                if (renderer == null || renderer.transform.IsChildOf(bones.transform)) continue;
+                if (!any) { bounds = renderer.bounds; any = true; }
+                else bounds.Encapsulate(renderer.bounds);
+            }
+
+            bones.transform.position = any
+                ? new Vector3(bounds.center.x, bounds.max.y - 0.02f, bounds.center.z)
+                : clone.transform.position + Vector3.up * 0.25f;
+            bones.transform.localRotation = Quaternion.Euler(18f, 35f, 0f);
+            bones.transform.localScale = Vector3.one * 0.55f;
+        }
+
+        /// <summary>
         /// Bone-ivory into the sack, on OUR OWN material copies - never the donor's
         /// shared material, which every barley flour in the world draws from. The
         /// copies belong to this prefab; its instances share them with each other
@@ -204,8 +257,21 @@ namespace Grove
                 {
                     if (materials[i] == null) continue;
                     materials[i] = new Material(materials[i]);
+
+                    // Say what we are tinting, once: the first attempt changed
+                    // nothing visible and gave no reason, which is exactly the
+                    // silent-skip this mod keeps producing. The property list is
+                    // the fact that decides the next move.
+                    GrovePlugin.LogOnce("Bonemeal tint: material '" + materials[i].name
+                        + "' shader '" + materials[i].shader.name
+                        + "' _Color=" + materials[i].HasProperty("_Color")
+                        + " _MainColor=" + materials[i].HasProperty("_MainColor"));
+
                     if (materials[i].HasProperty("_Color"))
                         materials[i].color = materials[i].color * tint;
+                    else if (materials[i].HasProperty("_MainColor"))
+                        materials[i].SetColor("_MainColor",
+                            materials[i].GetColor("_MainColor") * tint);
                 }
                 renderer.sharedMaterials = materials;
             }
