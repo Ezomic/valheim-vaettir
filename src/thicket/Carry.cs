@@ -37,6 +37,7 @@ namespace Thicket
         private static WildPlant _held;
         private static GameObject _visual;
         private static bool _hidTool;
+        private static bool _clipsSaid;
 
         internal static bool Carrying
         {
@@ -55,11 +56,44 @@ namespace Thicket
             _visual = WildPrefab.CarryVisual(plant, picked);
             if (_visual != null)
             {
-                _visual.transform.SetParent(player.transform, false);
-                // Low and close, in front of the belly - where empty arms read as
-                // wrapped around it rather than a bush hovering at the chin.
-                _visual.transform.localPosition = new Vector3(0f, 1.05f, 0.5f);
-                _visual.transform.localRotation = Quaternion.identity;
+                // The chest bone, not the player root: the root does not move with
+                // the walk cycle, so a root-parented bush hung in space while the
+                // body swayed around it. Ride the torso and it bobs like a held
+                // thing. World position computed first, then parented with the world
+                // kept, because a bone's local axes are whatever the rig says.
+                Transform mount = player.transform;
+                var animator = player.GetComponentInChildren<Animator>();
+                if (animator != null)
+                {
+                    var chest = animator.GetBoneTransform(HumanBodyBones.Chest);
+                    if (chest != null) mount = chest;
+
+                    // One-shot survey for the next iteration: does this rig even
+                    // carry a hold/carry clip a pose could borrow? Read once, said
+                    // once, and the answer decides whether a true hands-on pose is
+                    // a clip override or a custom animation nobody has.
+                    if (!_clipsSaid && animator.runtimeAnimatorController != null)
+                    {
+                        _clipsSaid = true;
+                        var names = new System.Collections.Generic.List<string>();
+                        foreach (var clip in animator.runtimeAnimatorController.animationClips)
+                        {
+                            if (clip == null) continue;
+                            var lower = clip.name.ToLowerInvariant();
+                            if (lower.Contains("carry") || lower.Contains("hold")
+                                || lower.Contains("lift") || lower.Contains("push")
+                                || lower.Contains("haul"))
+                                names.Add(clip.name);
+                        }
+                        GrovePlugin.Log.LogInfo("Carry-ish clips on the player rig: "
+                            + (names.Count == 0 ? "(none)" : string.Join(", ", names.ToArray())));
+                    }
+                }
+
+                _visual.transform.position = player.transform.position
+                    + player.transform.forward * 0.45f + Vector3.up * 1.05f;
+                _visual.transform.rotation = player.transform.rotation;
+                _visual.transform.SetParent(mount, true);
             }
 
             // Empty hands sell the carry, and vanilla does everything: the sheathe
