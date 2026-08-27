@@ -125,7 +125,7 @@ namespace Grove
                 + "on a field and a stack of ten would mean a trip back to a chest mid-row.");
 
             BonemealCost = config.Bind("Bonemeal", "BonemealCost",
-                "BoneFragments:10,Entrails:2",
+                "BoneFragments:2,Entrails:1",
                 "What one craft costs, as Item:Amount. Entrails rather than bone alone so it "
                 + "is a craft rather than a free conversion of the drop everybody is "
                 + "drowning in by the Black Forest. The bone mill stayed on its "
