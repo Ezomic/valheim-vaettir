@@ -106,10 +106,11 @@ namespace Thicket
             nview.ClaimOwnership();
 
             var where = pickable.transform.position;
+            var wasPicked = PickedRef(pickable);
 
             // An unpicked plant surrenders its pickings too, exactly what picking first
             // and then digging would have given. No order of operations is the wrong one.
-            if (!PickedRef(pickable) && pickable.m_itemPrefab != null)
+            if (!wasPicked && pickable.m_itemPrefab != null)
             {
                 for (var i = 0; i < Mathf.Max(1, pickable.m_amount); i++)
                     Object.Instantiate(pickable.m_itemPrefab,
@@ -120,7 +121,7 @@ namespace Thicket
             ZNetScene.instance.Destroy(pickable.gameObject);
 
             // Into the arms, not the inventory - Carry is the whole second half.
-            Carry.Begin(player, plant);
+            Carry.Begin(player, plant, wasPicked);
             player.RaiseSkill(Skills.SkillType.Farming, 1f);
         }
 

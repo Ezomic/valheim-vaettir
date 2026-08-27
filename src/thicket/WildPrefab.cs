@@ -408,7 +408,7 @@ namespace Thicket
         /// carrying nothing at all. Stripped of every component so it is pure shape:
         /// no network identity, no pickable, no collider to shove the carrier around.
         /// </summary>
-        public static GameObject CarryVisual(WildPlant plant)
+        public static GameObject CarryVisual(WildPlant plant, bool picked)
         {
             var source = ZNetScene.instance != null
                 ? ZNetScene.instance.GetPrefab(plant.Grown)
@@ -423,6 +423,17 @@ namespace Thicket
             finally { ZNetView.m_forceDisableInit = previous; }
 
             clone.name = "thicket_carried_" + plant.Id;
+
+            // The carried bush mirrors the state it was dug in. The berries are a
+            // child the Pickable hides when picked - the prefab ships with them ON,
+            // so a plucked bush carried without this grew berries in your arms.
+            if (picked)
+            {
+                Pickable clonePickable;
+                if (clone.TryGetComponent(out clonePickable)
+                    && clonePickable.m_hideWhenPicked != null)
+                    clonePickable.m_hideWhenPicked.SetActive(false);
+            }
 
             foreach (var component in clone.GetComponentsInChildren<MonoBehaviour>(true))
                 if (component != null) Object.DestroyImmediate(component);

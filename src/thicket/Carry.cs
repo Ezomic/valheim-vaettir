@@ -36,6 +36,7 @@ namespace Thicket
     {
         private static WildPlant _held;
         private static GameObject _visual;
+        private static bool _hidTool;
 
         internal static bool Carrying
         {
@@ -45,19 +46,28 @@ namespace Thicket
         /// <summary>Called by the dig. The visual rides the player's transform - crude
         /// beside a bone attach, but visible, and local-only in this version: other
         /// players see the plant vanish and reappear, not the carry.</summary>
-        internal static void Begin(Player player, WildPlant plant)
+        internal static void Begin(Player player, WildPlant plant, bool picked)
         {
             if (player == null || plant == null) return;
 
             _held = plant;
 
-            _visual = WildPrefab.CarryVisual(plant);
+            _visual = WildPrefab.CarryVisual(plant, picked);
             if (_visual != null)
             {
                 _visual.transform.SetParent(player.transform, false);
-                _visual.transform.localPosition = new Vector3(0f, 1.45f, 0.55f);
+                // Low and close, in front of the belly - where empty arms read as
+                // wrapped around it rather than a bush hovering at the chin.
+                _visual.transform.localPosition = new Vector3(0f, 1.05f, 0.5f);
                 _visual.transform.localRotation = Quaternion.identity;
             }
+
+            // Empty hands sell the carry, and vanilla does everything: the sheathe
+            // animation, the tool onto the back, other players seeing it - and
+            // leaving place mode, which is why planting is a plain E press. The
+            // restore goes through reflection because ShowHandItems is protected,
+            // and it must run AFTER the carry clears or our own equip-block eats it.
+            _hidTool = player.HideHandItems();
 
             player.Message(MessageHud.MessageType.Center,
                 "Carrying " + plant.Title + " - walk it somewhere its kind grows and "
@@ -190,6 +200,25 @@ namespace Thicket
             if (_visual != null) Object.Destroy(_visual);
             _visual = null;
             _held = null;
+
+            if (_hidTool)
+            {
+                _hidTool = false;
+                var player = Player.m_localPlayer;
+                if (player != null && !player.IsDead())
+                {
+                    try
+                    {
+                        AccessTools.Method(typeof(Humanoid), "ShowHandItems",
+                                new[] { typeof(bool), typeof(bool) })
+                            .Invoke(player, new object[] { false, true });
+                    }
+                    catch (System.Exception e)
+                    {
+                        GrovePlugin.Log.LogWarning("Could not unsheathe: " + e.Message);
+                    }
+                }
+            }
         }
 
         // ------------------------------------------------------- what carrying forbids
