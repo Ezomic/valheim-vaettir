@@ -133,6 +133,21 @@ namespace Thicket
 
         private static void PlantAt(Vector3 where)
         {
+            // The biome gate survives the seedling it used to live on. Plant.m_biome
+            // did this refusing for the old seedling path; with the grown bush going
+            // straight down, the same rule is asked of the ground here - and refused
+            // with the carry kept, so a wrong biome costs a walk, never the bush.
+            var biome = Heightmap.FindBiome(where);
+            if (_held.Biomes != 0 && (_held.Biomes & biome) == 0)
+            {
+                var player0 = Player.m_localPlayer;
+                if (player0 != null)
+                    player0.Message(MessageHud.MessageType.Center,
+                        _held.Title + " does not grow here - it wants "
+                        + _held.Biomes);
+                return;
+            }
+
             // The GROWN vanilla prefab, not the seedling piece. The seedling was the
             // "transplant recovery" design - dig, carry, a seedling regrows into the
             // bush - and he struck it: "you pickup a bush, it should show im carrying
