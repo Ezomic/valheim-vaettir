@@ -37,7 +37,6 @@ namespace Thicket
         private static WildPlant _held;
         private static GameObject _visual;
         private static bool _hidTool;
-        private static bool _clipsSaid;
 
         internal static bool Carrying
         {
@@ -56,42 +55,29 @@ namespace Thicket
             _visual = WildPrefab.CarryVisual(plant, picked);
             if (_visual != null)
             {
-                // The chest bone, not the player root: the root does not move with
-                // the walk cycle, so a root-parented bush hung in space while the
-                // body swayed around it. Ride the torso and it bobs like a held
-                // thing. World position computed first, then parented with the world
-                // kept, because a bone's local axes are whatever the rig says.
+                // On the head, balanced like a basket - his call, after the real
+                // hands-on pose priced itself out: the rig carries "Hold The Dragon"
+                // (the egg carry, exactly the pose wanted) but nothing reachable
+                // through AnimationState triggers it, and hunting animator wiring is
+                // the work this replaces. The head bone moves with everything the
+                // body does, so the bush bobs, turns and tilts when you look down,
+                // which is half the charm. World position computed first, then
+                // parented with the world kept - a bone's local axes are whatever
+                // the rig says.
                 Transform mount = player.transform;
+                var headWorld = player.transform.position + Vector3.up * 2.0f;
                 var animator = player.GetComponentInChildren<Animator>();
                 if (animator != null)
                 {
-                    var chest = animator.GetBoneTransform(HumanBodyBones.Chest);
-                    if (chest != null) mount = chest;
-
-                    // One-shot survey for the next iteration: does this rig even
-                    // carry a hold/carry clip a pose could borrow? Read once, said
-                    // once, and the answer decides whether a true hands-on pose is
-                    // a clip override or a custom animation nobody has.
-                    if (!_clipsSaid && animator.runtimeAnimatorController != null)
+                    var head = animator.GetBoneTransform(HumanBodyBones.Head);
+                    if (head != null)
                     {
-                        _clipsSaid = true;
-                        var names = new System.Collections.Generic.List<string>();
-                        foreach (var clip in animator.runtimeAnimatorController.animationClips)
-                        {
-                            if (clip == null) continue;
-                            var lower = clip.name.ToLowerInvariant();
-                            if (lower.Contains("carry") || lower.Contains("hold")
-                                || lower.Contains("lift") || lower.Contains("push")
-                                || lower.Contains("haul"))
-                                names.Add(clip.name);
-                        }
-                        GrovePlugin.Log.LogInfo("Carry-ish clips on the player rig: "
-                            + (names.Count == 0 ? "(none)" : string.Join(", ", names.ToArray())));
+                        mount = head;
+                        headWorld = head.position + Vector3.up * 0.30f;
                     }
                 }
 
-                _visual.transform.position = player.transform.position
-                    + player.transform.forward * 0.45f + Vector3.up * 1.05f;
+                _visual.transform.position = headWorld;
                 _visual.transform.rotation = player.transform.rotation;
                 _visual.transform.SetParent(mount, true);
             }
