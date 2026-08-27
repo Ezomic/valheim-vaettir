@@ -36,7 +36,13 @@ namespace Thicket
     {
         private static WildPlant _held;
         private static GameObject _visual;
-        private static bool _hidTool;
+        // The drawn tool's scene instance, which is where the bush sits - so
+        // sheathing mid-carry would destroy the bush's parent under it. Blocked
+        // below instead; it fits "nothing but walking" anyway.
+        private static readonly AccessTools.FieldRef<Character, VisEquipment> VisRef =
+            AccessTools.FieldRefAccess<Character, VisEquipment>("m_visEquipment");
+        private static readonly AccessTools.FieldRef<VisEquipment, GameObject> RightInstanceRef =
+            AccessTools.FieldRefAccess<VisEquipment, GameObject>("m_rightItemInstance");
 
         internal static bool Carrying
         {
@@ -55,39 +61,39 @@ namespace Thicket
             _visual = WildPrefab.CarryVisual(plant, picked);
             if (_visual != null)
             {
-                // On the head, balanced like a basket - his call, after the real
-                // hands-on pose priced itself out: the rig carries "Hold The Dragon"
-                // (the egg carry, exactly the pose wanted) but nothing reachable
-                // through AnimationState triggers it, and hunting animator wiring is
-                // the work this replaces. The head bone moves with everything the
-                // body does, so the bush bobs, turns and tilts when you look down,
-                // which is half the charm. World position computed first, then
-                // parented with the world kept - a bone's local axes are whatever
-                // the rig says.
+                // On the head of the CULTIVATOR - his words, misread once as the
+                // character's head, which put a bush basket on the viking. The tool
+                // stays drawn and the bush rides its tined end like a pitchfork
+                // load: the drawn tool's scene instance lives on VisEquipment, and
+                // the tip is the top of its rendered bounds. Parented world-kept, so
+                // it follows every swing of the hand through the walk.
                 Transform mount = player.transform;
-                var headWorld = player.transform.position + Vector3.up * 2.0f;
-                var animator = player.GetComponentInChildren<Animator>();
-                if (animator != null)
+                var where = player.transform.position
+                    + player.transform.forward * 0.4f + Vector3.up * 1.5f;
+
+                var vis = VisRef(player);
+                var toolInstance = vis != null ? RightInstanceRef(vis) : null;
+                if (toolInstance != null)
                 {
-                    var head = animator.GetBoneTransform(HumanBodyBones.Head);
-                    if (head != null)
+                    mount = toolInstance.transform;
+                    var bounds = new Bounds(toolInstance.transform.position, Vector3.zero);
+                    var any = false;
+                    foreach (var renderer in toolInstance.GetComponentsInChildren<Renderer>())
                     {
-                        mount = head;
-                        headWorld = head.position + Vector3.up * 0.30f;
+                        if (renderer == null) continue;
+                        if (!any) { bounds = renderer.bounds; any = true; }
+                        else bounds.Encapsulate(renderer.bounds);
                     }
+                    if (any)
+                        where = new Vector3(bounds.center.x, bounds.max.y + 0.12f,
+                                            bounds.center.z);
                 }
 
-                _visual.transform.position = headWorld;
+                _visual.transform.position = where;
                 _visual.transform.rotation = player.transform.rotation;
                 _visual.transform.SetParent(mount, true);
             }
 
-            // Empty hands sell the carry, and vanilla does everything: the sheathe
-            // animation, the tool onto the back, other players seeing it - and
-            // leaving place mode, which is why planting is a plain E press. The
-            // restore goes through reflection because ShowHandItems is protected,
-            // and it must run AFTER the carry clears or our own equip-block eats it.
-            _hidTool = player.HideHandItems();
 
             player.Message(MessageHud.MessageType.Center,
                 "Carrying " + plant.Title + " - walk it somewhere its kind grows and "
@@ -221,24 +227,6 @@ namespace Thicket
             _visual = null;
             _held = null;
 
-            if (_hidTool)
-            {
-                _hidTool = false;
-                var player = Player.m_localPlayer;
-                if (player != null && !player.IsDead())
-                {
-                    try
-                    {
-                        AccessTools.Method(typeof(Humanoid), "ShowHandItems",
-                                new[] { typeof(bool), typeof(bool) })
-                            .Invoke(player, new object[] { false, true });
-                    }
-                    catch (System.Exception e)
-                    {
-                        GrovePlugin.Log.LogWarning("Could not unsheathe: " + e.Message);
-                    }
-                }
-            }
         }
 
         // ------------------------------------------------------- what carrying forbids
@@ -281,6 +269,13 @@ namespace Thicket
             if (!Carrying || __instance != (Humanoid)Player.m_localPlayer) return true;
             __result = false;
             return false;
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(Humanoid), "HideHandItems")]
+        private static bool NoSheathing(Humanoid __instance)
+        {
+            return !(Carrying && __instance == (Humanoid)Player.m_localPlayer);
         }
 
         /// <summary>
