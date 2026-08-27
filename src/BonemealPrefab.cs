@@ -226,10 +226,35 @@ namespace Grove
 
         private static void Visual(GameObject clone, ModelData model)
         {
-            var filter = clone.GetComponentInChildren<MeshFilter>(true);
-            if (filter == null) return;
+            // The heartwood pattern, and for the heartwood's reasons: swapping only
+            // the mesh keeps the donor's material, whose normal map sampled through
+            // our UVs lit the dropped sack solid black. Components stripped, never
+            // their GameObjects - the donor's collider lives beside its renderer,
+            // and taking the object drops the item through the floor.
+            foreach (var renderer in clone.GetComponentsInChildren<MeshRenderer>(true))
+            {
+                if (renderer == null) continue;
 
-            filter.sharedMesh = model.Mesh;
+                var donorFilter = renderer.GetComponent<MeshFilter>();
+                if (donorFilter != null) Object.DestroyImmediate(donorFilter);
+                Object.DestroyImmediate(renderer);
+            }
+
+            var visual = new GameObject("bonemeal_visual");
+            visual.transform.SetParent(clone.transform, false);
+            visual.AddComponent<MeshFilter>().sharedMesh = model.Mesh;
+            visual.AddComponent<MeshRenderer>().sharedMaterials = Skins.Skin(model.Groups);
+            Skins.Remap(model.Mesh, model.Groups);
+
+            // The heartwood's other lesson, kept as insurance: an item with no
+            // collider falls through the world without a message.
+            if (clone.GetComponentInChildren<Collider>(true) == null && model.Mesh != null)
+            {
+                var bounds = model.Mesh.bounds;
+                var box = clone.AddComponent<BoxCollider>();
+                box.center = bounds.center;
+                box.size = bounds.size;
+            }
         }
 
         // ------------------------------------------------------------------ registration

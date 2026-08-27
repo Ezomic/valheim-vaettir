@@ -138,7 +138,9 @@ def sack():
     # so a vert-only profile spins into an invisible wireframe. Found by the
     # first render showing a floating rope and no sack.
     edges = [bm.edges.new((ring[i], ring[i + 1])) for i in range(len(ring) - 1)]
-    bmesh.ops.spin(bm, geom=ring + edges, angle=math.tau, steps=10,
+    # Nine steps, not ten: an even-sided lathe presents a flat face straight at
+    # the camera and its quads read as rectangles - the house cylinder rule.
+    bmesh.ops.spin(bm, geom=ring + edges, angle=math.tau, steps=9,
                    axis=(0, 0, 1), cent=(0, 0, 0))
     bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=0.001)
     for v in bm.verts:
@@ -153,7 +155,7 @@ def sack():
     bpy.ops.object.shade_flat()
 
     # the rope at the cinch, and the meal peeking above the flare
-    cyl(0, 0, 0.345, 0.075, 0.022, flat("rope", ROPE), sides=10)
+    cyl(0, 0, 0.345, 0.075, 0.022, flat("rope", ROPE), sides=9)
     sphereish(0, 0, 0.415, 0.045, 0.045, 0.025, flat("meal", MEAL))
 
 

@@ -56,6 +56,13 @@ namespace Grove
                 // material for both and hand the thistle a dandelion's yellow. The group
                 // name is the cache key, which is exactly why they cannot share it.
                 { "bloom", new[] { "Pickable_Dandelion", "sapling_carrot" } },
+
+                // The bonemeal sack. Cloth from the hide items (single-material
+                // donors, sackcloth tones), the meal from BoneFragments - the one
+                // honestly bone-white surface in the game - and the rope rides bark.
+                { "cloth", new[] { "LeatherScraps", "DeerHide", "wood_wall" } },
+                { "meal",  new[] { "BoneFragments", "stone_wall_2x1" } },
+                { "rope",  new[] { "wood_wall", "wood_beam" } },
                 { "bud",   new[] { "Pickable_Thistle", "Pickable_Dandelion",
                                    "sapling_carrot" } },
             };
