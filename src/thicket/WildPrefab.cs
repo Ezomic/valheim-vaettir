@@ -386,17 +386,25 @@ namespace Thicket
             piece.m_resources = new Piece.Requirement[0];
             piece.m_groundPiece = false;
 
-            // A raspberry bush, photographed live - his call over the cultivator's
-            // own picture: the entry is about the plants, so it wears one. A file
-            // beside the dll still wins if anyone ever draws a better one.
+            // The Raspberries ITEM icon - what vanilla itself does for planting
+            // entries, which wear their produce. A live photograph of the bush was
+            // tried first and shot the worst icon in the row: a muddy clod with no
+            // silhouette, because the render rig was tuned for barrels, not foliage,
+            // and vanilla's hand-made art plays by different rules than a camera.
+            // A file beside the dll still wins if anyone draws a better one.
             var icon = Grove.Icons.Load("thicket_transplant.png", ToolName);
             if (icon == null)
             {
-                var bush = ZNetScene.instance != null
-                    ? ZNetScene.instance.GetPrefab("RaspberryBush")
+                var berries = ObjectDB.instance != null
+                    ? ObjectDB.instance.GetItemPrefab("Raspberry")
                     : null;
-                if (bush != null)
-                    icon = Grove.IconRender.Shoot(bush, ToolName);
+                ItemDrop berriesDrop;
+                if (berries != null && berries.TryGetComponent(out berriesDrop)
+                    && berriesDrop.m_itemData != null
+                    && berriesDrop.m_itemData.m_shared != null
+                    && berriesDrop.m_itemData.m_shared.m_icons != null
+                    && berriesDrop.m_itemData.m_shared.m_icons.Length > 0)
+                    icon = berriesDrop.m_itemData.m_shared.m_icons[0];
             }
             if (icon != null) piece.m_icon = icon;
 
