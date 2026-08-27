@@ -41,6 +41,10 @@ namespace Thicket
 
         private static readonly HashSet<string> Said = new HashSet<string>();
 
+        private static float _nextKnownNudge;
+        private static readonly AccessTools.FieldRef<Player, HashSet<string>> KnownRef =
+            AccessTools.FieldRefAccess<Player, HashSet<string>>("m_knownRecipes");
+
         /// <summary>Plants whose prefab could not be built at all - a missing model, a bush
         /// this version of the game does not have - so the retry stops asking.</summary>
         private static readonly HashSet<WildPlant> Refused = new HashSet<WildPlant>();
@@ -122,7 +126,45 @@ namespace Thicket
             // flag: the Cultivator's PieceTable is rebuilt with ObjectDB per world.
             var tool = WildPrefab.BuildTool();
             if (tool != null && !table.m_pieces.Contains(tool))
+            {
                 table.m_pieces.Add(tool);
+                GrovePlugin.Log.LogInfo("Transplant added to the cultivator table ("
+                    + table.m_pieces.Count + " pieces).");
+            }
+
+            // The menu filter only shows KNOWN pieces, and knownness is re-evaluated
+            // by Player.UpdateKnownRecipesList - which is event-driven: it runs at
+            // spawn and then only when a new item or station is learned. A piece
+            // registered seconds after spawn therefore stays invisible forever on a
+            // quiet save. So while the tool is in the table and not yet known, nudge
+            // that update ourselves; the moment it lands this stops firing. Probed to
+            // this exact mechanism on 2026-08-27 - table, enabled, icon and the
+            // requirements check all measured fine while known stayed false.
+            if (tool != null && Time.time > _nextKnownNudge)
+            {
+                _nextKnownNudge = Time.time + 5f;
+                var player = Player.m_localPlayer;
+                if (player != null)
+                {
+                    var known = KnownRef(player);
+                    if (known != null && !known.Contains("Transplant")
+                        && table.m_pieces.Contains(tool))
+                    {
+                        try
+                        {
+                            AccessTools.Method(typeof(Player), "UpdateKnownRecipesList")
+                                .Invoke(player, null);
+                            GrovePlugin.Log.LogInfo(
+                                "Nudged the known-pieces update for Transplant.");
+                        }
+                        catch (System.Exception e)
+                        {
+                            GrovePlugin.Log.LogWarning(
+                                "Could not nudge known pieces: " + e.Message);
+                        }
+                    }
+                }
+            }
 
             var done = true;
 
