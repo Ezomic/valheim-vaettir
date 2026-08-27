@@ -3,18 +3,45 @@
 Notable changes to Vaettir. Format follows [Keep a Changelog](https://keepachangelog.com),
 and the mod uses [semantic versioning](https://semver.org).
 
-## [1.2.0] - 2026-08-27
+## [1.2.0] - 2026-08-28
 
-**Thicket: move wild plants.** Hold the cultivator and E digs up a wild berry bush,
-thistle, dandelion or mushroom patch; the uprooted plant is an item, and replanting it
-through the cultivator is what the item is for. The world's plant count is conserved -
-digging is the only source, and a replanted plant arrives picked so a dig-replant loop
-cannot mint berries. The same Farming ladder gates both ends, and grow times are
-transplant-recovery scale: minutes, not hours.
+Four features, every one reshaped in play before it shipped.
 
-The first Thicket design - grow a new bush from a handful of its berries - was reversed
-before it shipped: the objection to every generous version of a thing is that the
-world's bush count only ever goes up.
+### Thicket: move wild plants
+
+Select **Transplant** on the cultivator and click a wild berry bush, thistle, dandelion
+or mushroom patch: it comes up roots-and-all INTO YOUR ARMS - no item, no inventory -
+riding the tool's tined end while you walk it home. Walking is the whole verb set:
+running, jumping, attacking, the hotbar, equipping and every ordinary interaction wait
+until the plant is down. Click open ground where its kind grows (the biome gate refuses
+elsewhere, keeping the carry), press R to set it down anywhere regardless, and the SAME
+plant stands there - picked-empty, its berries having dropped at the dig, regrowing on
+vanilla's own timer. Dying or logging out plants it at your feet: conservation does not
+take an exit as an excuse. The Farming ladder gates digging per plant, and the world's
+plant count only ever stays the same.
+
+### Bonemeal, without the bone mill
+
+Two bones and an entrail make five at the workbench. Worked into a growing crop - crops
+only, never trees - it marks the plant: picking the crop it becomes yields THREE times
+and trains Farming hard, once, and the mark is spent. No growth speed-up, deliberately:
+bonemeal is resourcefulness, not haste. A fed plant says "Fertilised" on hover, and a
+second bonemeal on the same plant is refused rather than wasted. The sack is hand-built
+- a lathe-turned tied sack in flat painted colours matching its icon.
+
+### The planting grid, from Farming 10
+
+The cultivator's ghost snaps onto a lattice anchored to the nearest plant of the same
+kind, spaced by the plant's own grow radius - so beds come out in rows and columns you
+place yourself, one seed per press, exactly as vanilla plants. The first plant of a bed
+goes wherever you like and anchors it; no kin nearby, no snap. (Furrow's multi-sow
+machinery exists behind a config flag, off: one press planting a square was built and
+struck the day it was met.)
+
+### Housekeeping
+
+1.1.0 was published with its version constants still reading 1.0.0; the gate never
+noticed because both ends ran the same bytes. This release re-aligns the numbers.
 
 ## [1.1.0] - 2026-08-23
 
