@@ -246,6 +246,15 @@ namespace Grove
 
             bonus += Mathf.RoundToInt(amount * (multiplier - 1f));
 
+            // The lesson beside the meal, his numbers: picking a fertilised crop
+            // trains Farming hard. Granted to the local player on the owning
+            // machine - in this pack's bases that is the picker; a fertilised crop
+            // picked in someone else's loaded zone credits them instead, which is
+            // the cost of riding RPC_Pick and is accepted.
+            var gain = Mathf.Max(0f, GroveConfig.BonemealSkillGain.Value);
+            if (gain > 0f && Player.m_localPlayer != null)
+                Player.m_localPlayer.RaiseSkill(Skills.SkillType.Farming, gain);
+
             // Spent. A pickable with a respawn time - a berry bush rather than a crop - would
             // otherwise stay doubled for the rest of the world's life off one use.
             zdo.Set(Fertilised, false);

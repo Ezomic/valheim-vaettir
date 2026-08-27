@@ -99,6 +99,7 @@ namespace Grove
         public static ConfigEntry<string> BonemealStation;
         public static ConfigEntry<float> BonemealAdvance;
         public static ConfigEntry<float> BonemealHarvest;
+        public static ConfigEntry<float> BonemealSkillGain;
         public static ConfigEntry<float> BonemealFarming;
         public static ConfigEntry<float> BonemealRadius;
 
@@ -152,8 +153,8 @@ namespace Grove
                 + "the default: a fertiliser that finishes the job is a harvest button, and "
                 + "it makes the Farming skill Furrow exists to reward moot.");
 
-            BonemealHarvest = config.Bind("Bonemeal", "BonemealHarvest", 2f,
-                "What a fertilised crop yields when picked, as a multiplier. Two, so a fed "
+            BonemealHarvest = config.Bind("Bonemeal", "BonemealHarvest", 3f,
+                "What a fertilised crop yields when picked, as a multiplier. Three, so a fed "
                 + "carrot gives two.\n"
                 + "It travels down RPC_Pick's own bonus argument - the same channel the "
                 + "Farming skill's max-level bonus already uses - so the extra goes through "
@@ -166,6 +167,11 @@ namespace Grove
                 + "farmed by standing over one carrot. It is also spent on picking, which "
                 + "matters for anything that respawns rather than being consumed.\n"
                 + "Set it to 1 to keep the speed and drop the bounty.");
+
+            BonemealSkillGain = config.Bind("Bonemeal", "BonemealSkillGain", 5f,
+                "Farming skill gain granted when a fertilised crop is picked - his call: "
+                + "a fed field is also a lesson. Granted to the local player on the "
+                + "machine that owns the crop, which in this pack's bases is the picker.");
 
             TestMode = config.Bind("Diagnostics", "TestMode", false,
                 "Drops what a sapling needs to three greydwarfs, so the whole chain - "
