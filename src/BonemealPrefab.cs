@@ -281,10 +281,6 @@ namespace Grove
                 material.SetFloat("_Glossiness", 0f);
                 materials[i] = material;
 
-                GrovePlugin.LogOnce("Flat mat '" + groups[i] + "': shader "
-                    + material.shader.name + ", color " + material.color
-                    + ", mainTex " + (material.mainTexture == null ? "(none)"
-                        : material.mainTexture.name));
             }
             return materials;
         }
