@@ -250,9 +250,13 @@ namespace Grove
             var palette = new System.Collections.Generic.Dictionary<string, Color>(
                 System.StringComparer.OrdinalIgnoreCase)
             {
-                { "cloth", new Color(0.42f, 0.34f, 0.24f) },
-                { "rope",  new Color(0.55f, 0.44f, 0.28f) },
-                { "meal",  new Color(0.78f, 0.74f, 0.64f) },
+                // Roughly half the icon's display values: these are ALBEDOS, and
+                // vanilla's textures sit near 0.3 - a 0.78 flat albedo under the
+                // game's sun blew the whole sack out white. The icon renders its
+                // own exposure; the world multiplies sunlight over these.
+                { "cloth", new Color(0.20f, 0.16f, 0.11f) },
+                { "rope",  new Color(0.26f, 0.21f, 0.13f) },
+                { "meal",  new Color(0.38f, 0.36f, 0.31f) },
             };
 
             var materials = new Material[groups.Length];
@@ -260,7 +264,7 @@ namespace Grove
             {
                 Color colour;
                 if (!palette.TryGetValue(groups[i], out colour))
-                    colour = new Color(0.5f, 0.45f, 0.38f);
+                    colour = new Color(0.24f, 0.21f, 0.17f);
 
                 var material = new Material(shader);
                 material.color = colour;
