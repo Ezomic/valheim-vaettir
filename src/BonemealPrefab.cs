@@ -424,7 +424,20 @@ namespace Grove
             db.m_recipes.Add(recipe);
             _recipeAdded = true;
 
-            GrovePlugin.Log.LogInfo("Added the recipe for " + Name + ".");
+            // The cost is spelled out rather than just "added", because a saved config
+            // value silently beats a new default and the two are indistinguishable from
+            // in game once you are looking at a crafting panel and a config file that
+            // disagree. Whatever the recipe actually ended up costing, it says so here.
+            var cost = new System.Text.StringBuilder();
+            foreach (var requirement in requirements)
+            {
+                if (cost.Length > 0) cost.Append(" + ");
+                cost.Append(requirement.m_amount).Append("x ").Append(
+                    requirement.m_resItem != null ? requirement.m_resItem.name : "?");
+            }
+
+            GrovePlugin.Log.LogInfo("Added the recipe for " + Name + ": "
+                + cost + " makes " + recipe.m_amount + ".");
         }
 
         /// <summary>
