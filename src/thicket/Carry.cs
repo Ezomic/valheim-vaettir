@@ -96,8 +96,8 @@ namespace Thicket
 
 
             player.Message(MessageHud.MessageType.Center,
-                "Carrying " + plant.Title + " - walk it somewhere its kind grows and "
-                + "press E on open ground to plant it");
+                "Carrying " + plant.Title + " - click open ground where its kind "
+                + "grows to plant it, or press R to set it down right here");
         }
 
         /// <summary>Ticked from the plugin's Update, after the registrations.</summary>
@@ -117,7 +117,20 @@ namespace Thicket
 
             if (player.IsDead())
             {
-                PlantAt(player.transform.position);
+                PlantAt(player.transform.position, ignoreBiome: true);
+                return;
+            }
+
+            // The escape valve, and it was missing when he got stuck: a blueberry
+            // bush carried in the Meadows had every click refused by its own biome
+            // gate, with equips blocked and nowhere legal to put it - a soft lock.
+            // R sets the bush down right here, gates ignored: conservation outranks
+            // correctness, and a wrong-biome bush standing in a yard is a story, not
+            // a bug.
+            if (ZInput.GetButtonDown("Hide") || ZInput.GetButtonDown("JoyHide"))
+            {
+                PlantAt(player.transform.position
+                    + player.transform.forward * 1.1f, ignoreBiome: true);
                 return;
             }
 
@@ -167,14 +180,14 @@ namespace Thicket
             }
         }
 
-        private static void PlantAt(Vector3 where)
+        private static void PlantAt(Vector3 where, bool ignoreBiome = false)
         {
             // The biome gate survives the seedling it used to live on. Plant.m_biome
             // did this refusing for the old seedling path; with the grown bush going
             // straight down, the same rule is asked of the ground here - and refused
             // with the carry kept, so a wrong biome costs a walk, never the bush.
             var biome = Heightmap.FindBiome(where);
-            if (_held.Biomes != 0 && (_held.Biomes & biome) == 0)
+            if (!ignoreBiome && _held.Biomes != 0 && (_held.Biomes & biome) == 0)
             {
                 var player0 = Player.m_localPlayer;
                 if (player0 != null)
