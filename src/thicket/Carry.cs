@@ -39,10 +39,39 @@ namespace Thicket
         // The drawn tool's scene instance, which is where the bush sits - so
         // sheathing mid-carry would destroy the bush's parent under it. Blocked
         // below instead; it fits "nothing but walking" anyway.
-        private static readonly AccessTools.FieldRef<Character, VisEquipment> VisRef =
-            AccessTools.FieldRefAccess<Character, VisEquipment>("m_visEquipment");
-        private static readonly AccessTools.FieldRef<VisEquipment, GameObject> RightInstanceRef =
-            AccessTools.FieldRefAccess<VisEquipment, GameObject>("m_rightItemInstance");
+        //
+        // Bound LAZILY with a catch, never in the static initializer. The first
+        // version bound FieldRefAccess<Character,...> there, the field lives on
+        // Humanoid, and a throwing type initializer poisons EVERY patch this class
+        // carries - which presented as "I can't equip any tool", because the equip
+        // block was one of them. A failed binding now costs only the pretty mount.
+        private static AccessTools.FieldRef<Humanoid, VisEquipment> _visRef;
+        private static AccessTools.FieldRef<VisEquipment, GameObject> _rightInstanceRef;
+        private static bool _visBindTried;
+
+        private static GameObject DrawnTool(Player player)
+        {
+            if (!_visBindTried)
+            {
+                _visBindTried = true;
+                try
+                {
+                    _visRef = AccessTools.FieldRefAccess<Humanoid, VisEquipment>(
+                        "m_visEquipment");
+                    _rightInstanceRef = AccessTools.FieldRefAccess<VisEquipment, GameObject>(
+                        "m_rightItemInstance");
+                }
+                catch (System.Exception e)
+                {
+                    GrovePlugin.Log.LogWarning("No tool mount, using the fallback: "
+                        + e.Message);
+                }
+            }
+            if (_visRef == null || _rightInstanceRef == null) return null;
+
+            var vis = _visRef(player);
+            return vis != null ? _rightInstanceRef(vis) : null;
+        }
 
         internal static bool Carrying
         {
@@ -71,8 +100,7 @@ namespace Thicket
                 var where = player.transform.position
                     + player.transform.forward * 0.4f + Vector3.up * 1.5f;
 
-                var vis = VisRef(player);
-                var toolInstance = vis != null ? RightInstanceRef(vis) : null;
+                var toolInstance = DrawnTool(player);
                 if (toolInstance != null)
                 {
                     mount = toolInstance.transform;
