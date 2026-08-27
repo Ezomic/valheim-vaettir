@@ -104,17 +104,41 @@ namespace Thicket
                 if (toolInstance != null)
                 {
                     mount = toolInstance.transform;
-                    var bounds = new Bounds(toolInstance.transform.position, Vector3.zero);
-                    var any = false;
-                    foreach (var renderer in toolInstance.GetComponentsInChildren<Renderer>())
+
+                    // The tine end, not the top. "Top of the rendered bounds" put the
+                    // bush on the HANDLE, because a drawn tool is held at an angle
+                    // and the grip end rides highest. The instance's origin sits at
+                    // the grip - that is where the hand holds it - so the head is
+                    // the far end of the longest local axis from the origin. Mesh
+                    // corners measured in instance space, extremes compared by
+                    // distance from zero.
+                    var best = Vector3.zero;
+                    var bestSpan = 0f;
+                    foreach (var filter in toolInstance.GetComponentsInChildren<MeshFilter>())
                     {
-                        if (renderer == null) continue;
-                        if (!any) { bounds = renderer.bounds; any = true; }
-                        else bounds.Encapsulate(renderer.bounds);
+                        if (filter == null || filter.sharedMesh == null) continue;
+
+                        var b = filter.sharedMesh.bounds;
+                        for (var i = 0; i < 8; i++)
+                        {
+                            var corner = b.center + Vector3.Scale(b.extents, new Vector3(
+                                (i & 1) == 0 ? -1f : 1f,
+                                (i & 2) == 0 ? -1f : 1f,
+                                (i & 4) == 0 ? -1f : 1f));
+                            var local = toolInstance.transform.InverseTransformPoint(
+                                filter.transform.TransformPoint(corner));
+                            if (local.sqrMagnitude > bestSpan)
+                            {
+                                bestSpan = local.sqrMagnitude;
+                                best = local;
+                            }
+                        }
                     }
-                    if (any)
-                        where = new Vector3(bounds.center.x, bounds.max.y + 0.12f,
-                                            bounds.center.z);
+
+                    where = bestSpan > 0f
+                        ? toolInstance.transform.TransformPoint(best) + Vector3.up * 0.15f
+                        : player.transform.position + player.transform.forward * 0.4f
+                            + Vector3.up * 1.5f;
                 }
 
                 _visual.transform.position = where;
