@@ -386,17 +386,19 @@ namespace Thicket
             piece.m_resources = new Piece.Requirement[0];
             piece.m_groundPiece = false;
 
-            // The cultivator's own picture, so the entry reads as a mode of the tool
-            // rather than as a thing it builds.
-            var cultivator = ObjectDB.instance != null
-                ? ObjectDB.instance.GetItemPrefab("Cultivator")
-                : null;
-            ItemDrop drop;
-            if (cultivator != null && cultivator.TryGetComponent(out drop)
-                && drop.m_itemData != null && drop.m_itemData.m_shared != null
-                && drop.m_itemData.m_shared.m_icons != null
-                && drop.m_itemData.m_shared.m_icons.Length > 0)
-                piece.m_icon = drop.m_itemData.m_shared.m_icons[0];
+            // A raspberry bush, photographed live - his call over the cultivator's
+            // own picture: the entry is about the plants, so it wears one. A file
+            // beside the dll still wins if anyone ever draws a better one.
+            var icon = Grove.Icons.Load("thicket_transplant.png", ToolName);
+            if (icon == null)
+            {
+                var bush = ZNetScene.instance != null
+                    ? ZNetScene.instance.GetPrefab("RaspberryBush")
+                    : null;
+                if (bush != null)
+                    icon = Grove.IconRender.Shoot(bush, ToolName);
+            }
+            if (icon != null) piece.m_icon = icon;
 
             return _tool;
         }
