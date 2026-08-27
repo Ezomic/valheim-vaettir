@@ -145,14 +145,31 @@ def sack():
     bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=0.001)
     for v in bm.verts:
         if 0.02 < v.co.z < 0.4:
-            v.co.x += random.uniform(-0.006, 0.006)
-            v.co.y += random.uniform(-0.006, 0.006)
+            v.co.x += random.uniform(-0.018, 0.018)
+            v.co.y += random.uniform(-0.018, 0.018)
+            v.co.z += random.uniform(-0.008, 0.008)
+
+    # Triangulated, or the lathe's neat rings read as rows of rectangles - which
+    # is exactly what they are until the quads are split and jittered.
+    bmesh.ops.triangulate(bm, faces=bm.faces[:])
     bm.to_mesh(mesh)
     bm.free()
 
     ob.data.materials.append(flat("cloth", CLOTH))
     bpy.context.view_layer.objects.active = ob
     bpy.ops.object.shade_flat()
+
+    # A bmesh-born mesh has NO UV layer, and the OBJ writes its faces without
+    # texture coordinates - which the runtime loader drops silently, so the sack
+    # body simply did not render in game while the primitives beside it did.
+    # Cylinder projection, because a body of revolution is the projection's own
+    # case - after scale, before any rotation, per the house rule.
+    bpy.ops.object.select_all(action="DESELECT")
+    ob.select_set(True)
+    bpy.ops.object.mode_set(mode="EDIT")
+    bpy.ops.mesh.select_all(action="SELECT")
+    bpy.ops.uv.cylinder_project(scale_to_bounds=True)
+    bpy.ops.object.mode_set(mode="OBJECT")
 
     # the rope at the cinch, and the meal peeking above the flare
     cyl(0, 0, 0.345, 0.075, 0.022, flat("rope", ROPE), sides=9)
