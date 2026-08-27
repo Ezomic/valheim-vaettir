@@ -226,7 +226,27 @@ namespace Grove
 
         private static Material[] FlatMaterials(string[] groups)
         {
-            var shader = Shader.Find("Standard");
+            // From a live material, never Shader.Find: "Standard" exists on plenty
+            // of materials and is still stripped from Find's registry, so Find
+            // returned null and new Material(null) threw - which killed the whole
+            // item's registration on every retry. BoneFragments provably wears it.
+            Shader shader = null;
+            var bones = ObjectDB.instance != null
+                ? ObjectDB.instance.GetItemPrefab("BoneFragments")
+                : null;
+            if (bones != null)
+            {
+                var renderer = bones.GetComponentInChildren<Renderer>(true);
+                if (renderer != null && renderer.sharedMaterial != null)
+                    shader = renderer.sharedMaterial.shader;
+            }
+            if (shader == null)
+            {
+                var borrowed = Skins.Skin(new[] { "wood" });
+                if (borrowed.Length > 0 && borrowed[0] != null)
+                    shader = borrowed[0].shader;
+            }
+            if (shader == null) return Skins.Skin(groups);
             var palette = new System.Collections.Generic.Dictionary<string, Color>(
                 System.StringComparer.OrdinalIgnoreCase)
             {
