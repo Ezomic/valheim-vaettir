@@ -30,7 +30,7 @@ namespace Grove
     {
         public const string PluginGuid = "ezomic.valheim.vaettir";
         public const string PluginName = "Vaettir";
-        public const string PluginVersion = "1.1.0";
+        public const string PluginVersion = "1.2.0";
         public const string PluginAuthor = "Robbin Thijssen";
 
         /// <summary>Core's plugin GUID. Optional - see TryRegisterWithCore.</summary>
@@ -75,6 +75,13 @@ namespace Grove
             try
             {
                 Prefabs.Tick();
+
+                // Alongside the keeper, and for the same reason: a prefab that is not in
+                // ZNetScene by the time a zone loads has its ZDOs discarded rather than
+                // errored. A planted seedling is exactly as easy to lose that way as a
+                // heartwood in an inventory. Thicket keeps its own registry because it
+                // registers items AND pieces per plant, which Prefabs.Keep does not model.
+                Thicket.WildPlants.Register();
             }
             catch (System.Exception e)
             {
@@ -104,6 +111,12 @@ namespace Grove
             // its settings against this Config is what puts them in this mod's .cfg.
             GroveConfig.Bind(Config);
             Stow.StowConfig.Bind(Config);
+
+            // The wild plants bind their own rows, one per plant, so the defaults live
+            // beside the plant they describe rather than in a second list here that can
+            // drift out of step with it.
+            Thicket.ThicketConfig.Bind(Config);
+            Thicket.WildPlants.Bind(Config);
             Stow.StowRuntime.Log = Logger;
 
             TryRegisterWithCore();
@@ -112,6 +125,8 @@ namespace Grove
             _harmony.PatchAll(typeof(BloodFeed));
             _harmony.PatchAll(typeof(GrovePatches));
             _harmony.PatchAll(typeof(Stow.StowPatches));
+            _harmony.PatchAll(typeof(Thicket.SkillGate));
+            _harmony.PatchAll(typeof(Thicket.Transplant));
 
             // Without this the sapling still calls, and every one of them appears on top of
             // it: the band is enforced by a prefix on SpawnArea.FindSpawnPoint, and an
@@ -214,6 +229,7 @@ namespace Grove
             // One call, and cheap once satisfied: every check inside it is a live lookup
             // that returns immediately when the world already has the prefab.
             Prefabs.Tick();
+            Thicket.WildPlants.Register();
 
             // Not a registration, and so not part of the above. The post can appear at any
             // moment - it is a piece somebody builds - and this reprices its recipe when it
@@ -229,6 +245,11 @@ namespace Grove
             // pieces above, and reads the two stow keys. Last, because it is the half of
             // the mod that depends on the heartwood existing.
             Stow.StowRuntime.Tick();
+
+            // Says which Farming level a locked plant wants. Driven from here rather than
+            // from inside the gate itself, which the Hud asks about every piece in the open
+            // build menu on every frame.
+            Thicket.SkillGate.Tick(Player.m_localPlayer);
 
             if (_diagnosticsDone || ZNetScene.instance == null) return;
             _diagnosticsDone = true;

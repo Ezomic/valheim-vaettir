@@ -3,6 +3,19 @@
 Notable changes to Vaettir. Format follows [Keep a Changelog](https://keepachangelog.com),
 and the mod uses [semantic versioning](https://semver.org).
 
+## [1.2.0] - 2026-08-27
+
+**Thicket: move wild plants.** Hold the cultivator and E digs up a wild berry bush,
+thistle, dandelion or mushroom patch; the uprooted plant is an item, and replanting it
+through the cultivator is what the item is for. The world's plant count is conserved -
+digging is the only source, and a replanted plant arrives picked so a dig-replant loop
+cannot mint berries. The same Farming ladder gates both ends, and grow times are
+transplant-recovery scale: minutes, not hours.
+
+The first Thicket design - grow a new bush from a handful of its berries - was reversed
+before it shipped: the objection to every generous version of a thing is that the
+world's bush count only ever goes up.
+
 ## [1.1.0] - 2026-08-23
 
 The sapling half. Four things, and the first of them is the one that matters.

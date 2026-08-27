@@ -42,6 +42,22 @@ namespace Grove
                 // stick with a plank on top of it.
                 { "moss",  new[] { "sapling_carrot", "sapling_turnip", "Bush01",
                                    "shrub_2", "piece_beehive" } },
+
+                // A mushroom cap, for Thicket's seedlings. Its own group rather than moss
+                // because a green mushroom reads as a leaf on a stick, and the donors are
+                // the mushrooms themselves - they are the one vanilla surface that is
+                // neither bark, stone nor foliage.
+                { "cap",   new[] { "Pickable_Mushroom", "Pickable_Mushroom_yellow",
+                                   "Pickable_Mushroom_blue", "sapling_carrot" } },
+
+                // Two flower heads, not one shared one. Thistle and dandelion are both
+                // mostly leaf with one coloured tuft, and that tuft is the only thing
+                // telling them apart at seedling size - so a single group would cache one
+                // material for both and hand the thistle a dandelion's yellow. The group
+                // name is the cache key, which is exactly why they cannot share it.
+                { "bloom", new[] { "Pickable_Dandelion", "sapling_carrot" } },
+                { "bud",   new[] { "Pickable_Thistle", "Pickable_Dandelion",
+                                   "sapling_carrot" } },
             };
 
         private static readonly Dictionary<string, Material> Cache =
