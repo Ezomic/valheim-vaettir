@@ -162,7 +162,10 @@ def sack():
 
     ob.data.materials.append(flat("cloth", CLOTH))
     bpy.context.view_layer.objects.active = ob
-    bpy.ops.object.shade_flat()
+    # Smooth, his call: cloth is soft, and the loader carries exported normals,
+    # so the smoothing survives into the game. The jitter still shapes the
+    # silhouette; the facets stop shouting.
+    bpy.ops.object.shade_smooth()
 
     # A bmesh-born mesh has NO UV layer, and the OBJ writes its faces without
     # texture coordinates - which the runtime loader drops silently, so the sack
@@ -184,9 +187,12 @@ def sack():
         loop.uv.x = 0.32 + loop.uv.x * 0.30
         loop.uv.y = 0.32 + loop.uv.y * 0.30
 
-    # the rope at the cinch, and the meal peeking above the flare
+    # the rope at the cinch, and the meal peeking above the flare - both smooth
+    # like the body, or the seams between shadings read as different objects
     cyl(0, 0, 0.345, 0.075, 0.022, flat("rope", ROPE), sides=9)
+    bpy.ops.object.shade_smooth()
     sphereish(0, 0, 0.415, 0.045, 0.045, 0.025, flat("meal", MEAL))
+    bpy.ops.object.shade_smooth()
 
 
 BUILDS = [("e_sack", sack)]
