@@ -136,6 +136,8 @@ namespace Grove
                                          + " beside the dll - " + Name + " keeps the donor's mesh.");
             }
 
+            Tint(clone);
+
             var icon = Icons.Load(GroveConfig.BonemealIcon.Value, Name);
             if (icon != null) shared.m_icons = new[] { icon };
 
@@ -168,6 +170,47 @@ namespace Grove
         /// the heartwood: the clone is kept for its ItemDrop, Rigidbody, colliders and
         /// float-in-water behaviour, and only what you look at changes.
         /// </summary>
+        /// <summary>
+        /// Bone-ivory into the sack, on OUR OWN material copies - never the donor's
+        /// shared material, which every barley flour in the world draws from. The
+        /// copies belong to this prefab; its instances share them with each other
+        /// and with nothing else. Vanilla differentiates the meads exactly this way:
+        /// one jug, tinted apart.
+        /// </summary>
+        private static void Tint(GameObject clone)
+        {
+            var spec = (GroveConfig.BonemealTint.Value ?? "").Trim();
+            if (spec.Length == 0) return;
+
+            var parts = spec.Split(',');
+            if (parts.Length < 3) return;
+
+            float r, g, b;
+            if (!float.TryParse(parts[0], System.Globalization.NumberStyles.Float,
+                    System.Globalization.CultureInfo.InvariantCulture, out r)
+                || !float.TryParse(parts[1], System.Globalization.NumberStyles.Float,
+                    System.Globalization.CultureInfo.InvariantCulture, out g)
+                || !float.TryParse(parts[2], System.Globalization.NumberStyles.Float,
+                    System.Globalization.CultureInfo.InvariantCulture, out b))
+                return;
+
+            var tint = new Color(r, g, b, 1f);
+            foreach (var renderer in clone.GetComponentsInChildren<Renderer>(true))
+            {
+                if (renderer == null) continue;
+
+                var materials = renderer.sharedMaterials;
+                for (var i = 0; i < materials.Length; i++)
+                {
+                    if (materials[i] == null) continue;
+                    materials[i] = new Material(materials[i]);
+                    if (materials[i].HasProperty("_Color"))
+                        materials[i].color = materials[i].color * tint;
+                }
+                renderer.sharedMaterials = materials;
+            }
+        }
+
         private static void Visual(GameObject clone, ModelData model)
         {
             var filter = clone.GetComponentInChildren<MeshFilter>(true);
