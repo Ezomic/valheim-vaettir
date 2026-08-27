@@ -160,9 +160,9 @@ namespace Thicket
             var player = Player.m_localPlayer;
             if (player == null)
             {
-                // The world went away - menu, or a teardown mid-session. Best effort:
-                // if a scene still exists the plant goes down where we stood; if not,
-                // it is gone, and that is the one hole this version accepts.
+                // The world is already gone - the logout hook below is the one that
+                // saves the bush, before the teardown. Reaching here without it means
+                // the state can only be cleared.
                 Drop(null);
                 return;
             }
@@ -334,6 +334,31 @@ namespace Thicket
             if (!Carrying || __instance != (Humanoid)Player.m_localPlayer) return true;
             __result = false;
             return false;
+        }
+
+        /// <summary>
+        /// Logging out mid-carry plants the bush at your feet, gates ignored - the
+        /// same rule as dying. This hooks Game.Logout because by the time Tick sees
+        /// m_localPlayer go null the scene cannot spawn anything, and the bush was
+        /// simply gone: found by him logging out with one in his arms. Quitting the
+        /// process goes through OnApplicationQuit, which calls Logout, so one hook
+        /// covers both doors.
+        /// </summary>
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(Game), "Logout")]
+        private static void PlantBeforeLogout()
+        {
+            if (!Carrying) return;
+
+            var player = Player.m_localPlayer;
+            if (player == null || ZNetScene.instance == null) { Drop(null); return; }
+
+            PlantAt(player.transform.position + player.transform.forward * 1.1f,
+                ignoreBiome: true);
+
+            // PlantAt keeps the carry when the prefab fails to resolve; on the way
+            // out that must not leave the block patches armed for the next world.
+            if (Carrying) Drop(null);
         }
 
         [HarmonyPrefix]
