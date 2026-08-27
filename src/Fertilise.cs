@@ -61,8 +61,52 @@ namespace Grove
                 return false;
             }
 
+            // One meal per plant. The mark never stacked, but the ITEM was still
+            // spent on a second use - a silent waste he hit on his first carrot.
+            if (IsFed(_target))
+            {
+                _target = null;
+                __instance.Message(MessageHud.MessageType.Center,
+                    "Already fed");
+                __result = false;
+                return false;
+            }
+
             __result = true;
             return false;
+        }
+
+        /// <summary>The one question the gate and both hovers ask of a thing.</summary>
+        private static bool IsFed(Component thing)
+        {
+            if (thing == null) return false;
+
+            var view = thing.GetComponent<ZNetView>();
+            if (view == null || !view.IsValid()) return false;
+
+            var zdo = view.GetZDO();
+            return zdo != null && zdo.GetBool(Fertilised, false);
+        }
+
+        /// <summary>
+        /// Fed things say so. On the growing plant and on the crop it became, because
+        /// the mark travels between them and "did I feed this one" is otherwise
+        /// answered by wasting a bonemeal on the refusal.
+        /// </summary>
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(Plant), "GetHoverText")]
+        private static void FedPlantHover(Plant __instance, ref string __result)
+        {
+            if (!string.IsNullOrEmpty(__result) && IsFed(__instance))
+                __result += "\n<color=#c8b458>Fertilised</color>";
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(Pickable), "GetHoverText")]
+        private static void FedCropHover(Pickable __instance, ref string __result)
+        {
+            if (!string.IsNullOrEmpty(__result) && IsFed(__instance))
+                __result += "\n<color=#c8b458>Fertilised</color>";
         }
 
         // ------------------------------------------------------------------ the effect
