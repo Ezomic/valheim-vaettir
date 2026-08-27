@@ -224,6 +224,32 @@ namespace Grove
             }
         }
 
+        private static Material[] FlatMaterials(string[] groups)
+        {
+            var shader = Shader.Find("Standard");
+            var palette = new System.Collections.Generic.Dictionary<string, Color>(
+                System.StringComparer.OrdinalIgnoreCase)
+            {
+                { "cloth", new Color(0.42f, 0.34f, 0.24f) },
+                { "rope",  new Color(0.55f, 0.44f, 0.28f) },
+                { "meal",  new Color(0.78f, 0.74f, 0.64f) },
+            };
+
+            var materials = new Material[groups.Length];
+            for (var i = 0; i < groups.Length; i++)
+            {
+                Color colour;
+                if (!palette.TryGetValue(groups[i], out colour))
+                    colour = new Color(0.5f, 0.45f, 0.38f);
+
+                var material = new Material(shader);
+                material.color = colour;
+                material.SetFloat("_Glossiness", 0f);
+                materials[i] = material;
+            }
+            return materials;
+        }
+
         private static void Visual(GameObject clone, ModelData model)
         {
             // The heartwood pattern, and for the heartwood's reasons: swapping only
@@ -243,8 +269,15 @@ namespace Grove
             var visual = new GameObject("bonemeal_visual");
             visual.transform.SetParent(clone.transform, false);
             visual.AddComponent<MeshFilter>().sharedMesh = model.Mesh;
-            visual.AddComponent<MeshRenderer>().sharedMaterials = Skins.Skin(model.Groups);
-            Skins.Remap(model.Mesh, model.Groups);
+
+            // Flat colours, not borrowed textures - "to have it look like the icon",
+            // his words, and the icon IS flat paint. Three donors were tried and each
+            // failed its own way: leather scraps rendered transparent (alpha-cutout
+            // shader), the deer rug went orange with black border chunks, and no rug
+            // was ever going to look like posterised sackcloth. These are the design
+            // script's own RGBs, so the item matches its icon by construction.
+            visual.AddComponent<MeshRenderer>().sharedMaterials =
+                FlatMaterials(model.Groups);
 
             // The heartwood's other lesson, kept as insurance: an item with no
             // collider falls through the world without a message.
