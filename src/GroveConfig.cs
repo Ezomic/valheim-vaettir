@@ -115,11 +115,10 @@ namespace Grove
                 + "of a hand-built shape that never earned its place; the name and icon "
                 + "are what tell them apart.");
 
-            BonemealModel = config.Bind("Bonemeal", "BonemealModel", "",
-                "An override mesh read from beside the dll, for the day a hand-built "
-                + "shape earns its place. Blank keeps the donor's own sack, which is the "
-                + "default on purpose: six custom shapes were judged and every one read "
-                + "as random parts.");
+            BonemealModel = config.Bind("Bonemeal", "BonemealModel", "grove_bonemeal.obj",
+                "The mesh, read from beside the dll: a lathe-built tied sack, the shape "
+                + "that finally earned the slot after six read as random parts and the "
+                + "borrowed flour sack read as flour. Blank keeps the donor's own model.");
 
             BonemealTint = config.Bind("Bonemeal", "BonemealTint", "",
                 "Colour multiplied into the sack, as r,g,b - bone-ivory by default, so "
