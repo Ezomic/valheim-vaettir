@@ -104,8 +104,8 @@ namespace Grove
             var shared = drop.m_itemData.m_shared;
 
             shared.m_name = GroveConfig.BonemealName.Value;
-            shared.m_description = "Bone ground fine. Worked into the soil it feeds a crop "
-                                   + "far faster than the season would.";
+            shared.m_description = "Bone ground fine. Worked into a growing crop it makes "
+                                   + "the harvest richer, and the tending teaches.";
 
             // Consumable, and deliberately with no food values at all - see the class note.
             shared.m_itemType = ItemDrop.ItemData.ItemType.Consumable;

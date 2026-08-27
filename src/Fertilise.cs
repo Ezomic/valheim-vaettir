@@ -78,7 +78,6 @@ namespace Grove
             if (target == null) return;
 
             Advance(target);
-            Credit(__instance);
 
             var radius = Mathf.Max(0f, GroveConfig.BonemealRadius.Value);
             if (radius <= 0f) return;
@@ -96,28 +95,6 @@ namespace Grove
             }
         }
 
-        /// <summary>
-        /// Raises Farming for working the soil.
-        ///
-        /// On the use rather than on the harvest, which is the only place it can go. Vanilla
-        /// raises the skill once inside Pickable.Interact, before it has worked out how much
-        /// the plant yields, so the doubled harvest arrives too late to be credited and no
-        /// amount of patching the drop changes that. Tending the crop is its own action, and
-        /// crediting that is both simpler and better fiction than paying for it at the pick.
-        ///
-        /// Once per use, not once per plant. With BonemealRadius turned up a single press can
-        /// feed a whole bed, and paying per plant there would make skill scale with the size
-        /// of your field rather than with the work.
-        /// </summary>
-        private static void Credit(Player player)
-        {
-            if (player == null) return;
-
-            var value = Mathf.Max(0f, GroveConfig.BonemealFarming.Value);
-            if (value <= 0f) return;
-
-            player.RaiseSkill(Skills.SkillType.Farming, value);
-        }
 
         /// <summary>
         /// Moves the planted moment earlier by a share of this plant's own grow time.
@@ -135,27 +112,16 @@ namespace Grove
             var zdo = view.GetZDO();
             if (zdo == null) return;
 
-            var growTime = GrowTime.Invoke<float>(plant);
-            if (growTime <= 0f) return;
-
-            var share = Mathf.Clamp01(GroveConfig.BonemealAdvance.Value);
-            var seconds = growTime * share;
-
-            var planted = zdo.GetLong(ZDOVars.s_plantTime, ZNet.instance.GetTime().Ticks);
-            var moved = planted - (long)(seconds * System.TimeSpan.TicksPerSecond);
-
-            zdo.Set(ZDOVars.s_plantTime, moved);
-
-            // And mark it, so the crop it grows into gives more when it is picked. Set rather
-            // than counted: a second bonemeal on the same plant brings more time forward but
-            // does not stack the harvest, so the yield cannot be farmed by standing there
-            // feeding one carrot.
+            // The mark is the whole effect now. The first design also moved s_plantTime
+            // earlier - a share of the plant's own season - and he cut it: "bonemeal
+            // shouldnt speed up the growing process just be more resourcefull for now."
+            // The machinery to bring it back is one write away; the mark stays set-not-
+            // counted so a second bonemeal on one plant cannot stack the harvest.
             zdo.Set(Fertilised, true);
 
             if (GroveConfig.Verbose.Value)
-                GrovePlugin.Log.LogInfo("Fertilised " + plant.name + ": brought "
-                                        + seconds.ToString("0") + "s of its "
-                                        + growTime.ToString("0") + "s forward.");
+                GrovePlugin.Log.LogInfo("Fertilised " + plant.name
+                                        + ": marked for a richer harvest.");
         }
 
         // ------------------------------------------------------------------ the harvest
@@ -288,7 +254,24 @@ namespace Grove
             var plant = hovering.GetComponentInParent<Plant>();
             if (plant == null) return null;
 
-            return plant.GetStatus() == Plant.Status.Healthy ? plant : null;
+            if (plant.GetStatus() != Plant.Status.Healthy) return null;
+
+            // Crops only, his call. A crop is a plant that grows into something
+            // pickable and not into a tree - read off the grown prefabs rather than
+            // a name list, so a modded crop qualifies the day it exists and a
+            // sapling never does.
+            var pickable = false;
+            if (plant.m_grownPrefabs != null)
+            {
+                foreach (var grown in plant.m_grownPrefabs)
+                {
+                    if (grown == null) continue;
+                    if (grown.GetComponent<TreeBase>() != null) return null;
+                    if (grown.GetComponent<Pickable>() != null) pickable = true;
+                }
+            }
+
+            return pickable ? plant : null;
         }
 
         private static bool IsBonemeal(ItemDrop.ItemData item)
