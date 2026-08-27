@@ -65,7 +65,7 @@ namespace Grove
                 // before the texture was suspected. The rug is opaque hide on
                 // Custom/Piece. The meal keeps BoneFragments - its rect lands on
                 // solid bone - and the rope rides plank.
-                { "cloth", new[] { "rug_deer", "rug_fur", "wood_wall" } },
+                { "cloth", new[] { "rug_lox", "rug_deer", "rug_fur", "wood_wall" } },
                 { "meal",  new[] { "BoneFragments", "stone_wall_2x1" } },
                 { "rope",  new[] { "wood_wall", "wood_beam" } },
                 { "bud",   new[] { "Pickable_Thistle", "Pickable_Dandelion",
