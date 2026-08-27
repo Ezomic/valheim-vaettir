@@ -3,7 +3,19 @@
 Notable changes to Vaettir. Format follows [Keep a Changelog](https://keepachangelog.com),
 and the mod uses [semantic versioning](https://semver.org).
 
-## [1.2.0] - 2026-08-28
+## [1.2.1] - 2026-08-27
+
+### Fixed
+
+- **Grid rows no longer drift out of line while planting.** Two causes, both only
+  visible on a server where fields have had time to grow. The grid re-chose its anchor
+  every frame (the nearest plant of the same kind), so a nearby free-placed plant could
+  re-seat the whole lattice mid-row; and a grown crop is a different prefab from its
+  sapling, so replanting a half-harvested field found no anchor at all and every new
+  row started its own grid. The anchor is now held for the whole bed - one bed, one
+  grid - and grown crops anchor exactly like the saplings they stand in place of.
+
+## [1.2.0] - 2026-08-27
 
 Four features, every one reshaped in play before it shipped.
 
