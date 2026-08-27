@@ -236,9 +236,19 @@ namespace Grove
                 : null;
             if (bones != null)
             {
-                var renderer = bones.GetComponentInChildren<Renderer>(true);
-                if (renderer != null && renderer.sharedMaterial != null)
+                // The MESH renderer's shader, never just the first renderer: that
+                // was the pickup-sparkle particle, whose Alpha Blended shader glows
+                // white whatever colour it is fed - the sack rendered as a bright
+                // white blob and pure red proved no colour was reaching it.
+                foreach (var renderer in bones.GetComponentsInChildren<MeshRenderer>(true))
+                {
+                    if (renderer == null || renderer.sharedMaterial == null) continue;
+                    if (renderer.sharedMaterial.shader == null) continue;
+                    if (renderer.sharedMaterial.shader.name.IndexOf("Particle",
+                            System.StringComparison.OrdinalIgnoreCase) >= 0) continue;
                     shader = renderer.sharedMaterial.shader;
+                    break;
+                }
             }
             if (shader == null)
             {
@@ -270,6 +280,11 @@ namespace Grove
                 material.color = colour;
                 material.SetFloat("_Glossiness", 0f);
                 materials[i] = material;
+
+                GrovePlugin.LogOnce("Flat mat '" + groups[i] + "': shader "
+                    + material.shader.name + ", color " + material.color
+                    + ", mainTex " + (material.mainTexture == null ? "(none)"
+                        : material.mainTexture.name));
             }
             return materials;
         }
