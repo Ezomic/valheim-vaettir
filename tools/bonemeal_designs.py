@@ -176,6 +176,14 @@ def sack():
     bpy.ops.uv.cylinder_project(scale_to_bounds=True)
     bpy.ops.object.mode_set(mode="OBJECT")
 
+    # Into the middle of the donor sheet, not across all of it. The rug donor is
+    # full-bleed, so 0..1 UVs sampled its dark border and backing too - the black
+    # chunks on the dropped sack. The central window is the clean hide.
+    layer = ob.data.uv_layers.active.data
+    for loop in layer:
+        loop.uv.x = 0.32 + loop.uv.x * 0.30
+        loop.uv.y = 0.32 + loop.uv.y * 0.30
+
     # the rope at the cinch, and the meal peeking above the flare
     cyl(0, 0, 0.345, 0.075, 0.022, flat("rope", ROPE), sides=9)
     sphereish(0, 0, 0.415, 0.045, 0.045, 0.025, flat("meal", MEAL))
