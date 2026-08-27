@@ -402,23 +402,58 @@ namespace Thicket
         }
 
         /// <summary>
-        /// The plant as a thing in your arms: mesh and skin only, no components, no
-        /// network identity. Local-only by design in this version - the carry itself
-        /// is not synced, only its two ends (the dig and the planting) are.
+        /// The plant as a thing in your arms: a visual-only clone of the GROWN vanilla
+        /// prefab, because that is what you dug up. The first cut used the seedling
+        /// stage model, which is a hand-high sprout - carried at the chest it read as
+        /// carrying nothing at all. Stripped of every component so it is pure shape:
+        /// no network identity, no pickable, no collider to shove the carrier around.
         /// </summary>
         public static GameObject CarryVisual(WildPlant plant)
         {
-            var model = Mesh(plant);
-            if (model == null) return null;
+            var source = ZNetScene.instance != null
+                ? ZNetScene.instance.GetPrefab(plant.Grown)
+                : null;
+            if (source == null) return null;
 
-            var go = new GameObject("thicket_carried_" + plant.Id);
-            go.AddComponent<MeshFilter>().sharedMesh = model.Mesh;
-            go.AddComponent<MeshRenderer>().sharedMaterials = Grove.Skins.Skin(model.Groups);
-            if (Remapped.Add(model.Mesh.GetInstanceID()))
-                Grove.Skins.Remap(model.Mesh, model.Groups);
+            var previous = ZNetView.m_forceDisableInit;
+            ZNetView.m_forceDisableInit = true;
 
-            go.transform.localScale = Vector3.one * 0.8f;
-            return go;
+            GameObject clone;
+            try { clone = Object.Instantiate(source); }
+            finally { ZNetView.m_forceDisableInit = previous; }
+
+            clone.name = "thicket_carried_" + plant.Id;
+
+            foreach (var component in clone.GetComponentsInChildren<MonoBehaviour>(true))
+                if (component != null) Object.DestroyImmediate(component);
+            foreach (var netview in clone.GetComponentsInChildren<ZNetView>(true))
+                if (netview != null) Object.DestroyImmediate(netview);
+            foreach (var collider in clone.GetComponentsInChildren<Collider>(true))
+                if (collider != null) Object.DestroyImmediate(collider);
+            foreach (var body in clone.GetComponentsInChildren<Rigidbody>(true))
+                if (body != null) Object.DestroyImmediate(body);
+
+            clone.transform.localScale = Vector3.one
+                * (plant.Form == WildPlant.Shape.Bush ? 0.55f : 0.8f);
+            clone.SetActive(true);
+            return clone;
+        }
+
+        /// <summary>
+        /// A freshly planted seedling has every stage mesh disabled - Plant.SUpdate
+        /// turns exactly one on, and its slow tick can be ten seconds away. Planted
+        /// from the arms that read as the plant vanishing, so the healthy stage is
+        /// woken here; SUpdate owns it from its first tick onward.
+        /// </summary>
+        public static void WakeStage(GameObject planted)
+        {
+            if (planted == null) return;
+
+            Plant plantComponent;
+            if (!planted.TryGetComponent(out plantComponent)) return;
+
+            var healthy = HealthyRef(plantComponent);
+            if (healthy != null) healthy.SetActive(true);
         }
 
         // ------------------------------------------------------------------ the item

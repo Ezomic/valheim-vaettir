@@ -146,7 +146,8 @@ namespace Thicket
             }
 
             var rotation = Quaternion.Euler(0f, Random.Range(0f, 360f), 0f);
-            Object.Instantiate(prefab, where, rotation);
+            var planted = Object.Instantiate(prefab, where, rotation);
+            WildPrefab.WakeStage(planted);
 
             var player = Player.m_localPlayer;
             if (player != null)
