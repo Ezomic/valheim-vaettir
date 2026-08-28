@@ -368,12 +368,18 @@ def unwrap_parts():
 
         # A cylinder projection wraps 0..1 around the circumference whatever the
         # girth, so a 12cm post and a 30cm barrel would claim the same metre of
-        # texture. Scaled back to real units, because the runtime measures UV span
-        # in metres.
-        if projection == "cylinder" and radius > 0.0:
+        # texture - U is scaled back to real units, because the runtime measures
+        # UV span in metres. V needs its own correction: Blender's tube map writes
+        # V = z/2 + 0.5, HALF metres, measured off the shipped thicket blades
+        # (0.135m of stalk spanned exactly 0.0675 in V). Left alone, every stalk
+        # and trunk carried grain stretched 2:1 along its length, and the runtime
+        # fits uniformly on purpose so it could never correct it.
+        if projection == "cylinder":
             circumference = 2.0 * math.pi * radius
             for loop in obj.data.uv_layers.active.data:
-                loop.uv[0] *= circumference
+                if radius > 0.0:
+                    loop.uv[0] *= circumference
+                loop.uv[1] = (loop.uv[1] - 0.5) * 2.0
 
         bpy.ops.object.transform_apply(location=False, rotation=True, scale=False)
 

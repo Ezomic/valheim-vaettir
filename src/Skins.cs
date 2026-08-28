@@ -33,9 +33,9 @@ namespace Grove
         private static readonly Dictionary<string, string[]> Donors =
             new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase)
             {
-                { "bark",  new[] { "wood_wall", "wood_beam", "piece_chest_wood" } },
-                { "wood",  new[] { "wood_wall", "wood_beam", "piece_chest_wood" } },
-                { "seed",  new[] { "wood_beam", "wood_wall" } },
+                { "bark",  new[] { "woodwall", "wood_beam", "piece_chest_wood" } },
+                { "wood",  new[] { "woodwall", "wood_beam", "piece_chest_wood" } },
+                { "seed",  new[] { "wood_beam", "woodwall", "piece_chest_wood" } },
                 { "stone", new[] { "stone_wall_2x1", "piece_stonecutter", "smelter" } },
 
                 // Anything green and growing. A sapling skinned in plank would be a
@@ -65,9 +65,9 @@ namespace Grove
                 // before the texture was suspected. The rug is opaque hide on
                 // Custom/Piece. The meal keeps BoneFragments - its rect lands on
                 // solid bone - and the rope rides plank.
-                { "cloth", new[] { "rug_lox", "rug_deer", "rug_fur", "wood_wall" } },
+                { "cloth", new[] { "rug_lox", "rug_deer", "rug_fur", "piece_chest_wood" } },
                 { "meal",  new[] { "BoneFragments", "stone_wall_2x1" } },
-                { "rope",  new[] { "wood_wall", "wood_beam" } },
+                { "rope",  new[] { "woodwall", "wood_beam", "piece_chest_wood" } },
                 { "bud",   new[] { "Pickable_Thistle", "Pickable_Dandelion",
                                    "sapling_carrot" } },
             };
@@ -125,18 +125,33 @@ namespace Grove
             // in the log to say why. It is not load-bearing today.
             if (group == GlowGroup)
             {
-                var lit = Pick(group, true);
+                var lit = Pick(group, true, false);
                 if (lit != null) return lit;
             }
 
-            return Pick(group, false);
+            var clean = Pick(group, false, false);
+            if (clean != null) return clean;
+
+            // Last resort: accept a donor whose material scales its own texture.
+            // The rect is then measured in a space the shader transforms away from,
+            // so the sampling lands somewhere wrong on the sheet - but a wrong slice
+            // of real timber still beats a null material, which renders as missing-
+            // material magenta. This pass exists because the guard once emptied the
+            // 'seed' list outright and every sapling shipped pink.
+            var scaled = Pick(group, false, true);
+            if (scaled != null) return scaled;
+
+            GrovePlugin.Log.LogWarning("No material found for group '" + group + "'.");
+            Cache[group] = null;
+            return null;
         }
 
         /// <summary>
         /// One walk through the donors. With mustEmit, only materials whose shader
-        /// exposes _EmissionColor are accepted.
+        /// exposes _EmissionColor are accepted; with allowScaled, a material that
+        /// carries its own texture transform is taken rather than skipped.
         /// </summary>
-        private static Material Pick(string group, bool mustEmit)
+        private static Material Pick(string group, bool mustEmit, bool allowScaled)
         {
             foreach (var name in DonorsFor(group))
             {
@@ -166,7 +181,8 @@ namespace Grove
                 // around the transform would need per-axis density, which stretches
                 // grain, so such a donor is passed over while the list has more.
                 var st = material.mainTextureScale;
-                if ((Mathf.Abs(st.x - 1f) > 0.001f || Mathf.Abs(st.y - 1f) > 0.001f))
+                if (!allowScaled
+                    && (Mathf.Abs(st.x - 1f) > 0.001f || Mathf.Abs(st.y - 1f) > 0.001f))
                 {
                     GrovePlugin.Log.LogInfo(string.Format(
                         "'{0}': skipping {1} from {2} - its material scales its own "
@@ -188,13 +204,7 @@ namespace Grove
                 return material;
             }
 
-            // Only a failure on the second pass. The first is allowed to come up empty -
-            // that is what the second is for - and warning about it would report a
-            // working fallback as a fault.
-            if (mustEmit) return null;
-
-            GrovePlugin.Log.LogWarning("No material found for group '" + group + "'.");
-            Cache[group] = null;
+            // Failure is For's to report - it still has passes left to try.
             return null;
         }
 
@@ -487,14 +497,28 @@ namespace Grove
                     }
 
                     var span = max - min;
-                    if (span.x <= 0f || span.y <= 0f) continue;
 
+                    // A flat cap projected down its own axis has zero span on one
+                    // axis - a cylinder projection writes constant V across a taper's
+                    // end face. Skipping those (as this first did) leaves the cap's
+                    // UVs raw and unclamped, sampling arbitrary tiles of the sheet at
+                    // accidental density - the exact artifact the rect exists to
+                    // prevent. So a degenerate island is still scaled by whatever
+                    // axis it has and pinned inside the rect; a fully degenerate one
+                    // lands on the rect's centre. A sawn end wearing a sliver of side
+                    // grain is not the painted disc Kynda aims caps at, but it is
+                    // quiet - the proper end-grain route is a cap split this pipeline
+                    // has not ported yet.
                     var scale = target / px;
-                    scale = Mathf.Min(scale, rect.width / span.x);
-                    scale = Mathf.Min(scale, rect.height / span.y);
+                    if (span.x > 0f) scale = Mathf.Min(scale, rect.width / span.x);
+                    if (span.y > 0f) scale = Mathf.Min(scale, rect.height / span.y);
+                    if (span.x <= 0f && span.y <= 0f) scale = 0f;
 
-                    coarsest = Mathf.Min(coarsest, scale * px);
-                    finest = Mathf.Max(finest, scale * px);
+                    if (span.x > 0f || span.y > 0f)
+                    {
+                        coarsest = Mathf.Min(coarsest, scale * px);
+                        finest = Mathf.Max(finest, scale * px);
+                    }
 
                     // Centred in the rect, so a part that does fit samples the middle
                     // of the patch rather than its edge, where the neighbour bleeds.

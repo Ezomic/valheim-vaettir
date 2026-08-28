@@ -52,7 +52,10 @@ namespace Stow
         private static readonly Dictionary<string, string[]> Donors =
             new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase)
             {
-                { "wood",  new[] { "wood_wall", "wood_beam", "piece_chest_wood" } },
+                // "woodwall", not "wood_wall" - the underscored name resolves to no
+                // prefab at all, and every list that led with it silently fell
+                // through for a whole release before the run log gave it away.
+                { "wood",  new[] { "woodwall", "wood_beam", "piece_chest_wood" } },
                 // Metal, not "a station that happens to have metal on it somewhere".
                 // piece_artisanstation was first and its first textured renderer is
                 // ArtisanTable_Mat - a wooden bench top - so every iron band on the trough
@@ -269,6 +272,22 @@ namespace Stow
             Material cached;
             if (Cache.TryGetValue(group, out cached)) return cached;
 
+            var clean = Walk(group, false);
+            if (clean != null) return clean;
+
+            // Rather a donor with a scaled material - sampling the wrong slice of
+            // real timber - than a null one, which renders missing-material magenta.
+            // The guard emptied Grove's 'seed' list outright the day it was added,
+            // so no list here is trusted to always keep a clean donor either.
+            var scaled = Walk(group, true);
+            if (scaled != null) return scaled;
+
+            Cache[group] = null;
+            return null;
+        }
+
+        private static Material Walk(string group, bool allowScaled)
+        {
             foreach (var raw in DonorsFor(group))
             {
                 // Trimmed, because the glow list comes out of a config string and
@@ -299,7 +318,8 @@ namespace Stow
                 // what shipped this post's timber as a black smear off the bottom edge
                 // of the planks sheet. Passed over while the list has more.
                 var st = material.mainTextureScale;
-                if (Mathf.Abs(st.x - 1f) > 0.001f || Mathf.Abs(st.y - 1f) > 0.001f)
+                if (!allowScaled
+                    && (Mathf.Abs(st.x - 1f) > 0.001f || Mathf.Abs(st.y - 1f) > 0.001f))
                 {
                     StowRuntime.Log.LogInfo(string.Format(
                         "Group '{0}': skipping {1} from {2} - its material scales its "
@@ -323,7 +343,6 @@ namespace Stow
                 return material;
             }
 
-            Cache[group] = null;
             return null;
         }
 
