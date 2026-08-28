@@ -77,6 +77,10 @@ namespace Stow
         private static readonly Dictionary<string, Rect> Atlas =
             new Dictionary<string, Rect>(StringComparer.OrdinalIgnoreCase);
 
+        /// <summary>Each borrowed sheet's width in pixels - see Grove.Skins.TexPx.</summary>
+        private static readonly Dictionary<string, int> TexPx =
+            new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+
         /// <summary>
         /// Swaps the donor's visuals for ours. Returns false if the model is missing, in
         /// which case the caller keeps the donor's look rather than shipping an invisible
@@ -257,6 +261,7 @@ namespace Stow
         {
             Cache.Clear();
             Atlas.Clear();
+            TexPx.Clear();
         }
 
         private static Material Borrow(string group)
@@ -276,27 +281,62 @@ namespace Stow
                 var donor = PropIndex.Find(name);
                 if (donor == null) continue;
 
-                foreach (var renderer in donor.GetComponentsInChildren<MeshRenderer>(true))
+                // The measuring lives in Grove.Skins and is shared, not copied - the
+                // post went through three generations of this code and the lesson of
+                // the last one was that the two copies drift. MainRenderer picks the
+                // renderer that is actually the object (vanilla prefabs carry Worn and
+                // Broken copies and chunks, in accidental order); the fallback keeps a
+                // donor usable when nothing on it is readable.
+                var renderer = Grove.Skins.MainRenderer(donor);
+                var measured = renderer != null;
+                if (renderer == null) renderer = FirstTextured(donor);
+                if (renderer == null) continue;
+
+                var material = renderer.sharedMaterial;
+
+                // A material whose shader scales its own texture samples somewhere
+                // other than where the mesh UVs point - woodwall's (-0.56, 0.12) is
+                // what shipped this post's timber as a black smear off the bottom edge
+                // of the planks sheet. Passed over while the list has more.
+                var st = material.mainTextureScale;
+                if (Mathf.Abs(st.x - 1f) > 0.001f || Mathf.Abs(st.y - 1f) > 0.001f)
                 {
-                    var material = renderer.sharedMaterial;
-                    if (material == null || material.shader == null) continue;
-
-                    // A material with no albedo renders flat and grey, which looks like a
-                    // bug rather than a choice.
-                    if (!material.HasProperty("_MainTex") || material.GetTexture("_MainTex") == null)
-                        continue;
-
-                    Cache[group] = material;
-                    Atlas[group] = UvRegion(renderer);
-
                     StowRuntime.Log.LogInfo(string.Format(
-                        "Group '{0}' skinned with {1} from {2} (shader {3}), atlas {4}.",
-                        group, material.name, name, material.shader.name, Atlas[group]));
-                    return material;
+                        "Group '{0}': skipping {1} from {2} - its material scales its "
+                        + "own texture by {3:0.00}x{4:0.00}.",
+                        group, material.name, name, st.x, st.y));
+                    continue;
                 }
+
+                Cache[group] = material;
+                Atlas[group] = measured
+                    ? Grove.Skins.SideRegion(renderer)
+                    : new Rect(0f, 0f, 1f, 1f);
+
+                var sheet = material.GetTexture("_MainTex");
+                TexPx[group] = Mathf.Max(1, sheet != null ? sheet.width : 1);
+
+                StowRuntime.Log.LogInfo(string.Format(
+                    "Group '{0}' skinned with {1} from {2} (shader {3}), atlas {4}, {5}px.",
+                    group, material.name, name, material.shader.name, Atlas[group],
+                    TexPx[group]));
+                return material;
             }
 
             Cache[group] = null;
+            return null;
+        }
+
+        private static MeshRenderer FirstTextured(GameObject donor)
+        {
+            foreach (var renderer in donor.GetComponentsInChildren<MeshRenderer>(true))
+            {
+                var material = renderer.sharedMaterial;
+                if (material == null || material.shader == null) continue;
+                if (!material.HasProperty("_MainTex")
+                    || material.GetTexture("_MainTex") == null) continue;
+                return renderer;
+            }
             return null;
         }
 
@@ -319,122 +359,15 @@ namespace Stow
         }
 
         /// <summary>
-        /// The slice of texture one face of the donor uses.
-        ///
-        /// Deliberately one face, not the whole mesh. Measuring min/max across every
-        /// vertex gives a rectangle spanning every tile the donor touches - for
-        /// stone_wall_2x1 that was 71% of the sheet - and squeezing our coordinates into
-        /// that still walks across tile boundaries, which is why the trough stayed striped
-        /// and its charcoal stayed green after the first attempt at this.
-        ///
-        /// The largest single triangle is used because area is a good proxy for "a plain
-        /// wall face" rather than a trim detail, and a triangle cannot straddle two tiles
-        /// without the donor itself looking wrong.
-        /// </summary>
-        private static Rect UvRegion(Renderer renderer)
-        {
-            var whole = new Rect(0f, 0f, 1f, 1f);
-
-            var filter = renderer != null ? renderer.GetComponent<MeshFilter>() : null;
-            var mesh = filter != null ? filter.sharedMesh : null;
-            if (mesh == null) return whole;
-
-            Vector2[] uv;
-            int[] tris;
-            try
-            {
-                // Imported meshes are frequently upload-only; reading them then throws.
-                if (!mesh.isReadable) return whole;
-                uv = mesh.uv;
-                tris = mesh.triangles;
-            }
-            catch { return whole; }
-
-            if (uv == null || uv.Length == 0 || tris == null || tris.Length < 3) return whole;
-
-            var bestArea = 0f;
-            var best = whole;
-
-            for (var i = 0; i + 2 < tris.Length; i += 3)
-            {
-                var a = tris[i];
-                var b = tris[i + 1];
-                var c = tris[i + 2];
-                if (a >= uv.Length || b >= uv.Length || c >= uv.Length) continue;
-
-                var minX = Mathf.Min(uv[a].x, Mathf.Min(uv[b].x, uv[c].x));
-                var maxX = Mathf.Max(uv[a].x, Mathf.Max(uv[b].x, uv[c].x));
-                var minY = Mathf.Min(uv[a].y, Mathf.Min(uv[b].y, uv[c].y));
-                var maxY = Mathf.Max(uv[a].y, Mathf.Max(uv[b].y, uv[c].y));
-
-                var width = maxX - minX;
-                var height = maxY - minY;
-
-                // A face that itself tiles past the sheet edge tells us nothing useful.
-                if (width <= 0.005f || height <= 0.005f) continue;
-                if (width > 1f || height > 1f) continue;
-
-                var area = width * height;
-                if (area <= bestArea) continue;
-
-                bestArea = area;
-                best = new Rect(minX, minY, width, height);
-            }
-
-            return bestArea > 0f ? best : whole;
-        }
-
-        /// <summary>
-        /// Squeezes each submesh's UVs into its material's slice of the atlas.
-        ///
-        /// Wrapped first, then mapped: the mesh is unwrapped at world scale so its
-        /// coordinates run well past 1, and mapping those directly would walk straight
-        /// out of the region again. Repeat brings them back into 0..1 so the tiling
-        /// survives, then the rect places that tile where the texture actually is.
+        /// Places each submesh's UVs inside its material's slice of the atlas, at the
+        /// configured texel density. The fit itself lives in Grove.Skins.Fit - the
+        /// post went through three generations of this code as a private copy, and
+        /// what the last generation proved is that the copies drift. Only the caches
+        /// are the post's own, because its donor table is.
         /// </summary>
         public static void Remap(Mesh mesh, string[] groups)
         {
-            if (mesh == null || groups == null) return;
-
-            var uv = mesh.uv;
-            if (uv == null || uv.Length == 0) return;
-
-            var count = Mathf.Min(groups.Length, mesh.subMeshCount);
-            var moved = 0;
-
-            // A vertex sitting on the seam between two groups appears in both submeshes,
-            // and mapping it twice would squeeze it into a rectangle inside a rectangle -
-            // a sliver of a texel, stretched across the face.
-            var done = new bool[uv.Length];
-
-            for (var i = 0; i < count; i++)
-            {
-                Rect rect;
-                if (!Atlas.TryGetValue(groups[i], out rect)) continue;
-                if (rect.width >= 0.999f && rect.height >= 0.999f) continue;
-
-                foreach (var index in mesh.GetTriangles(i))
-                {
-                    if (index < 0 || index >= uv.Length || done[index]) continue;
-                    done[index] = true;
-
-                    // Clamped, never wrapped. Repeat() here was the bug: it wraps per
-                    // vertex, so a face crossing 1.0 got vertices at 0.9 and 0.2 and the
-                    // GPU interpolated backwards across the whole tile between them - the
-                    // smeared diagonal banding that made a square model look crooked. The
-                    // mesh is now unwrapped inside 0..1, so a straight map is enough.
-                    uv[index] = new Vector2(
-                        rect.x + Mathf.Clamp01(uv[index].x) * rect.width,
-                        rect.y + Mathf.Clamp01(uv[index].y) * rect.height);
-                }
-
-                moved++;
-            }
-
-            if (moved == 0) return;
-
-            mesh.uv = uv;
-            StowRuntime.Log.LogInfo("Remapped UVs into the atlas for " + moved + " group(s).");
+            Grove.Skins.Fit(mesh, groups, Atlas, TexPx);
         }
 
         /// <summary>
