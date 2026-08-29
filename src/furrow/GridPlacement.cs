@@ -122,6 +122,7 @@ namespace Furrow
 
             Pin(__instance, at);
             Turn(__instance);
+            Wheel(__instance);
 
             Vector3 anchor;
             if (_pin.HasValue)
@@ -209,7 +210,7 @@ namespace Furrow
 
             player.Message(MessageHud.MessageType.Center,
                 Localization.instance.Localize(
-                    "Grid on. $KEY_Use to plant, " + KeyName(FurrowConfig.GridTurnKey.Value)
+                    "Grid on. $KEY_Use to plant, " + TurnGesture()
                     + " to turn it, " + KeyName(FurrowConfig.GridPinKey.Value)
                     + " to pin it here."));
         }
@@ -219,6 +220,18 @@ namespace Furrow
         /// The mouse buttons are spelled out; everything else is its own name, which
         /// for a keyboard key is already what is printed on it.
         /// </summary>
+        /// <summary>What to call the turn gesture, given what is actually bound.</summary>
+        private static string TurnGesture()
+        {
+            var key = FurrowConfig.GridTurnKey.Value;
+            var scroll = FurrowConfig.GridTurnScroll.Value;
+
+            if (scroll && key != KeyCode.None) return "scroll or " + KeyName(key);
+            if (scroll) return "scroll";
+            if (key != KeyCode.None) return KeyName(key);
+            return "nothing (no turn gesture is bound)";
+        }
+
         private static string KeyName(KeyCode key)
         {
             switch (key)
@@ -269,14 +282,57 @@ namespace Furrow
         /// of the default 22.5 covers every distinct grid, and the step matches the
         /// one vanilla turns buildings by, so a wall built square is reachable.
         /// </summary>
+        /// <summary>
+        /// The wheel turns the rows.
+        ///
+        /// This is the gesture, and a key is the option, because the wheel is what a
+        /// player already reaches for to rotate something - and while planting it is
+        /// very nearly free. A crop carries m_randomInitBuildRotation, so the game
+        /// re-rolls the ghost's facing after every single placement: whatever yaw you
+        /// scrolled to is discarded the instant the seed goes in, and no amount of
+        /// scrolling can give a bed a consistent facing. Spending the same wheel on
+        /// the lattice spends it on the one thing that does survive the click.
+        ///
+        /// The plant still turns underneath, because vanilla's own rotation runs
+        /// before this postfix and is left alone. Holding it still would mean fighting
+        /// UpdatePlacement for a facing the game is about to randomise anyway.
+        ///
+        /// Accumulated against vanilla's own threshold so a notch here is a notch
+        /// there: the rows and the ghost step together rather than at different rates,
+        /// which would read as the grid lagging the mouse.
+        /// </summary>
+        private static float _wheel;
+
+        private static void Wheel(Player player)
+        {
+            if (!FurrowConfig.GridTurnScroll.Value) return;
+
+            _wheel += ZInput.GetMouseScrollWheel();
+
+            const float threshold = 0.1f;   // Player.m_scrollAmountThreshold
+            if (_wheel > threshold) { _wheel = 0f; Step(player, 1); }
+            else if (_wheel < -threshold) { _wheel = 0f; Step(player, -1); }
+        }
+
         private static void Turn(Player player)
         {
             if (!Keys.Pressed(FurrowConfig.GridTurnKey.Value)) return;
+            Step(player, 1);
+        }
 
+        /// <summary>
+        /// One notch of the lattice, either way.
+        ///
+        /// Wrapped at 90 degrees because a square lattice repeats there - four presses
+        /// of the default 22.5 covers every distinct grid, so there is no long way
+        /// round to find the one you want.
+        /// </summary>
+        private static void Step(Player player, int direction)
+        {
             var step = FurrowConfig.GridTurnStep.Value;
             if (step <= 0f) return;
 
-            var angle = Mathf.Repeat(FurrowConfig.GridAngle.Value + step, 90f);
+            var angle = Mathf.Repeat(FurrowConfig.GridAngle.Value + step * direction, 90f);
             FurrowConfig.GridAngle.Value = angle;
 
             player.Message(MessageHud.MessageType.Center,
