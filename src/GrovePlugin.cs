@@ -216,23 +216,63 @@ namespace Grove
             // in the world - and item data that differs desyncs inventories.
             Suite.Register(PluginGuid, PluginName, PluginVersion, Config);
 
-            // The grid's current rotation is personal, not a rule, and must not be
-            // imposed by the host. It is a float, so Core's own exemption - which
-            // covers KeyCode and KeyboardShortcut - does not reach it, and on a server
-            // every scroll notch wrote the value and was snapped straight back to the
-            // host's by Core's SettingChanged watch. The grid simply would not turn
-            // online while working perfectly in singleplayer, which is about the most
-            // misleading shape a bug can have.
+            // What a host may decide and what is the player's own was settled entry
+            // by entry on 2026-08-29, after the grid-angle bug: GridAngle is a float
+            // the mod writes on every scroll notch, Core's own exemption covers only
+            // KeyCode and KeyboardShortcut, and on a server Core's SettingChanged
+            // watch snapped every write straight back to the host's value. The grid
+            // simply would not turn online while working perfectly in singleplayer,
+            // which is about the most misleading shape a bug can have.
             //
-            // Suite.Local is exactly the declaration for this: Core's own comment on it
-            // names a UI scale, a colour and a hover-text toggle as the same kind of
-            // thing. It removes the key from the synced set, so the host's value is
-            // never applied rather than merely being overridden afterwards.
+            // Suite.Local is exactly the declaration for this: Core's own comment on
+            // it names a UI scale, a colour and a hover-text toggle as the same kind
+            // of thing. It removes the key from the synced set, so the host's value
+            // is never applied rather than merely being overridden afterwards.
             //
-            // GridCell, GridLevel, GridEnabled and the harvest numbers stay synced on
-            // purpose - those are rules about how the world plays, and a server is
-            // entitled to them.
-            Suite.Local(Furrow.FurrowConfig.GridAngle);
+            // Everything below is per-player by nature and none of it is a rule about
+            // how the world plays. Every gameplay number - costs, ranges, health,
+            // rosters, caps, TestMode - stays synced on purpose, and so does every
+            // shared prefab fact (donors, names, stack sizes), which both ends must
+            // agree on. Three that look personal stay synced deliberately:
+            // BeckonMessage and the grove Messages toggle are read on the machine
+            // that owns the sapling and decide what OTHER players are shown, and
+            // SpiritScale is baked into a persistent networked object's transform.
+
+            // The grid and sowing gestures - the angle's whole family.
+            Suite.Local(Furrow.FurrowConfig.GridAngle,
+                        Furrow.FurrowConfig.GridTurnScroll,
+                        Furrow.FurrowConfig.GridTurnStep,
+                        Furrow.FurrowConfig.GridPreview,
+                        Furrow.FurrowConfig.GridPreviewRings,
+                        Furrow.FurrowConfig.RoomPreview,
+                        Furrow.FurrowConfig.Shape,
+                        Furrow.FurrowConfig.RowAcrossFacing,
+                        Furrow.FurrowConfig.Verbose);
+
+            // Your own map, messages on your own screen, the spirit's local render,
+            // and the diagnostics.
+            Suite.Local(GroveConfig.PinSaplings, GroveConfig.PinIcon,
+                        GroveConfig.MoteCount, GroveConfig.RingCount,
+                        GroveConfig.ShowHoop, GroveConfig.PartingEffect,
+                        GroveConfig.BaseRefusal, GroveConfig.BiomeRefusal,
+                        GroveConfig.GlowDonors, GroveConfig.Verbose,
+                        GroveConfig.DumpMaterials, GroveConfig.LookForPrefabs);
+
+            // Which of your own items the stow gesture may take, and the post's
+            // lamp - built on every client from its own config, lighting nothing
+            // anyone else sees.
+            Suite.Local(Stow.StowConfig.KeepHotbar, Stow.StowConfig.NeverStow,
+                        Stow.StowConfig.CarrierScale,
+                        Stow.StowConfig.PostGlowDonors, Stow.StowConfig.FlareDonors,
+                        Stow.StowConfig.PostLightRange, Stow.StowConfig.PostLightIntensity,
+                        Stow.StowConfig.PostFlareScale,
+                        Stow.StowConfig.Messages, Stow.StowConfig.Verbose,
+                        Stow.StowConfig.LookForProps);
+
+            // The carried plant's look in your arms, and Thicket's own chatter.
+            Suite.Local(Thicket.ThicketConfig.Scale,
+                        Thicket.ThicketConfig.SayTheLevel,
+                        Thicket.ThicketConfig.Verbose);
         }
 
 
