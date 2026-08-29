@@ -271,7 +271,7 @@ namespace Furrow
         /// </summary>
         private static void Turn(Player player)
         {
-            if (!Pressed(FurrowConfig.GridTurnKey.Value)) return;
+            if (!Keys.Pressed(FurrowConfig.GridTurnKey.Value)) return;
 
             var step = FurrowConfig.GridTurnStep.Value;
             if (step <= 0f) return;
@@ -294,7 +294,7 @@ namespace Furrow
         /// </summary>
         private static void Pin(Player player, Vector3 at)
         {
-            if (!Pressed(FurrowConfig.GridPinKey.Value)) return;
+            if (!Keys.Pressed(FurrowConfig.GridPinKey.Value)) return;
 
             if (_pin.HasValue)
             {
@@ -360,18 +360,6 @@ namespace Furrow
             }
 
             return best;
-        }
-
-        /// <summary>
-        /// A key press that is not a keystroke meant for a text field. Without this a
-        /// keypad key typed into chat or the console also turns the grid, which reads
-        /// as the grid moving on its own.
-        /// </summary>
-        private static bool Pressed(KeyCode key)
-        {
-            if (!Input.GetKeyDown(key)) return false;
-            if (Chat.instance != null && Chat.instance.HasFocus()) return false;
-            return !Console.IsVisible() && !TextInput.IsVisible();
         }
 
         private static float FlatSqr(Vector3 a, Vector3 b)

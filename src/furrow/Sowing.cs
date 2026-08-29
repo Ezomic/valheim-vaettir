@@ -44,7 +44,7 @@ namespace Furrow
         {
             if (player == null) return;
 
-            if (Input.GetKeyDown(FurrowConfig.ShapeKey.Value))
+            if (Keys.Pressed(FurrowConfig.ShapeKey.Value))
             {
                 var next = Shape == SowShape.Row ? SowShape.Circle
                     : Shape == SowShape.Circle ? SowShape.Grid
@@ -68,8 +68,8 @@ namespace Furrow
                 return;
             }
 
-            var up = Input.GetKeyDown(FurrowConfig.IncreaseKey.Value);
-            var down = Input.GetKeyDown(FurrowConfig.DecreaseKey.Value);
+            var up = Keys.Pressed(FurrowConfig.IncreaseKey.Value);
+            var down = Keys.Pressed(FurrowConfig.DecreaseKey.Value);
             if (!up && !down) return;
 
             // The cap is read here only so the message can say something true. The real cap
