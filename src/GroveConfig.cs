@@ -101,7 +101,6 @@ namespace Grove
         public static ConfigEntry<float> BonemealAdvance;
         public static ConfigEntry<float> BonemealHarvest;
         public static ConfigEntry<float> BonemealSkillGain;
-        public static ConfigEntry<float> BonemealFarming;
         public static ConfigEntry<float> BonemealRadius;
 
         public static void Bind(ConfigFile config)
@@ -180,6 +179,14 @@ namespace Grove
                 "Farming skill gain granted when a fertilised crop is picked - his call: "
                 + "a fed field is also a lesson. Granted to the local player on the "
                 + "machine that owns the crop, which in this pack's bases is the picker.");
+
+            BonemealRadius = config.Bind("Bonemeal", "BonemealRadius", 0f,
+                "Feed every plant within this many metres of the one you clicked, in "
+                + "the same press. Off at 0, which is the default: one press per plant "
+                + "is the constrained reading, and the radius exists only so somebody "
+                + "with a full field does not reach for a mod that does far more than "
+                + "this. This entry used to be read without ever being bound, so the read "
+                + "threw on every use and the radius could not be turned on at all.");
 
             TestMode = config.Bind("Diagnostics", "TestMode", false,
                 "Drops what a sapling needs to three greydwarfs, so the whole chain - "
