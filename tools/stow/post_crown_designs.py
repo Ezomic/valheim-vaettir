@@ -30,11 +30,8 @@ import sys
 # quietly write every asset into tools/assets instead of assets.
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-# The script's own folder first, for post_heartwood - these scripts moved from the
-# old repo's flat tools/ into tools/stow/, and the copied insert quietly pointed one
-# level too high, so the sibling import only ever worked from the old layout.
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-# tools/ for vhbuild.py, which is vendored there so this repo stands alone. The sibling
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# tools/ first: vhbuild.py is vendored here so this repo stands alone. The sibling
 # vaettir checkout is kept as a fallback for a working tree that has both.
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 

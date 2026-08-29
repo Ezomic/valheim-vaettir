@@ -34,12 +34,8 @@ import math
 import os
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-# Into variants/, never assets/. This script predates vhbuild and its finish()
-# does no unwrap, so a rerun used to silently overwrite the shipped
-# grove_sapling_1.obj - which planted_designs.py owns - with default primitive
-# UVs, undoing the texel-density fix in a way that reads as a runtime fault.
-ASSETS = os.path.join(ROOT, "assets", "variants")
-PREVIEWS = os.path.join(ROOT, "assets", "previews")
+ASSETS = os.path.join(ROOT, "assets")
+PREVIEWS = os.path.join(ASSETS, "previews")
 
 COLLIDERS = []
 

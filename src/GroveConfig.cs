@@ -62,7 +62,6 @@ namespace Grove
         public static ConfigEntry<string> StowPostCost;
 
         public static ConfigEntry<string> GlowDonors;
-        public static ConfigEntry<float> TexelsPerMetre;
         public static ConfigEntry<bool> DumpMaterials;
         public static ConfigEntry<string> LookForPrefabs;
 
@@ -513,14 +512,6 @@ namespace Grove
                 "fire_pit,piece_walltorch,bonfire,Ember,piece_groundtorch_green,guard_stone",
                 "Prefabs to try to lift the glowing material from, best first. The first "
                 + "one that resolves and has an albedo wins.");
-
-            TexelsPerMetre = config.Bind("Materials", "TexelsPerMetre", 42f,
-                "How much texture one metre of surface gets, across every hand-built "
-                + "mesh in the mod. Before this was chosen, density was an accident of "
-                + "donor rect size against part size and varied forty-fold inside one "
-                + "piece - the stow post's timber shipped at roughly 10 texels/m, a "
-                + "featureless smear. Kynda ships 28; 42 is finer because these pieces "
-                + "are furniture seen from arm's length, not casks seen across a room.");
 
             DumpMaterials = config.Bind("Diagnostics", "DumpMaterials", false,
                 "On startup, log every material on each donor with its shader and "

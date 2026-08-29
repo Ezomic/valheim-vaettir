@@ -36,11 +36,8 @@ from vhbuild import (bevel_all, box, camera, clear_scene, export, finish, orb,
                      render, stage_scene, taper, tint)
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-# Into variants/, never assets/ - heartwood_designs.py owns the shipped
-# grove_heartwood.obj now, and two scripts exporting one filename means
-# whichever ran last silently swaps the model the game loads.
-ASSETS = os.path.join(ROOT, "assets", "variants")
-PREVIEWS = os.path.join(ROOT, "assets", "previews")
+ASSETS = os.path.join(ROOT, "assets")
+PREVIEWS = os.path.join(ASSETS, "previews")
 
 NAME = "grove_heartwood"
 

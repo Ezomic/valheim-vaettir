@@ -89,17 +89,6 @@ namespace Grove
 
                 var glow = Glow();
 
-                // Once per mesh, here, not in Part. Rings hands the same mote
-                // ModelData to Part twelve times, and the fit is not idempotent:
-                // every pass after the first shrinks the already-placed UVs by
-                // texels-per-metre over sheet width again, so by the twelfth the
-                // beads sample a single texel while the heart, fitted once, does
-                // not - one material reading as two different surfaces. Glow() has
-                // to run first, because it is what fills the atlas caches.
-                Skins.Remap(heart.Mesh, heart.Groups);
-                Skins.Remap(hoop.Mesh, hoop.Groups);
-                Skins.Remap(mote.Mesh, mote.Groups);
-
                 var heartGo = Part(root.transform, "heart", heart, glow);
 
                 // An empty carrier rather than the hoop mesh. It is what tumbles, and
@@ -234,6 +223,11 @@ namespace Grove
             var skins = new Material[model.Groups.Length];
             for (var i = 0; i < skins.Length; i++) skins[i] = skin;
             renderer.sharedMaterials = skins;
+
+            // Into the borrowed material's slice of its atlas. Valheim's textures are
+            // sheets, so UVs running 0..1 sample the whole thing and pick up whatever
+            // the neighbouring tiles are.
+            Skins.Remap(model.Mesh, model.Groups);
 
             // Nothing here should darken anything. The creature is a light source, and
             // a light that casts its own geometry across the ground in seven directions

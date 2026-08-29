@@ -32,14 +32,6 @@ SHIFT = 0.008
 
 COLLIDERS = []
 
-# Parts whose unwrap is not a cube projection: obj -> ("cylinder", radius). Only the
-# exceptions register; finish() unwraps every mesh in the scene and anything not in
-# here gets the cube treatment, so a design script that builds something by hand is
-# still unwrapped rather than silently shipping Blender's per-face default UVs -
-# which give a 3cm strap and a 1.2m plank the same amount of texture, the bug this
-# whole stage exists to fix.
-PARTS = {}
-
 TINTS = {
     "bark":  (0.24, 0.17, 0.11, 1.0),
     "moss":  (0.20, 0.28, 0.14, 1.0),
@@ -67,7 +59,6 @@ def clear_scene():
             if item.users == 0:
                 block.remove(item)
     del COLLIDERS[:]
-    PARTS.clear()
     random.seed(SEED)
 
 
@@ -112,7 +103,7 @@ def box(size, location, mat, rot_x=0.0, rot_y=0.0, rot_z=0.0, tilt=TILT, hit=Fal
 
 
 def taper(bottom, top, height, location, mat, sides=7, rot_x=0.0, rot_y=0.0,
-          tilt=TILT, spin=True, projection="cylinder"):
+          tilt=TILT, spin=True):
     """
     Odd side counts by default. An even-sided cylinder presents a flat face square to
     the camera and reads as a box with the corners knocked off; an odd one always
@@ -136,17 +127,13 @@ def taper(bottom, top, height, location, mat, sides=7, rot_x=0.0, rot_y=0.0,
     obj.rotation_euler = (math.radians(rot_x + jx), math.radians(rot_y + jy),
                           obj.rotation_euler.z + math.radians(jz))
     obj.data.materials.append(material(mat))
-    if projection == "cylinder":
-        PARTS[obj] = ("cylinder", max(bottom, top))
     return obj
 
 
 def disc(radius, thickness, location, mat, sides=13, rot_x=90.0, tilt=1.0):
     """A flat round plate facing along +y by default, for anything set into a chest."""
-    # Cube-projected, not cylinder: a disc's visible surface IS its flat face, and a
-    # cylinder projection smears exactly that face into a pole.
     return taper(radius, radius, thickness, location, mat, sides=sides,
-                 rot_x=rot_x, tilt=tilt, projection="cube")
+                 rot_x=rot_x, tilt=tilt)
 
 
 def orb(radius, location, mat, subdivisions=2, stretch=1.0, tilt=1.0):
@@ -227,7 +214,6 @@ def shell(bottom, top, height, location, mat, sides=9, rot_x=0.0, rot_y=0.0):
     bpy.ops.object.mode_set(mode="OBJECT")
 
     obj.data.materials.append(material(mat))
-    PARTS[obj] = ("cylinder", max(bottom, top))
     return obj
 
 
@@ -261,7 +247,6 @@ def limb(base, length, segments, thick, taper_to, pitch, yaw, curve, mat, sides=
         obj = bpy.context.active_object
         obj.rotation_euler = euler
         obj.data.materials.append(material(mat))
-        PARTS[obj] = ("cylinder", max(r0, r1))
 
         pos = pos + heading * step * 0.92
         angle += curve
@@ -318,78 +303,9 @@ def bevel_all(width=0.014, segments=2):
             obj.modifiers.remove(modifier)
 
 
-def unwrap_parts():
-    """
-    Unwraps every part at real-world scale, one part at a time, before the join.
-
-    Without this the OBJ ships Blender's generated primitive UVs, where every face of
-    every box gets the same patch of the 0..1 square - so a 3cm strap and a 1.2m
-    plank claim the same amount of texture, and the runtime's atlas fit turns that
-    into texture density varying forty-fold across one model. The runtime (Skins.Fit)
-    expects UVs in METRES - 1 UV unit per metre - and picks the density itself.
-
-    Per part, before the join, and that is load-bearing: a cube projection maps
-    position straight to UV, so projecting the joined model would give every part a
-    UV span equal to the whole model's bounding box - two 15cm lumps 0.74m apart
-    would claim 0.74m of texture. (Kynda measured exactly that: 6 texels/m against a
-    target of 35.)
-
-    Two transform details, both easy to get wrong:
-    - Scale is applied first. A box's mesh data is a unit cube with its real size in
-      the object's scale; projecting before applying hands a 13cm post and a 90cm
-      plank identical UVs. This also bakes an orb's stretch.
-    - Location is NOT applied, or every part's UVs carry its world position and the
-      span becomes the model's bounding box again. Rotation is held back until after
-      the projection - cylinders are built along local Z and the cylinder projection
-      needs the axis there; a cube projection on an already-rotated box skews every
-      face - then applied, so nothing downstream changes.
-    """
-    for obj in list(bpy.context.scene.objects):
-        if obj.type != "MESH":
-            continue
-
-        bpy.ops.object.select_all(action="DESELECT")
-        obj.select_set(True)
-        bpy.context.view_layer.objects.active = obj
-
-        bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
-
-        projection, radius = PARTS.get(obj, ("cube", 0.0))
-
-        bpy.ops.object.mode_set(mode="EDIT")
-        bpy.ops.mesh.select_all(action="SELECT")
-        if projection == "cylinder":
-            bpy.ops.uv.cylinder_project(direction="ALIGN_TO_OBJECT", align="POLAR_ZX",
-                                        correct_aspect=True, scale_to_bounds=False)
-        else:
-            bpy.ops.uv.cube_project(cube_size=1.0, correct_aspect=True,
-                                    scale_to_bounds=False)
-        bpy.ops.object.mode_set(mode="OBJECT")
-
-        # A cylinder projection wraps 0..1 around the circumference whatever the
-        # girth, so a 12cm post and a 30cm barrel would claim the same metre of
-        # texture - U is scaled back to real units, because the runtime measures
-        # UV span in metres. V needs its own correction: Blender's tube map writes
-        # V = z/2 + 0.5, HALF metres, measured off the shipped thicket blades
-        # (0.135m of stalk spanned exactly 0.0675 in V). Left alone, every stalk
-        # and trunk carried grain stretched 2:1 along its length, and the runtime
-        # fits uniformly on purpose so it could never correct it.
-        if projection == "cylinder":
-            circumference = 2.0 * math.pi * radius
-            for loop in obj.data.uv_layers.active.data:
-                if radius > 0.0:
-                    loop.uv[0] *= circumference
-                loop.uv[1] = (loop.uv[1] - 0.5) * 2.0
-
-        bpy.ops.object.transform_apply(location=False, rotation=True, scale=False)
-
-
 def finish(name, bevel=True):
     if bevel:
         bevel_all()
-
-    # After the bevel (the chamfer faces need real UVs too) and before the join.
-    unwrap_parts()
 
     bpy.ops.object.select_all(action="SELECT")
     joined = bpy.context.selected_objects[0]
