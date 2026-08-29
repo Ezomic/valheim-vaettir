@@ -137,9 +137,24 @@ namespace Furrow
 
                 if (!_anchor.HasValue)
                 {
-                    _anchor = NearestKin(ghostPlant, crop, at);
+                    // No kin in reach, so the bed starts HERE - the lattice is born
+                    // under the cursor rather than not at all.
+                    //
+                    // Until this, the origin could only ever be a plant that already
+                    // existed, and the consequence was backwards: the first plant of
+                    // every bed was placed blind, with no grid drawn and nothing to
+                    // turn, and wherever it happened to land silently fixed the phase
+                    // and angle for every plant after it. The one plant that most
+                    // needed aiming was the only one with no help, and by the time the
+                    // grid appeared it was already too late to move it.
+                    //
+                    // Seeding on the ghost costs nothing: on the frame it is set the
+                    // ghost is exactly on a lattice point, so nothing jumps, and the
+                    // first plant lands where the drawn grid says it will. The pin key
+                    // re-seats it deliberately, and walking clear of the bed drops it.
+                    var kin = NearestKin(ghostPlant, crop, at);
+                    _anchor = kin.HasValue ? kin.Value : at;
                     _anchorCrop = crop;
-                    if (!_anchor.HasValue) { GridPreview.HideGrid(); return; }
                 }
                 anchor = _anchor.Value;
             }
@@ -172,6 +187,47 @@ namespace Furrow
             // the ghost has moved since the ring above was drawn.
             GridPreview.Grid(anchor, step, angle, snapped, _pin.HasValue);
             GridPreview.Ring(snapped, ghostPlant, Room.Free(snapped, ghostPlant));
+
+            Hint(__instance);
+        }
+
+        /// <summary>
+        /// Name the two keys, once, the first time a grid is actually drawn.
+        ///
+        /// A key nobody knows about is a feature nobody has. Both of these are
+        /// discoverable only by reading the config file, and the question they answer -
+        /// "how am I supposed to turn this thing" - is asked while looking at the grid,
+        /// which is exactly when this fires. Once per session: a hint repeated is a
+        /// nag, and by the second bed it is already known.
+        /// </summary>
+        private static bool _hinted;
+
+        private static void Hint(Player player)
+        {
+            if (_hinted) return;
+            _hinted = true;
+
+            player.Message(MessageHud.MessageType.Center,
+                Localization.instance.Localize(
+                    "Grid on. $KEY_Use to plant, " + KeyName(FurrowConfig.GridTurnKey.Value)
+                    + " to turn it, " + KeyName(FurrowConfig.GridPinKey.Value)
+                    + " to pin it here."));
+        }
+
+        /// <summary>
+        /// KeyCode.Mouse2 reads as "Mouse2", which names a button nobody calls that.
+        /// The mouse buttons are spelled out; everything else is its own name, which
+        /// for a keyboard key is already what is printed on it.
+        /// </summary>
+        private static string KeyName(KeyCode key)
+        {
+            switch (key)
+            {
+                case KeyCode.Mouse0: return "left click";
+                case KeyCode.Mouse1: return "right click";
+                case KeyCode.Mouse2: return "middle click";
+                default: return key.ToString();
+            }
         }
 
         /// <summary>
