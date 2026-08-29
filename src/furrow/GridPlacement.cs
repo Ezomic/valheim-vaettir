@@ -175,6 +175,33 @@ namespace Furrow
         }
 
         /// <summary>
+        /// Middle mouse is vanilla's Remove while a build tool is out, and it really
+        /// does destroy the hovered piece - so for the one press we have taken over,
+        /// removal is suppressed. Without this, turning the grid beside an existing
+        /// bed would delete the very plant being lined up against.
+        ///
+        /// Scoped as tightly as it can be: only when the turn key IS middle mouse,
+        /// only while a plant ghost is up, and only while the grid is actually
+        /// running. Everywhere else - the hammer, the same cultivator on a piece that
+        /// is not a plant, the grid switched off - removal is vanilla's again.
+        /// </summary>
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(Player), "RemovePiece")]
+        private static bool BlockRemove(Player __instance)
+        {
+            if (FurrowConfig.GridTurnKey.Value != KeyCode.Mouse2) return true;
+            if (!FurrowConfig.GridEnabled.Value) return true;
+            if (__instance != Player.m_localPlayer) return true;
+
+            var ghost = GhostRef(__instance);
+            if (ghost == null || !ghost.activeSelf) return true;
+            if (!ghost.GetComponent<Plant>()) return true;
+
+            return __instance.GetSkillFactor(Skills.SkillType.Farming) * 100f
+                   < FurrowConfig.GridLevel.Value;
+        }
+
+        /// <summary>
         /// Turn the lattice by a step.
         ///
         /// A key rather than the ghost's own rotation, which was the obvious binding

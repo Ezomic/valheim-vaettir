@@ -77,10 +77,18 @@ namespace Furrow
                 + "the cultivator out and a plant selected, since the ghost is what says "
                 + "where 'here' is.");
 
-            GridTurnKey = config.Bind("Keys", "GridTurnKey", KeyCode.KeypadDivide,
+            GridTurnKey = config.Bind("Keys", "GridTurnKey", KeyCode.Mouse2,
                 "Turn the grid by GridTurnStep, so you can line the rows up with a wall "
                 + "and watch them turn. Wraps at 90 degrees, because a square lattice "
-                + "repeats there and every distinct grid is within a few presses.");
+                + "repeats there and every distinct grid is within a few presses. "
+                + "The default is the MIDDLE MOUSE BUTTON, which vanilla spends on "
+                + "Remove while a build tool is out. So while the cultivator is up with "
+                + "a plant selected and the grid is active, middle click turns the grid "
+                + "and does NOT remove the piece under your cursor - otherwise every "
+                + "turn would also delete whatever you were lining up against. Removal "
+                + "is untouched everywhere else, including with the same cultivator on "
+                + "any non-plant piece. Set this to some other key and vanilla removal "
+                + "comes straight back.");
 
             GridTurnStep = config.Bind("Keys", "GridTurnStep", 22.5f,
                 "Degrees per press of GridTurnKey. 22.5 is the step vanilla turns a "
