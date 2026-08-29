@@ -3,6 +3,32 @@
 Notable changes to Vaettir. Format follows [Keep a Changelog](https://keepachangelog.com),
 and the mod uses [semantic versioning](https://semver.org).
 
+## [1.4.0] - 2026-08-29
+
+### Added
+
+- **Shift+E on a ripe crop harvests the bed**, reaching further as Farming rises: two
+  metres at level 15, growing smoothly to eight by level 80. Plain E is untouched and
+  still picks exactly one - an area harvest with no way to opt out is a mod deciding
+  when you wanted the whole bed. Shift+E costs nothing to take: `Pickable.Interact`
+  already accepts an `alt` argument and never once reads it.
+
+  What it takes is deliberately narrow. **Only crops** - the grown stage of something
+  plantable - and that set is read off the game rather than listed in the mod, by
+  walking every prefab carrying a `Plant` and collecting its `m_grownPrefabs`. So a crop
+  another mod adds is included the day it is added, and **no wild berry, mushroom,
+  thistle or dandelion is ever touched**: those are Thicket's, and clearing a forest
+  from one keypress is a different and far more generous mod than this one. By default
+  it also takes only the crop you actually clicked, so a mixed bed is harvested a kind
+  at a time rather than stripped in one press.
+
+  Every neighbour goes through vanilla's own `Interact`, one call each, rather than
+  reaching into `RPC_Pick` - which keeps the skill gain, the level bonus roll, the
+  effects, the drop scaling and the ownership identical to picking each by hand. An area
+  harvest the server disagreed with about who owns what is the kind of bug that only
+  appears with other people watching. `PickMax` caps a single press so a dense field
+  cannot empty an inventory onto the ground.
+
 ## [1.3.1] - 2026-08-29
 
 Three reports against 1.3.0's grid, all from one session of actually using it.
