@@ -215,6 +215,24 @@ namespace Grove
             // hash discards the ZDO rather than erroring - destroying what is already standing
             // in the world - and item data that differs desyncs inventories.
             Suite.Register(PluginGuid, PluginName, PluginVersion, Config);
+
+            // The grid's current rotation is personal, not a rule, and must not be
+            // imposed by the host. It is a float, so Core's own exemption - which
+            // covers KeyCode and KeyboardShortcut - does not reach it, and on a server
+            // every scroll notch wrote the value and was snapped straight back to the
+            // host's by Core's SettingChanged watch. The grid simply would not turn
+            // online while working perfectly in singleplayer, which is about the most
+            // misleading shape a bug can have.
+            //
+            // Suite.Local is exactly the declaration for this: Core's own comment on it
+            // names a UI scale, a colour and a hover-text toggle as the same kind of
+            // thing. It removes the key from the synced set, so the host's value is
+            // never applied rather than merely being overridden afterwards.
+            //
+            // GridCell, GridLevel, GridEnabled and the harvest numbers stay synced on
+            // purpose - those are rules about how the world plays, and a server is
+            // entitled to them.
+            Suite.Local(Furrow.FurrowConfig.GridAngle);
         }
 
 
