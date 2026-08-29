@@ -24,6 +24,14 @@ namespace Furrow
         public static ConfigEntry<int> GridPreviewRings;
         public static ConfigEntry<bool> RoomPreview;
 
+        public static ConfigEntry<bool> PickArea;
+        public static ConfigEntry<int> PickLevel;
+        public static ConfigEntry<int> PickAtLevel;
+        public static ConfigEntry<float> PickRadiusMin;
+        public static ConfigEntry<float> PickRadius;
+        public static ConfigEntry<int> PickMax;
+        public static ConfigEntry<bool> PickSameCropOnly;
+
         public static ConfigEntry<bool> Enabled;
 
         public static ConfigEntry<SowShape> Shape;
@@ -113,6 +121,39 @@ namespace Furrow
                 + "place: it checks ten seconds later, and a sapling that fails simply "
                 + "turns unhealthy or deletes itself, so the seed is gone before "
                 + "anything says no. Shown whatever the grid is doing.");
+
+            PickArea = config.Bind("Harvest", "PickArea", true,
+                "Shift+E on a ripe crop harvests its neighbours too. Plain E still picks "
+                + "exactly one and is untouched - an area harvest you cannot switch off "
+                + "is a mod deciding for you when you wanted the whole bed.");
+
+            PickLevel = config.Bind("Harvest", "PickLevel", 15,
+                "The Farming level that unlocks the area harvest. Below it Shift+E is an "
+                + "ordinary single pick.");
+
+            PickAtLevel = config.Bind("Harvest", "PickAtLevel", 80,
+                "The Farming level at which the harvest reaches PickRadius. Between the "
+                + "unlock and here it grows smoothly, so the reward arrives over the "
+                + "whole skill rather than all at one threshold.");
+
+            PickRadiusMin = config.Bind("Harvest", "PickRadiusMin", 2f,
+                "Metres reached at PickLevel, the moment it unlocks. Small on purpose: a "
+                + "couple of neighbours, not a field.");
+
+            PickRadius = config.Bind("Harvest", "PickRadius", 8f,
+                "Metres reached at PickAtLevel, and the most it ever reaches.");
+
+            PickMax = config.Bind("Harvest", "PickMax", 50,
+                "Most crops one Shift+E may take. The radius already limits this; the cap "
+                + "is what stops a very dense field emptying an inventory into items on "
+                + "the ground in one press.");
+
+            PickSameCropOnly = config.Bind("Harvest", "PickSameCropOnly", true,
+                "Take only the crop you clicked, so a mixed bed is harvested a kind at a "
+                + "time instead of stripped in one press. Turn it off to take every ripe "
+                + "crop in reach. Either way it is ONLY crops - the grown stage of "
+                + "something plantable, read from the game rather than listed here - so "
+                + "wild berries, mushrooms, thistle and dandelion are never touched.");
 
             Enabled = config.Bind("Sowing", "Enabled", false,
                 "Sow more than one seed per click. Turn this off and the mod does nothing, "

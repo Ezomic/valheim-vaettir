@@ -133,6 +133,7 @@ namespace Grove
             _harmony.PatchAll(typeof(Fertilise));
             _harmony.PatchAll(typeof(Furrow.Sowing));
             _harmony.PatchAll(typeof(Furrow.GridPlacement));
+            _harmony.PatchAll(typeof(Furrow.AreaPick));
 
             // Without this the sapling still calls, and every one of them appears on top of
             // it: the band is enforced by a prefix on SpawnArea.FindSpawnPoint, and an
