@@ -3,6 +3,43 @@
 Notable changes to Vaettir. Format follows [Keep a Changelog](https://keepachangelog.com),
 and the mod uses [semantic versioning](https://semver.org).
 
+## [1.3.1] - 2026-08-29
+
+Three reports against 1.3.0's grid, all from one session of actually using it.
+
+### Fixed
+
+- **The grid did not exist until the second plant.** Its origin could only ever be a
+  plant that already stood there, so the first plant of every bed went down blind -
+  nothing drawn, nothing to turn - and wherever it landed silently fixed the phase and
+  the angle for every plant after it. The one plant that most needed aiming was the only
+  one with no help. The bed now starts under the cursor: the lattice is drawn before
+  anything is planted, and the first seed lands where it says it will.
+
+- **The turn key was never received.** Furrow read its keys with
+  `UnityEngine.Input.GetKeyDown`, and Valheim runs on the new Input System - ZInput
+  routes a KeyCode to the mouse, keyboard or pad itself, and the legacy class does not
+  see the middle mouse button at all. The key was bound, the config held the right
+  value, and nothing happened. All of Furrow's keys go through ZInput now, which also
+  repairs Sowing's shape, increase and decrease keys - broken the same way, and never
+  reported only because Sowing is off by default.
+
+### Changed
+
+- **The mouse wheel turns the grid**, and it is the gesture rather than an option. While
+  planting the wheel is very nearly free: a crop carries `m_randomInitBuildRotation`, so
+  the game re-rolls the ghost's facing after every single placement and the yaw you
+  scrolled to is discarded as the seed goes in. Spending the same wheel on the rows
+  spends it on the one thing that survives the click - and scrolling back turns back,
+  which a key that only stepped one way could not.
+
+- **`GridTurnKey` now defaults to None**, so middle click is vanilla's remove again.
+  Set it to Mouse2 to have a key as well, and only then is removal suppressed while a
+  plant is selected.
+
+- The first grid drawn in a session names the gesture that is actually bound, so it
+  cannot tell you to press something that does nothing.
+
 ## [1.3.0] - 2026-08-29
 
 Four reports, and the answer to each one.
