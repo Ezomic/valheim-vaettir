@@ -3,6 +3,63 @@
 Notable changes to Vaettir. Format follows [Keep a Changelog](https://keepachangelog.com),
 and the mod uses [semantic versioning](https://semver.org).
 
+## [1.3.0] - 2026-08-29
+
+Four reports, and the answer to each one.
+
+### Fixed
+
+- **"Sometimes it says there is nothing to dig up."** Transplant took the first
+  `Pickable` out of `Physics.RaycastAll` and answered with it - and RaycastAll returns
+  its hits in ARBITRARY order, not nearest first. So whichever pickable the array
+  happened to list first spoke for the plant you were actually aiming at, and when that
+  one was not on the roster the dig was refused with a bush filling your screen.
+  Nothing about the failure depended on where you pointed, which is exactly why it read
+  as intermittent. Hits are sorted now, a roster plant always beats a stranger however
+  close, and a refusal names what it found ("Mushroom cannot be dug up") instead of
+  claiming there is nothing there. A clean miss falls back to a cone, because wild
+  plants are ragged and several carry a collider narrower than they look.
+
+### Added
+
+- **The grid can be lined up with what you have built.** All three properties of the
+  lattice were the mod's and are now yours: `GridCell` in absolute metres, `GridAngle`
+  for a building that does not sit square to the world, and `GridPinKey`, which anchors
+  the lattice where you stand rather than on the nearest plant.
+
+- **You can see the grid before you plant in it.** The rows are drawn on the ground
+  under the ghost, from the same anchor, spacing and angle the snap itself uses, so the
+  drawing cannot disagree with where the plant lands. It follows the terrain, and turns
+  live with the grid.
+
+- **The grid turns on the middle mouse button.** 22.5 degrees a press - vanilla's own
+  building step, so anything you built square is reachable - wrapping at 90, where a
+  square lattice repeats. Tying it to the ghost's own rotation was the obvious choice
+  and is wrong: crops carry `m_randomInitBuildRotation`, so the game re-rolls that yaw
+  after every placement and the grid would jump each time a seed went in. While the
+  cultivator is up with a plant selected, middle click turns the grid and does NOT
+  remove the piece under your cursor; removal is untouched everywhere else, and
+  rebinding the key restores it.
+
+- **A ring says whether a sapling will actually have room.** Green when it would grow,
+  red when it would not, at the plant's own radius. The game never checks this when you
+  place: `Plant.UpdateHealth` skips the test entirely for the first ten seconds after
+  planting, so a sapling with no room looks healthy, then quietly turns unhealthy - or
+  deletes itself, if it carries `m_destroyIfCantGrow`. The seed is spent before anything
+  says no, and the loss shows up later somewhere you are no longer standing. The ring
+  runs vanilla's own test, and shows whatever the grid is doing.
+
+- **The stowing post can say why it is doing nothing.** Its hover text carries the
+  count of items with nowhere to go, a corner message fires once when nothing in the
+  post has a home, and `Diagnostics/Verbose` logs one line per nearby chest naming why
+  it was skipped - privacy, range, a ward, an open window, a cart or a ship.
+
+### Note
+
+Nothing about how anything looks has changed. A repo-wide rework of texture density is
+finished and held back deliberately: it has not been seen in game, and two choices about
+the stowing post are still open.
+
 ## [1.2.1] - 2026-08-27
 
 ### Fixed
