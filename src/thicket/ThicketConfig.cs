@@ -25,6 +25,8 @@ namespace Thicket
         public static ConfigEntry<float> Scale;
         public static ConfigEntry<float> SpacingScale;
         public static ConfigEntry<bool> SayTheLevel;
+        public static ConfigEntry<float> DigReach;
+        public static ConfigEntry<float> DigAssist;
         public static ConfigEntry<bool> Verbose;
 
         /// <summary>Each plant's row, keyed by its id.</summary>
@@ -70,6 +72,18 @@ namespace Thicket
                 + "base figure comes from the plant's own size - a bush needs metres where "
                 + "a mushroom needs centimetres - and this scales all of them at once. "
                 + "Below 1 packs them tighter than the grown bushes will fit.");
+
+            DigReach = config.Bind("Thicket", "DigReach", 6f,
+                "How far away a wild plant can be dug up, in metres, measured from you "
+                + "rather than from the camera. Roughly the reach of any other click on "
+                + "the world.");
+
+            DigAssist = config.Bind("Thicket", "DigAssist", 12f,
+                "How many degrees off the crosshair a plant may sit and still be dug, "
+                + "when the crosshair itself hits nothing. Wild plants are ragged and "
+                + "several have a collider narrower than they look, so an exact ray is a "
+                + "harder shot than the plant appears to be. The plant nearest the aim "
+                + "line wins, not the nearest plant. 0 turns the help off.");
 
             SayTheLevel = config.Bind("Thicket", "SayTheLevel", true,
                 "Write the Farming level a plant needs into its build-menu description, and "

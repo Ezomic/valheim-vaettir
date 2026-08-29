@@ -14,6 +14,9 @@ namespace Furrow
     {
         public static ConfigEntry<int> GridLevel;
         public static ConfigEntry<bool> GridEnabled;
+        public static ConfigEntry<float> GridCell;
+        public static ConfigEntry<float> GridAngle;
+        public static ConfigEntry<KeyCode> GridPinKey;
 
         public static ConfigEntry<bool> Enabled;
 
@@ -45,6 +48,27 @@ namespace Furrow
                 "The Farming level that unlocks the grid shape. Below it the shape "
                 + "cycle offers row and circle only; a rank of seeds is a hand skill, "
                 + "a whole field laid out at once is what the levels are for.");
+
+            GridCell = config.Bind("Furrow", "GridCell", 0f,
+                "Metres between plants on the grid. 0 uses the plant's own grow radius, "
+                + "which is the distance the game itself refuses to plant inside - the "
+                + "tightest spacing that always takes, and different for every crop. Set "
+                + "a number and every crop uses it instead, so rows line up with the "
+                + "floor you are planting beside. Below a crop's own radius the game will "
+                + "refuse some placements, which is your business rather than the mod's.");
+
+            GridAngle = config.Bind("Furrow", "GridAngle", 0f,
+                "Which way the rows run, in degrees. The lattice is world-aligned at 0, "
+                + "so rows run north-south whatever direction you approach from. Turn it "
+                + "to match a building that does not sit square to the world.");
+
+            GridPinKey = config.Bind("Keys", "GridPinKey", KeyCode.KeypadPeriod,
+                "Pin the grid to where the ghost is standing, so a row starts exactly "
+                + "there. Without a pin the lattice lines up on the nearest plant of the "
+                + "same crop, which is right for extending a bed and wrong for lining one "
+                + "up with a floor you just laid. Press again to unpin. Only works with "
+                + "the cultivator out and a plant selected, since the ghost is what says "
+                + "where 'here' is.");
 
             Enabled = config.Bind("Sowing", "Enabled", false,
                 "Sow more than one seed per click. Turn this off and the mod does nothing, "

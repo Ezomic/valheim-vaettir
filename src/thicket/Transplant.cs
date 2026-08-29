@@ -49,12 +49,18 @@ namespace Thicket
                 return false;
             }
 
-            var pickable = UnderCrosshair(__instance);
+            Pickable stranger;
+            var pickable = UnderCrosshair(__instance, out stranger);
             var plant = Of(pickable);
             if (plant == null)
             {
+                // Naming what was actually under the cursor, when something was. "Nothing
+                // here to dig up" while a bush fills the screen reads as the mod being
+                // broken, and for a while it half was - see UnderCrosshair.
                 __instance.Message(MessageHud.MessageType.Center,
-                    "Nothing here to dig up");
+                    stranger != null
+                        ? Humanise(stranger) + " cannot be dug up"
+                        : "Nothing here to dig up");
                 return false;
             }
 
@@ -63,26 +69,107 @@ namespace Thicket
         }
 
         /// <summary>
+        /// The roster plant the player is aiming at, or null - with anything else that
+        /// was under the cursor handed back so the refusal can name it.
+        ///
         /// Our own ray, because repair mode's GetHoveringPiece only finds Pieces and a
-        /// bush is not one. Same camera, same reach a repair click has.
+        /// bush is not one. Three things make it find what the player means:
+        ///
+        /// RaycastAll's hits arrive in ARBITRARY order, not nearest first. This used to
+        /// take the first pickable in that array and hand it straight back, so a bush
+        /// standing behind a mushroom - or a mushroom whose collider merely happened to
+        /// be listed first - answered for the plant actually aimed at, and the dig was
+        /// refused with a bush filling the screen. That is the intermittent "sometimes
+        /// it says nothing to dig up": nothing about it depended on where you pointed.
+        ///
+        /// So the hits are sorted, and a plant ON THE ROSTER always beats one that is
+        /// not, however close the stranger. Being nearer is not being what was meant.
+        ///
+        /// And a miss falls back to a cone: wild plants are small, ragged, and often
+        /// have a collider narrower than they look, so a ray through the exact centre
+        /// of the crosshair is a harder shot than the plant appears to be. The cone
+        /// picks the plant closest to the aim LINE rather than the nearest one, so it
+        /// resolves the way a player expects when two stand side by side.
         /// </summary>
-        private static Pickable UnderCrosshair(Player player)
+        private static Pickable UnderCrosshair(Player player, out Pickable stranger)
         {
+            stranger = null;
+
             var camera = GameCamera.instance;
             if (camera == null) return null;
 
-            var ray = new Ray(camera.transform.position, camera.transform.forward);
-            foreach (var hit in Physics.RaycastAll(ray, 8f))
+            var reach = Mathf.Max(1f, ThicketConfig.DigReach.Value);
+            var eye = camera.transform.position;
+            var forward = camera.transform.forward;
+
+            // Reach is measured from the player and the ray starts at the camera, which
+            // on a third-person shoulder sits behind them - so the ray is given room and
+            // the reach test below is what actually decides.
+            var hits = Physics.RaycastAll(new Ray(eye, forward), reach + 6f);
+            System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
+
+            foreach (var hit in hits)
             {
                 if (hit.collider == null) continue;
 
                 var pickable = hit.collider.GetComponentInParent<Pickable>();
                 if (pickable == null) continue;
-                if (Vector3.Distance(hit.point, player.transform.position) > 6f) continue;
+                if (Vector3.Distance(pickable.transform.position,
+                                     player.transform.position) > reach) continue;
 
-                return pickable;
+                if (Of(pickable) != null) return pickable;
+                if (stranger == null) stranger = pickable;
             }
-            return null;
+
+            var cone = ThicketConfig.DigAssist.Value;
+            if (cone <= 0f) return null;
+
+            Pickable best = null;
+            var widest = Mathf.Cos(Mathf.Clamp(cone, 0f, 89f) * Mathf.Deg2Rad);
+
+            foreach (var collider in Physics.OverlapSphere(player.transform.position, reach))
+            {
+                if (collider == null) continue;
+
+                var pickable = collider.GetComponentInParent<Pickable>();
+                if (pickable == null || Of(pickable) == null) continue;
+
+                // Aimed at the middle of the plant rather than its base, or a bush at
+                // your feet is always behind you by a couple of degrees.
+                var to = pickable.transform.position + Vector3.up * 0.3f - eye;
+                if (to.sqrMagnitude < 0.0001f) continue;
+
+                var alignment = Vector3.Dot(to.normalized, forward);
+                if (alignment <= widest) continue;
+
+                widest = alignment;
+                best = pickable;
+            }
+
+            return best;
+        }
+
+        /// <summary>The prefab name of something the player can see, made readable.</summary>
+        private static string Humanise(Pickable pickable)
+        {
+            var name = Utils.GetPrefabName(pickable.gameObject.name);
+
+            // Vanilla's own display name when there is one - a Pickable carries the
+            // token it shows on hover, and "$piece_mushroom" localises to what the
+            // player already calls it.
+            if (!string.IsNullOrEmpty(pickable.m_overrideName))
+                return Localization.instance.Localize(pickable.m_overrideName);
+
+            if (pickable.m_itemPrefab != null)
+            {
+                var drop = pickable.m_itemPrefab.GetComponent<ItemDrop>();
+                if (drop != null && drop.m_itemData != null
+                    && drop.m_itemData.m_shared != null)
+                    return Localization.instance.Localize(
+                        drop.m_itemData.m_shared.m_name);
+            }
+
+            return name;
         }
 
         private static void Dig(Player player, Pickable pickable, WildPlant plant)

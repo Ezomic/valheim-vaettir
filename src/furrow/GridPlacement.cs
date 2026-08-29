@@ -38,6 +38,17 @@ namespace Furrow
     /// (FarmGrid and PlantEasily solve the same drift with on-grid pair detection
     /// and snap hysteresis; the held anchor buys the same stability inside this
     /// design's world-aligned axes without either.)
+    ///
+    /// All three properties of a lattice are now the player's, because "it does not
+    /// line up with my build" is not answerable by any default. Its SPACING is
+    /// GridCell, absolute metres, overriding the crop's own grow radius - which is
+    /// per-crop and so can never match a floor. Its ANGLE is GridAngle, for a
+    /// building that does not sit square to the world. And its ORIGIN is GridPinKey:
+    /// anchoring on the nearest kin is exactly right for extending an existing bed
+    /// and cannot be right for starting one, since the phase then comes from wherever
+    /// the first plant happened to land. Pin a corner against the floor instead. A
+    /// pin outranks the found anchor and survives a change of crop, so one pinned bed
+    /// takes carrots and turnips in the same rows.
     /// </summary>
     [HarmonyPatch]
     internal static class GridPlacement
@@ -50,6 +61,12 @@ namespace Furrow
         // and a Vector3 cannot become a dead UnityEngine.Object mid-frame.
         private static Vector3? _anchor;
         private static string _anchorCrop;
+
+        // A pinned phase outranks the found one and survives a change of crop, because
+        // it is about the ground rather than about the plant: you pin a corner of the
+        // bed you are laying out, then plant carrots and turnips into the same rows.
+        // Not held across a session - a pin is for the bed being worked on.
+        private static Vector3? _pin;
 
         // Kin lookup per crop, so the grown-prefab names are not re-read per frame.
         private static string _kinCrop;
@@ -83,29 +100,54 @@ namespace Furrow
             if (__instance.GetSkillFactor(Skills.SkillType.Farming) * 100f
                 < FurrowConfig.GridLevel.Value) return;
 
-            var step = Mathf.Max(0.1f,
-                ghostPlant.m_growRadius * 2f
-                * Mathf.Max(0.1f, FurrowConfig.Spacing.Value));
+            // The crop's own grow radius is the tightest spacing that always takes, and
+            // it differs per crop - right for a bed of one thing, wrong for lining rows
+            // up with a floor, which is why an absolute override exists beside it.
+            var cell = FurrowConfig.GridCell.Value;
+            var step = cell > 0f
+                ? Mathf.Max(0.1f, cell)
+                : Mathf.Max(0.1f, ghostPlant.m_growRadius * 2f
+                                  * Mathf.Max(0.1f, FurrowConfig.Spacing.Value));
 
             var crop = Utils.GetPrefabName(ghost.name);
             var at = ghost.transform.position;
 
-            if (_anchorCrop != crop
-                || (_anchor.HasValue && FlatSqr(_anchor.Value, at) > HoldRadius * HoldRadius))
-                _anchor = null;
+            Pin(__instance, at);
 
-            if (!_anchor.HasValue)
+            Vector3 anchor;
+            if (_pin.HasValue)
             {
-                _anchor = NearestKin(ghostPlant, crop, at);
-                _anchorCrop = crop;
-                if (!_anchor.HasValue) return;
+                anchor = _pin.Value;
             }
-            var anchor = _anchor.Value;
+            else
+            {
+                if (_anchorCrop != crop
+                    || (_anchor.HasValue
+                        && FlatSqr(_anchor.Value, at) > HoldRadius * HoldRadius))
+                    _anchor = null;
 
-            var snapped = new Vector3(
-                anchor.x + Mathf.Round((at.x - anchor.x) / step) * step,
-                at.y,
-                anchor.z + Mathf.Round((at.z - anchor.z) / step) * step);
+                if (!_anchor.HasValue)
+                {
+                    _anchor = NearestKin(ghostPlant, crop, at);
+                    _anchorCrop = crop;
+                    if (!_anchor.HasValue) return;
+                }
+                anchor = _anchor.Value;
+            }
+
+            // Rounded in the lattice's own frame, so a turned grid stays square. At the
+            // default angle the two rotations are identity and this is the plain
+            // world-axis round it has always been.
+            var angle = FurrowConfig.GridAngle.Value;
+            var into = Quaternion.Euler(0f, -angle, 0f);
+            var back = Quaternion.Euler(0f, angle, 0f);
+
+            var local = into * (at - anchor);
+            local.x = Mathf.Round(local.x / step) * step;
+            local.z = Mathf.Round(local.z / step) * step;
+
+            var snapped = anchor + back * new Vector3(local.x, 0f, local.z);
+            snapped.y = at.y;
 
             // Follow the terrain at the snapped spot, or a snap across a dip leaves
             // the ghost floating and vanilla refuses the placement for it.
@@ -115,6 +157,36 @@ namespace Furrow
                 snapped.y = ground;
 
             ghost.transform.position = snapped;
+        }
+
+        /// <summary>
+        /// Pin the lattice where the ghost stands, or lift the pin.
+        ///
+        /// The pin is what makes the grid line up with a BUILDING. Anchoring on the
+        /// nearest kin is right for extending a bed that already exists and cannot be
+        /// right for a bed that does not: the phase then comes from wherever the first
+        /// plant happened to land, which is nowhere in particular. Pin a corner against
+        /// your floor and every row runs from it.
+        /// </summary>
+        private static void Pin(Player player, Vector3 at)
+        {
+            if (!Input.GetKeyDown(FurrowConfig.GridPinKey.Value)) return;
+
+            // Not while typing into the console or a sign, or the pin lands on a
+            // keystroke meant for the text field.
+            if (Chat.instance != null && Chat.instance.HasFocus()) return;
+            if (Console.IsVisible() || TextInput.IsVisible()) return;
+
+            if (_pin.HasValue)
+            {
+                _pin = null;
+                _anchor = null;
+                player.Message(MessageHud.MessageType.Center, "Grid unpinned");
+                return;
+            }
+
+            _pin = at;
+            player.Message(MessageHud.MessageType.Center, "Grid pinned here");
         }
 
         /// <summary>
