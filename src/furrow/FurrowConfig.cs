@@ -17,6 +17,11 @@ namespace Furrow
         public static ConfigEntry<float> GridCell;
         public static ConfigEntry<float> GridAngle;
         public static ConfigEntry<KeyCode> GridPinKey;
+        public static ConfigEntry<KeyCode> GridTurnKey;
+        public static ConfigEntry<float> GridTurnStep;
+        public static ConfigEntry<bool> GridPreview;
+        public static ConfigEntry<int> GridPreviewRings;
+        public static ConfigEntry<bool> RoomPreview;
 
         public static ConfigEntry<bool> Enabled;
 
@@ -50,12 +55,14 @@ namespace Furrow
                 + "a whole field laid out at once is what the levels are for.");
 
             GridCell = config.Bind("Furrow", "GridCell", 0f,
-                "Metres between plants on the grid. 0 uses the plant's own grow radius, "
-                + "which is the distance the game itself refuses to plant inside - the "
-                + "tightest spacing that always takes, and different for every crop. Set "
-                + "a number and every crop uses it instead, so rows line up with the "
-                + "floor you are planting beside. Below a crop's own radius the game will "
-                + "refuse some placements, which is your business rather than the mod's.");
+                "Metres between plants on the grid. Leave it at 0 - that keeps EVERY "
+                + "PLANT ON ITS OWN SPACING, taken from its grow radius, which is the "
+                + "distance the game itself needs clear around it. A carrot wants "
+                + "centimetres and an oak wants metres, so one fixed number for both "
+                + "either spaces carrots out like trees or packs trees in like carrots. "
+                + "A number here overrides all of them, and setting it below a tree's "
+                + "own radius is exactly how a sapling gets planted with no room and is "
+                + "wasted. Watch the ring, not this line.");
 
             GridAngle = config.Bind("Furrow", "GridAngle", 0f,
                 "Which way the rows run, in degrees. The lattice is world-aligned at 0, "
@@ -69,6 +76,32 @@ namespace Furrow
                 + "up with a floor you just laid. Press again to unpin. Only works with "
                 + "the cultivator out and a plant selected, since the ghost is what says "
                 + "where 'here' is.");
+
+            GridTurnKey = config.Bind("Keys", "GridTurnKey", KeyCode.KeypadDivide,
+                "Turn the grid by GridTurnStep, so you can line the rows up with a wall "
+                + "and watch them turn. Wraps at 90 degrees, because a square lattice "
+                + "repeats there and every distinct grid is within a few presses.");
+
+            GridTurnStep = config.Bind("Keys", "GridTurnStep", 22.5f,
+                "Degrees per press of GridTurnKey. 22.5 is the step vanilla turns a "
+                + "building by, so anything you built square is reachable exactly.");
+
+            GridPreview = config.Bind("Furrow", "GridPreview", true,
+                "Draw the lattice on the ground under the ghost, so the rows, the "
+                + "spacing and the angle can be seen before anything is planted rather "
+                + "than worked out from where the last seed landed.");
+
+            GridPreviewRings = config.Bind("Furrow", "GridPreviewRings", 3,
+                "How many cells the drawn lattice reaches in each direction. 3 draws a "
+                + "seven by seven patch, which is enough to see the rows without "
+                + "covering the ground you are trying to look at.");
+
+            RoomPreview = config.Bind("Furrow", "RoomPreview", true,
+                "Draw a ring at the plant's grow radius, green when it would have room "
+                + "and red when it would not. The game does not check this when you "
+                + "place: it checks ten seconds later, and a sapling that fails simply "
+                + "turns unhealthy or deletes itself, so the seed is gone before "
+                + "anything says no. Shown whatever the grid is doing.");
 
             Enabled = config.Bind("Sowing", "Enabled", false,
                 "Sow more than one seed per click. Turn this off and the mod does nothing, "

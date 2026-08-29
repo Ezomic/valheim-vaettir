@@ -81,7 +81,6 @@ namespace Furrow
         [HarmonyPatch(typeof(Player), "UpdatePlacementGhost")]
         private static void Snap(Player __instance)
         {
-            if (!FurrowConfig.GridEnabled.Value) return;
             if (__instance != Player.m_localPlayer) return;
 
             var ghost = GhostRef(__instance);
@@ -91,14 +90,23 @@ namespace Furrow
                 // here is safe because every plant this grid placed shares its
                 // phase, so the re-pick on the next sweep lands on the same lattice.
                 _anchor = null;
+                GridPreview.Hide();
                 return;
             }
 
             Plant ghostPlant;
-            if (!ghost.TryGetComponent(out ghostPlant)) return;
+            if (!ghost.TryGetComponent(out ghostPlant)) { GridPreview.Hide(); return; }
+
+            // The room ring first, and outside every gate below it. Whether an oak
+            // will fit is worth answering at Farming 0 with the grid switched off -
+            // it is about the seed being spent, not about the rows being tidy.
+            GridPreview.Ring(ghost.transform.position, ghostPlant,
+                             Room.Free(ghost.transform.position, ghostPlant));
+
+            if (!FurrowConfig.GridEnabled.Value) { GridPreview.HideGrid(); return; }
 
             if (__instance.GetSkillFactor(Skills.SkillType.Farming) * 100f
-                < FurrowConfig.GridLevel.Value) return;
+                < FurrowConfig.GridLevel.Value) { GridPreview.HideGrid(); return; }
 
             // The crop's own grow radius is the tightest spacing that always takes, and
             // it differs per crop - right for a bed of one thing, wrong for lining rows
@@ -113,6 +121,7 @@ namespace Furrow
             var at = ghost.transform.position;
 
             Pin(__instance, at);
+            Turn(__instance);
 
             Vector3 anchor;
             if (_pin.HasValue)
@@ -130,7 +139,7 @@ namespace Furrow
                 {
                     _anchor = NearestKin(ghostPlant, crop, at);
                     _anchorCrop = crop;
-                    if (!_anchor.HasValue) return;
+                    if (!_anchor.HasValue) { GridPreview.HideGrid(); return; }
                 }
                 anchor = _anchor.Value;
             }
@@ -157,6 +166,38 @@ namespace Furrow
                 snapped.y = ground;
 
             ghost.transform.position = snapped;
+
+            // Drawn from the same anchor, step and angle the snap just used, so the
+            // lines cannot disagree with where the plant will land. Re-rung too, since
+            // the ghost has moved since the ring above was drawn.
+            GridPreview.Grid(anchor, step, angle, snapped, _pin.HasValue);
+            GridPreview.Ring(snapped, ghostPlant, Room.Free(snapped, ghostPlant));
+        }
+
+        /// <summary>
+        /// Turn the lattice by a step.
+        ///
+        /// A key rather than the ghost's own rotation, which was the obvious binding
+        /// and is wrong: crops carry m_randomInitBuildRotation, so the game re-rolls
+        /// the ghost's yaw after every single placement. A grid tied to it would jump
+        /// to a new angle each time a seed went in.
+        ///
+        /// Wrapped at 90 degrees because a square lattice repeats there - two presses
+        /// of the default 22.5 covers every distinct grid, and the step matches the
+        /// one vanilla turns buildings by, so a wall built square is reachable.
+        /// </summary>
+        private static void Turn(Player player)
+        {
+            if (!Pressed(FurrowConfig.GridTurnKey.Value)) return;
+
+            var step = FurrowConfig.GridTurnStep.Value;
+            if (step <= 0f) return;
+
+            var angle = Mathf.Repeat(FurrowConfig.GridAngle.Value + step, 90f);
+            FurrowConfig.GridAngle.Value = angle;
+
+            player.Message(MessageHud.MessageType.Center,
+                "Grid at " + angle.ToString("0.#") + "°");
         }
 
         /// <summary>
@@ -170,12 +211,7 @@ namespace Furrow
         /// </summary>
         private static void Pin(Player player, Vector3 at)
         {
-            if (!Input.GetKeyDown(FurrowConfig.GridPinKey.Value)) return;
-
-            // Not while typing into the console or a sign, or the pin lands on a
-            // keystroke meant for the text field.
-            if (Chat.instance != null && Chat.instance.HasFocus()) return;
-            if (Console.IsVisible() || TextInput.IsVisible()) return;
+            if (!Pressed(FurrowConfig.GridPinKey.Value)) return;
 
             if (_pin.HasValue)
             {
@@ -241,6 +277,18 @@ namespace Furrow
             }
 
             return best;
+        }
+
+        /// <summary>
+        /// A key press that is not a keystroke meant for a text field. Without this a
+        /// keypad key typed into chat or the console also turns the grid, which reads
+        /// as the grid moving on its own.
+        /// </summary>
+        private static bool Pressed(KeyCode key)
+        {
+            if (!Input.GetKeyDown(key)) return false;
+            if (Chat.instance != null && Chat.instance.HasFocus()) return false;
+            return !Console.IsVisible() && !TextInput.IsVisible();
         }
 
         private static float FlatSqr(Vector3 a, Vector3 b)
