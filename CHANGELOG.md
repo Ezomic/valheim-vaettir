@@ -3,6 +3,26 @@
 Notable changes to Vaettir. Format follows [Keep a Changelog](https://keepachangelog.com),
 and the mod uses [semantic versioning](https://semver.org).
 
+## [1.4.1] - 2026-08-29
+
+### Fixed
+
+- **The grid would not turn on a server**, while turning perfectly in singleplayer -
+  which is the shape of bug that sends you looking everywhere except at the cause.
+  `GridAngle` is a float, and Longhouse Core's config sync exempts only `KeyCode` and
+  `KeyboardShortcut` from being decided by the host. So on a server the host's angle was
+  imposed on the client, and Core's watch put an imposed setting straight back the moment
+  anything wrote it: every scroll notch set the angle and had it reverted in the same
+  frame. Nothing was wrong with the wheel, the input or the grid.
+
+  The angle is now declared personal through Core's own `Suite.Local`, which is written
+  for exactly this and names a UI scale or a colour as the same kind of setting. The host's
+  value is never applied rather than applied and then fought.
+
+  The actual rules stay host-decided on purpose - `GridCell`, `GridLevel`, `GridEnabled`
+  and the harvest numbers are all things a server is entitled to settle for everyone.
+  Which way one player's rows happen to run is not.
+
 ## [1.4.0] - 2026-08-29
 
 ### Added
