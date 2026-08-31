@@ -77,6 +77,25 @@ namespace Furrow
                                                  // re-picking at the search edge is what
                                                  // let the phase churn in the first place
 
+        /// <summary>
+        /// Whether the player is holding the grid away for this placement.
+        ///
+        /// Left at None the key is vanilla's own AltPlace - Shift by default, and
+        /// rebindable in the game's controls, so a rebind moves this along with it.
+        /// GetButton rather than a raw KeyCode read is what makes that true, and it
+        /// brings the gamepad's JoyAltPlace along unasked. A configured key replaces
+        /// the button instead of joining it, so someone who moved the gesture off
+        /// Shift is not still triggering it by sprinting.
+        /// </summary>
+        private static bool Suspended()
+        {
+            var key = FurrowConfig.GridFreeKey.Value;
+            if (key != KeyCode.None) return Keys.Held(key);
+
+            return ZInput.instance != null
+                && (ZInput.GetButton("AltPlace") || ZInput.GetButton("JoyAltPlace"));
+        }
+
         [HarmonyPostfix]
         [HarmonyPatch(typeof(Player), "UpdatePlacementGhost")]
         private static void Snap(Player __instance)
@@ -104,6 +123,13 @@ namespace Furrow
                              Room.Free(ghost.transform.position, ghostPlant));
 
             if (!FurrowConfig.GridEnabled.Value) { GridPreview.HideGrid(); return; }
+
+            // Held, not toggled: a player asked to plant one thing off-grid, and a
+            // toggle is state you forget while a held key ends when the hand opens.
+            // Returning here, before Pin/Turn/Wheel and the snap, is the whole
+            // feature - the ghost is vanilla's again, and the scroll wheel goes back
+            // to being the camera's.
+            if (Suspended()) { GridPreview.HideGrid(); return; }
 
             if (__instance.GetSkillFactor(Skills.SkillType.Farming) * 100f
                 < FurrowConfig.GridLevel.Value) { GridPreview.HideGrid(); return; }
@@ -260,6 +286,7 @@ namespace Furrow
         {
             if (FurrowConfig.GridTurnKey.Value != KeyCode.Mouse2) return true;
             if (!FurrowConfig.GridEnabled.Value) return true;
+            if (Suspended()) return true;
             if (__instance != Player.m_localPlayer) return true;
 
             var ghost = GhostRef(__instance);

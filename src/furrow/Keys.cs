@@ -35,5 +35,20 @@ namespace Furrow
             if (Chat.instance != null && Chat.instance.HasFocus()) return false;
             return !Console.IsVisible() && !TextInput.IsVisible();
         }
+
+        /// <summary>
+        /// True while the key is held, with the same text-field refusal as Pressed.
+        /// A held modifier hardly matters while chat has focus - you cannot click a
+        /// plant in anyway - but two readers with different manners is how one of
+        /// them ends up wrong later.
+        /// </summary>
+        public static bool Held(KeyCode key)
+        {
+            if (key == KeyCode.None) return false;
+            if (!ZInput.GetKey(key, false)) return false;
+
+            if (Chat.instance != null && Chat.instance.HasFocus()) return false;
+            return !Console.IsVisible() && !TextInput.IsVisible();
+        }
     }
 }

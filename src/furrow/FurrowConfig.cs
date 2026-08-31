@@ -17,6 +17,7 @@ namespace Furrow
         public static ConfigEntry<float> GridCell;
         public static ConfigEntry<float> GridAngle;
         public static ConfigEntry<KeyCode> GridPinKey;
+        public static ConfigEntry<KeyCode> GridFreeKey;
         public static ConfigEntry<KeyCode> GridTurnKey;
         public static ConfigEntry<bool> GridTurnScroll;
         public static ConfigEntry<float> GridTurnStep;
@@ -77,6 +78,14 @@ namespace Furrow
                 "Which way the rows run, in degrees. The lattice is world-aligned at 0, "
                 + "so rows run north-south whatever direction you approach from. Turn it "
                 + "to match a building that does not sit square to the world.");
+
+            GridFreeKey = config.Bind("Keys", "GridFreeKey", KeyCode.None,
+                "Hold to plant free of the grid - the lattice and its preview stand "
+                + "down until the key is released. Left at None this is the game's own "
+                + "AltPlace key, Shift unless rebound, which is already vanilla's "
+                + "'place free of snapping' gesture - one habit, both meanings. Set a "
+                + "KeyCode here only if Shift is overloaded for you; the named key "
+                + "then replaces AltPlace rather than joining it.");
 
             GridPinKey = config.Bind("Keys", "GridPinKey", KeyCode.KeypadPeriod,
                 "Pin the grid to where the ghost is standing, so a row starts exactly "
