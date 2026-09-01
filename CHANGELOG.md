@@ -3,6 +3,41 @@
 Notable changes to Vaettir. Format follows [Keep a Changelog](https://keepachangelog.com),
 and the mod uses [semantic versioning](https://semver.org).
 
+## [1.4.2] - 2026-09-01
+
+### Added
+
+- **Hold Shift to plant free of the grid.** A Longhouse player asked to switch the grid
+  off sometimes, to put one plant where it wanted to be - which is a gesture, not a
+  setting. So it is a held key rather than a toggle or a cfg edit: the lattice, its
+  preview, the scroll wheel and middle mouse all return to vanilla while it is down,
+  and come back when the hand opens. The key is the game's own AltPlace - Shift unless
+  rebound, which is already vanilla's "place free of snapping" gesture while building,
+  so the habit transfers whole and follows a rebind in the game's controls for free.
+  `GridFreeKey` in config replaces it for anyone whose Shift is overloaded.
+
+### Fixed
+
+- **Bonemeal threw on every use.** `BonemealRadius` was read each time bonemeal was
+  consumed on a plant, but it was never bound to the config file, so the read was a
+  NullReferenceException on the one path the item exists for. The plant still advanced,
+  because that happens first, and the exception landed in Player.log rather than the
+  BepInEx log - which is why it read as working. It is now bound, off by default at 0;
+  set a radius in metres to feed the neighbours in the same press. The radius could
+  never actually be switched on before this, since no cfg row existed to set.
+
+### Changed
+
+- **Every config entry is now settled as either the host's or yours.** The 1.4.1
+  grid-angle fix closed one instance of a class, so this release classified all 137
+  entries against Longhouse Core's sync. Thirty-three are per-player by nature and now
+  say so through `Suite.Local`: the grid and sowing gestures, your map pins, the
+  refusal messages on your own screen, the spirit's and post's local renders,
+  `KeepHotbar` and `NeverStow`, and every Verbose and diagnostics toggle. Every
+  gameplay number - costs, ranges, health, rosters, caps - stays host-decided on
+  purpose, and so does every shared prefab fact. Three that look personal stay synced
+  deliberately, and the code records which and why.
+
 ## [1.4.1] - 2026-08-29
 
 ### Fixed

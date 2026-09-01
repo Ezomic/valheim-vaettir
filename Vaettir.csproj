@@ -5,7 +5,7 @@
     <AssemblyName>Vaettir</AssemblyName>
     <RootNamespace>Vaettir</RootNamespace>
     <LangVersion>latest</LangVersion>
-    <Version>1.4.1</Version>
+    <Version>1.4.2</Version>
     <Authors>Robbin Thijssen</Authors>
     <Company>Thijssen Software</Company>
     <Product>Vaettir</Product>
