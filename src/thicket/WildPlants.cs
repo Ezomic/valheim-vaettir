@@ -42,8 +42,47 @@ namespace Thicket
         private static readonly HashSet<string> Said = new HashSet<string>();
 
         private static float _nextKnownNudge;
-        private static readonly AccessTools.FieldRef<Player, HashSet<string>> KnownRef =
-            AccessTools.FieldRefAccess<Player, HashSet<string>>("m_knownRecipes");
+
+        /// <summary>
+        /// Player.m_knownRecipes, bound on first use and never in a field initialiser.
+        ///
+        /// It was a static readonly field, which is a type initialiser, and a type
+        /// initialiser that throws poisons the whole class: every later call into
+        /// WildPlants - Bind, Register, Of, Warn - comes back as TypeInitializationException
+        /// instead. Bind runs from the plugin's Awake, so one renamed private field on Player
+        /// would have taken the rest of Awake with it and, before today's reordering, the
+        /// prefab declarations too. Carry.cs already binds this way and says why: it cost an
+        /// evening presenting as "I can't equip any tool", and it lands in Player.log rather
+        /// than in the BepInEx log anyone would think to read.
+        ///
+        /// A failed binding now costs exactly one thing - the known-pieces nudge below - and
+        /// says so once.
+        /// </summary>
+        private static AccessTools.FieldRef<Player, HashSet<string>> _knownRef;
+        private static bool _knownBindTried;
+
+        private static AccessTools.FieldRef<Player, HashSet<string>> KnownRef()
+        {
+            if (_knownBindTried) return _knownRef;
+            _knownBindTried = true;
+
+            try
+            {
+                _knownRef = AccessTools.FieldRefAccess<Player, HashSet<string>>(
+                    "m_knownRecipes");
+            }
+            catch (System.Exception e)
+            {
+                // Named loudly, because the symptom without it is baffling: the Transplant
+                // entry sits in the cultivator's table, enabled, with an icon, and simply
+                // never appears in the menu on a quiet save.
+                Warn("could not read Player.m_knownRecipes, so the Transplant entry will "
+                     + "not be nudged into the build menu - it may stay hidden until you "
+                     + "next learn a recipe or station. " + e.Message);
+            }
+
+            return _knownRef;
+        }
 
         /// <summary>Plants whose prefab could not be built at all - a missing model, a bush
         /// this version of the game does not have - so the retry stops asking.</summary>
@@ -144,9 +183,10 @@ namespace Thicket
             {
                 _nextKnownNudge = Time.time + 5f;
                 var player = Player.m_localPlayer;
-                if (player != null)
+                var knownRef = KnownRef();
+                if (player != null && knownRef != null)
                 {
-                    var known = KnownRef(player);
+                    var known = knownRef(player);
                     if (known != null && !known.Contains("Transplant")
                         && table.m_pieces.Contains(tool))
                     {

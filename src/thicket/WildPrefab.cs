@@ -24,17 +24,64 @@ namespace Thicket
     /// </summary>
     internal static class WildPrefab
     {
-        private static readonly AccessTools.FieldRef<Plant, GameObject> HealthyRef =
-            AccessTools.FieldRefAccess<Plant, GameObject>("m_healthy");
+        /// <summary>
+        /// Plant's four private stage fields, bound on first use and never in a field
+        /// initialiser.
+        ///
+        /// These were four static readonly fields, which is a type initialiser, and a type
+        /// initialiser that throws poisons the entire class - every later call comes back as
+        /// TypeInitializationException, including Build, BuildTool and CarryVisual. That
+        /// would have turned one renamed private field on Plant into "Thicket registers
+        /// nothing", which means eight seedling prefabs missing from ZNetScene, which means
+        /// every planted one discarded from the world without an error. Carry.cs binds this
+        /// way already and records what the same mistake cost there.
+        ///
+        /// Bound as a set of four rather than one at a time on purpose: they are only useful
+        /// together, and a partial bind is a Plant with two of its four stages wired, which
+        /// is a worse state than none.
+        /// </summary>
+        private static AccessTools.FieldRef<Plant, GameObject> _healthyRef;
+        private static AccessTools.FieldRef<Plant, GameObject> _unhealthyRef;
+        private static AccessTools.FieldRef<Plant, GameObject> _healthyGrownRef;
+        private static AccessTools.FieldRef<Plant, GameObject> _unhealthyGrownRef;
+        private static bool _stageBindTried;
 
-        private static readonly AccessTools.FieldRef<Plant, GameObject> UnhealthyRef =
-            AccessTools.FieldRefAccess<Plant, GameObject>("m_unhealthy");
+        private static bool BindStages()
+        {
+            if (!_stageBindTried)
+            {
+                _stageBindTried = true;
 
-        private static readonly AccessTools.FieldRef<Plant, GameObject> HealthyGrownRef =
-            AccessTools.FieldRefAccess<Plant, GameObject>("m_healthyGrown");
+                try
+                {
+                    _healthyRef = AccessTools.FieldRefAccess<Plant, GameObject>("m_healthy");
+                    _unhealthyRef =
+                        AccessTools.FieldRefAccess<Plant, GameObject>("m_unhealthy");
+                    _healthyGrownRef =
+                        AccessTools.FieldRefAccess<Plant, GameObject>("m_healthyGrown");
+                    _unhealthyGrownRef =
+                        AccessTools.FieldRefAccess<Plant, GameObject>("m_unhealthyGrown");
+                }
+                catch (System.Exception e)
+                {
+                    // All four dropped together, so a half-bound set cannot be used.
+                    _healthyRef = null;
+                    _unhealthyRef = null;
+                    _healthyGrownRef = null;
+                    _unhealthyGrownRef = null;
 
-        private static readonly AccessTools.FieldRef<Plant, GameObject> UnhealthyGrownRef =
-            AccessTools.FieldRefAccess<Plant, GameObject>("m_unhealthyGrown");
+                    WildPlants.Warn("could not bind Plant's stage fields (m_healthy and its "
+                        + "three siblings), so a transplanted seedling will not show the "
+                        + "right mesh and Plant.SUpdate will throw against it about once "
+                        + "every ten seconds. The seedlings ARE still registered, so nothing "
+                        + "already planted is lost - which is why this is a complaint rather "
+                        + "than a refusal to build them. " + e.Message);
+                }
+            }
+
+            return _healthyRef != null && _unhealthyRef != null
+                   && _healthyGrownRef != null && _unhealthyGrownRef != null;
+        }
 
         private static GameObject _holder;
 
@@ -269,10 +316,17 @@ namespace Thicket
             // to cling to and reports NoAttachPiece when there is none.
             component.m_attachDistance = 0f;
 
-            HealthyRef(component) = stages[0];
-            UnhealthyRef(component) = stages[1];
-            HealthyGrownRef(component) = stages[2];
-            UnhealthyGrownRef(component) = stages[3];
+            // Only when all four bound. The alternative - refusing to build the seedling at
+            // all - would leave the prefab out of ZNetScene, and an unresolvable prefab has
+            // its ZDOs discarded rather than errored: every planted seedling in the world,
+            // gone. A visibly broken plant that throws in the log is recoverable; that is not.
+            if (BindStages())
+            {
+                _healthyRef(component) = stages[0];
+                _unhealthyRef(component) = stages[1];
+                _healthyGrownRef(component) = stages[2];
+                _unhealthyGrownRef(component) = stages[3];
+            }
         }
 
         private static void Dress(GameObject clone, WildPlant plant)
@@ -469,8 +523,9 @@ namespace Thicket
 
             Plant plantComponent;
             if (!planted.TryGetComponent(out plantComponent)) return;
+            if (!BindStages()) return;
 
-            var healthy = HealthyRef(plantComponent);
+            var healthy = _healthyRef(plantComponent);
             if (healthy != null) healthy.SetActive(true);
         }
 

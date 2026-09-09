@@ -1,5 +1,4 @@
 using System.IO;
-using HarmonyLib;
 using UnityEngine;
 
 namespace Grove
@@ -25,7 +24,6 @@ namespace Grove
         /// </summary>
         public const string Name = "GroveBonemeal";
 
-        private static GameObject _prefab;
         private static GameObject _holder;
         private static bool _recipeAdded;
 
@@ -43,22 +41,37 @@ namespace Grove
             }
         }
 
-        public static bool Register()
+        /// <summary>
+        /// The recipe, and nothing else. The prefab is not registered here any more.
+        ///
+        /// This file used to hand itself to ZNetScene and ObjectDB directly, and the
+        /// ZNetScene half wrote the private m_namedPrefabs dictionary with no try/catch at
+        /// all - the only unguarded reflective write left in the mod. Worse, the gate in
+        /// front of the whole thing read "Ready AND _recipeAdded", so a static bool of ours
+        /// was half the answer to "have I registered this world yet". Loading a second world
+        /// - which includes logging out to the menu and back in - tears both singletons down
+        /// and builds new ones, the flag still says yes, and every ZDO of the prefab is
+        /// discarded as junk. That is not a hypothesis: it destroyed a built Stow post on
+        /// 2026-08-16, silently and permanently.
+        ///
+        /// So the prefab is declared through Prefabs.Keep in GrovePlugin.Awake alongside the
+        /// other four, which owns the guarded write, the retry, and an idempotence that asks
+        /// the live scene every frame and cannot go stale. A Recipe is not a prefab and Keep
+        /// does not model one, so that much stays here - and it is safe to lose, because a
+        /// missing recipe costs a crafting entry rather than an object in the world.
+        /// </summary>
+        public static bool RegisterRecipe()
         {
-            if (Ready && _recipeAdded) return true;
-            if (ZNetScene.instance == null || ObjectDB.instance == null) return false;
+            if (_recipeAdded) return true;
 
-            if (_prefab == null)
-            {
-                _prefab = Build();
-                if (_prefab == null) return false;
-            }
+            // The item has to be in THIS ObjectDB before a recipe can name it, and Prefabs
+            // may still be waiting - the first ObjectDB.Awake of a session fires against a
+            // stub with no items in it, where registering succeeds and is then thrown away.
+            // Ready asks the database rather than a field, for the reason above.
+            if (!Ready) return false;
 
-            AddToObjectDB();
-            AddToScene();
             AddRecipe();
-
-            return Ready;
+            return _recipeAdded;
         }
 
         /// <summary>Called when ObjectDB is rebuilt, so the recipe is re-added to the new one.</summary>
@@ -69,7 +82,18 @@ namespace Grove
 
         // ------------------------------------------------------------------ building
 
-        private static GameObject Build()
+        /// <summary>
+        /// Built once per process and handed to Prefabs.Keep, which re-registers the result
+        /// into every world after that. Internal rather than private because Awake names it.
+        ///
+        /// It does not refuse when ObjectDB is missing, deliberately. The only thing here
+        /// that wants one is FlatMaterials borrowing a shader off BoneFragments, and that
+        /// already falls back on its own; refusing instead would return null, and Prefabs
+        /// abandons a builder after five nulls - which for an ITEM means it never reaches
+        /// ObjectDB, and Inventory.AddItem drops an unresolvable item out of a saved
+        /// inventory without erroring. A slightly wrong shader is the cheaper failure.
+        /// </summary>
+        internal static GameObject Build()
         {
             var source = Donor();
             if (source == null) return null;
@@ -325,48 +349,6 @@ namespace Grove
             }
         }
 
-        // ------------------------------------------------------------------ registration
-
-        /// <summary>
-        /// Into ObjectDB, and then its lookup tables rebuilt. UpdateRegisters is private and
-        /// builds m_itemByHash once, so adding to m_items alone leaves the item unfindable
-        /// by name - which is exactly what a recipe does when it resolves its ingredients.
-        /// </summary>
-        private static void AddToObjectDB()
-        {
-            var db = ObjectDB.instance;
-            if (db == null || _prefab == null) return;
-            if (db.GetItemPrefab(Name) != null) return;
-
-            db.m_items.Add(_prefab);
-
-            try
-            {
-                AccessTools.Method(typeof(ObjectDB), "UpdateRegisters").Invoke(db, null);
-            }
-            catch (System.Exception e)
-            {
-                GrovePlugin.Log.LogError("Could not refresh ObjectDB for " + Name + ": "
-                                         + e.Message);
-            }
-        }
-
-        private static void AddToScene()
-        {
-            var scene = ZNetScene.instance;
-            if (scene == null || _prefab == null) return;
-            if (scene.GetPrefab(Name) != null) return;
-
-            scene.m_prefabs.Add(_prefab);
-
-            // The list alone is not enough: m_namedPrefabs is built in Awake and never
-            // rebuilt, so a prefab missing from the dictionary is a prefab ZNetScene cannot
-            // resolve - and an unresolvable prefab has its ZDOs discarded rather than erroring.
-            var named = AccessTools.Field(typeof(ZNetScene), "m_namedPrefabs")
-                                   .GetValue(scene) as System.Collections.Generic.Dictionary<int, GameObject>;
-            if (named != null) named[Name.GetStableHashCode()] = _prefab;
-        }
-
         // ------------------------------------------------------------------ the recipe
 
         /// <summary>
@@ -386,9 +368,16 @@ namespace Grove
             // gate goes back.
 
             var db = ObjectDB.instance;
-            if (db == null || _prefab == null) return;
+            if (db == null) return;
 
-            var drop = _prefab.GetComponent<ItemDrop>();
+            // The prefab as THIS database knows it, rather than a field of ours pointing at
+            // whatever the last world had. Prefabs.Keep put it there; if it has not yet, the
+            // caller's Ready check has already refused and this line is unreachable - but it
+            // is asked of the database anyway, because that is the whole rule this file broke.
+            var prefab = db.GetItemPrefab(Name);
+            if (prefab == null) return;
+
+            var drop = prefab.GetComponent<ItemDrop>();
             if (drop == null) return;
 
             // Ask the live database rather than a flag: ObjectDB is rebuilt on every world

@@ -73,21 +73,58 @@ namespace Grove
         {
             if (Log == null) return;
 
+            // One try block per registry, never one around all three.
+            //
+            // They used to share a single try, which made them a chain: Prefabs.Tick throwing
+            // meant Thicket never ran and the bonemeal recipe never ran, and the failure of
+            // whichever one was first silently disabled the two behind it. These are
+            // independent registrations of independent things, so a fault in one is now
+            // reported and stepped over rather than propagated.
+            //
+            // Prefabs.Tick goes first because it is the one that keeps built pieces
+            // resolvable - a prefab missing from ZNetScene when a zone loads has its ZDOs
+            // discarded rather than errored.
+            Step("keep its prefabs registered", TickPrefabs);
+
+            // Thicket keeps its own registry because it registers a piece per plant off a
+            // config roster, which Prefabs.Keep does not model. A planted seedling is
+            // exactly as easy to lose to a missing prefab as a heartwood in an inventory.
+            Step("register its wild plants", RegisterPlants);
+
+            // Only the recipe now; the item itself is declared through Prefabs.Keep in
+            // Awake, which owns the guarded write and the ask-the-world idempotence.
+            Step("add the bonemeal recipe", RegisterBonemealRecipe);
+        }
+
+        // Cached delegates rather than method groups at the call site. RegisterNow runs from
+        // Update, and a method-group conversion allocates a fresh delegate every time on this
+        // compiler - three a frame, for nothing. Safe as a field initialiser because none of
+        // these does any work: binding a delegate to a static method neither calls it nor
+        // reflects on anything, which is the thing a type initialiser must never do.
+        private static readonly Action TickPrefabs = Prefabs.Tick;
+        private static readonly Action RegisterPlants = () => Thicket.WildPlants.Register();
+        private static readonly Action RegisterBonemealRecipe =
+            () => BonemealPrefab.RegisterRecipe();
+
+        /// <summary>
+        /// One registration step, run so that its failure cannot take the others with it.
+        ///
+        /// Complains once rather than once a frame. This is driven from Update, and the
+        /// faults worth reporting here - a private field renamed by a game update, a builder
+        /// throwing on a donor that changed shape - do not clear by themselves, so sixty
+        /// lines a second would bury the one line that mattered. It is an error rather than
+        /// a warning because every one of these steps exists to stop something being lost.
+        /// </summary>
+        private static void Step(string what, Action step)
+        {
             try
             {
-                Prefabs.Tick();
-
-                // Alongside the keeper, and for the same reason: a prefab that is not in
-                // ZNetScene by the time a zone loads has its ZDOs discarded rather than
-                // errored. A planted seedling is exactly as easy to lose that way as a
-                // heartwood in an inventory. Thicket keeps its own registry because it
-                // registers items AND pieces per plant, which Prefabs.Keep does not model.
-                Thicket.WildPlants.Register();
-                BonemealPrefab.Register();
+                step();
             }
-            catch (System.Exception e)
+            catch (Exception e)
             {
-                Log.LogError("Early registration failed; Update will retry. " + e);
+                LogErrorOnce("Vaettir could not " + what + ", and will keep trying: "
+                    + e + " - the other registrations were attempted anyway.");
             }
         }
 
@@ -104,6 +141,17 @@ namespace Grove
             Log.LogWarning(message);
         }
 
+        /// <summary>
+        /// The same, at error level. Kept separate rather than given a flag, because the two
+        /// read differently in a log and the distinction is the point: a warning is something
+        /// that did not work, an error here is something that could cost a player an object.
+        /// </summary>
+        internal static void LogErrorOnce(string message)
+        {
+            if (Log == null || !Said.Add(message)) return;
+            Log.LogError(message);
+        }
+
         private void Awake()
         {
             Log = Logger;
@@ -111,32 +159,32 @@ namespace Grove
             // One config file, one Harmony instance, one registration with Core. The post
             // was a second plugin until the merge and is now a part of this one; binding
             // its settings against this Config is what puts them in this mod's .cfg.
+            //
+            // These two are bound here, ahead of the declarations below, because the stow
+            // post is only declared when PostEnabled says so and a config entry cannot be
+            // read before it is bound. Every other bind in this Awake happens AFTER the
+            // declarations, for the reason spelled out there.
             GroveConfig.Bind(Config);
             Stow.StowConfig.Bind(Config);
 
-            // The wild plants bind their own rows, one per plant, so the defaults live
-            // beside the plant they describe rather than in a second list here that can
-            // drift out of step with it.
-            Thicket.ThicketConfig.Bind(Config);
-            Furrow.FurrowConfig.Bind(Config);
-            Thicket.WildPlants.Bind(Config);
-            Stow.StowRuntime.Log = Logger;
-
-            TryRegisterWithCore();
-
-            // The prefabs are declared BEFORE anything is patched, and that order is the whole
-            // point rather than tidiness.
+            // The prefabs are declared BEFORE anything else in this method, and that order is
+            // the whole point rather than tidiness.
             //
-            // These four are the only things here that can cost somebody their world. ZNetScene
+            // These five are the only things here that can cost somebody their world. ZNetScene
             // discards any ZDO whose prefab name will not resolve, silently and permanently, so
             // a Heartwood, a sapling, a spirit or a stow post standing in a world is deleted the
-            // moment this mod loads without having declared it. Everything below is a feature:
-            // if a patch does not apply, something does not work and you can read about it.
+            // moment this mod loads without having declared it - and an item ObjectDB cannot
+            // resolve is dropped out of a saved inventory by Inventory.AddItem without so much
+            // as an error. Everything below is a feature: if a patch does not apply, something
+            // does not work and you can read about it.
             //
             // They used to sit after thirteen PatchAll calls. Any one of those throwing - one
             // renamed method after a game update, which is ordinary - took the declarations with
             // it, so the first failure of a feature was also the permanent loss of everything
-            // built. Declare first, then patch.
+            // built. That was fixed by moving them above the patches; this moves them above the
+            // rest of Awake as well, because TryRegisterWithCore and four config binds still sat
+            // in front of them and any one of those throwing lost exactly as much. Nothing that
+            // can throw now runs before the declarations except BepInEx's own Config.Bind.
             //
             // Keep is only a declaration; Prefabs.Tick() from Update does the live registration
             // and re-does it for every world that loads, asking the scene each time rather than
@@ -144,10 +192,18 @@ namespace Grove
             // standing in a world was destroyed for want of exactly this.
             Prefabs.Log = Logger;
 
-            // Heartwood first: it is the only item of the four, the sapling's cost names it
-            // and the spirit hands one over, and an item ObjectDB cannot find by name is an
-            // item that quietly does not exist.
+            // Heartwood first: the sapling's cost names it and the spirit hands one over, and
+            // an item ObjectDB cannot find by name is an item that quietly does not exist.
             Prefabs.Keep(HeartwoodPrefab.Name, HeartwoodPrefab.Build, item: true);
+
+            // The bonemeal, declared here rather than registering itself. It used to write
+            // ZNetScene's private m_namedPrefabs dictionary by hand, unguarded, and answer
+            // "already done?" partly from a static bool - which is the exact pattern that
+            // discarded a built Stow post on 2026-08-16, because a second world rebuilds both
+            // singletons and a field of ours cannot know that. Through Keep it inherits the
+            // guarded write, the retry, and an idempotence that asks the live scene every
+            // frame. The recipe is not a prefab and stays in BonemealPrefab.
+            Prefabs.Keep(BonemealPrefab.Name, BonemealPrefab.Build, item: true);
 
             // The cultivator, not the hammer. It is a seed, so it belongs under the tool
             // already in your hand when you think "I want to plant this".
@@ -155,11 +211,50 @@ namespace Grove
 
             Prefabs.Keep(SpiritPrefab.Name, SpiritPrefab.Build);
 
-            // Declared only when the post is wanted. The old Register read this setting on
-            // every call and returned early; a builder answering "disabled" with a null
-            // would instead be retried five times and then reported as broken.
-            if (Stow.StowConfig.PostEnabled.Value)
-                Prefabs.Keep(Stow.StowPost.Name, Stow.StowPost.Build, buildTool: "Hammer");
+            // Declared ALWAYS; the setting decides only whether it can be built.
+            //
+            // It used to gate the declaration itself, and that made a config switch into a
+            // demolition order. PostEnabled is not in any Suite.Local list, so Core treats it as
+            // a rule the host owns and pushes the host's value to every client - and a prefab
+            // that is not declared is not a piece that fails to appear, it is a ZDO ZNetScene
+            // discards. One host toggling this off deleted every stow post standing in the
+            // world, on everyone's next load, silently and permanently.
+            //
+            // Passing buildTool null instead of "Hammer" keeps it out of the build menu, which
+            // is what the setting is actually for. Same shape as the fix Kynda's upgrades needed
+            // the same evening, and for the same reason: registration is cheap and permanent,
+            // and the menu is the only part anyone wanted to switch off.
+            Prefabs.Keep(Stow.StowPost.Name, Stow.StowPost.Build,
+                         buildTool: Stow.StowConfig.PostEnabled.Value ? "Hammer" : null);
+
+            // ---- past this line a failure costs a feature, never a world ----
+
+            // The wild plants bind their own rows, one per plant, so the defaults live
+            // beside the plant they describe rather than in a second list here that can
+            // drift out of step with it. WildPlants.Bind reads ThicketConfig's rows, so it
+            // follows ThicketConfig.Bind.
+            Thicket.ThicketConfig.Bind(Config);
+            Furrow.FurrowConfig.Bind(Config);
+            Thicket.WildPlants.Bind(Config);
+            Stow.StowRuntime.Log = Logger;
+
+            // Caught, because joining the gate is worth nothing next to the rest of Awake.
+            // Suite.Register and every Suite.Local below it name config entries by reference
+            // and reach into another assembly, so a Core that has moved on - a renamed entry,
+            // a changed signature - throws here. Uncaught that took the patches with it, and
+            // before today it took the prefab declarations too. The version gate is the one
+            // thing in this file whose absence is safe: without Core the mod already runs
+            // without it, which is the standalone case and a supported one.
+            try
+            {
+                TryRegisterWithCore();
+            }
+            catch (Exception e)
+            {
+                Log.LogError("Vaettir could not register with Core, so this session runs "
+                    + "without the version gate and without the host's settings. The mod "
+                    + "itself is unaffected. " + e);
+            }
 
             _harmony = new Harmony(PluginGuid);
 
@@ -197,7 +292,7 @@ namespace Grove
                 // are safe either way - that is what the reordering above buys - so this says
                 // which half is affected rather than reading as total failure.
                 Log.LogError(PluginName + " " + PluginVersion + " came up with " + failed
-                    + " of its patch groups unapplied - see the errors above. The four prefabs "
+                    + " of its patch groups unapplied - see the errors above. The prefabs "
                     + "ARE declared, so nothing standing in a world is at risk; the features "
                     + "behind those patches are off.");
             }
@@ -346,11 +441,14 @@ namespace Grove
         /// </summary>
         private void Update()
         {
-            // One call, and cheap once satisfied: every check inside it is a live lookup
-            // that returns immediately when the world already has the prefab.
-            Prefabs.Tick();
-            Thicket.WildPlants.Register();
-            BonemealPrefab.Register();
+            // The same three steps the Awake hooks drive, and through the same door rather
+            // than repeated here: each one guarded on its own, so one throwing does not
+            // silently disable the two behind it and does not take the rest of this Update
+            // - the pins, the post, the carry - with it either. Cheap once satisfied: every
+            // check inside is a live lookup that returns immediately when the world already
+            // has the prefab.
+            RegisterNow();
+
             Furrow.Sowing.HandleKeys(Player.m_localPlayer);
             Thicket.Carry.Tick();
 
