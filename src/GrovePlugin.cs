@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using BepInEx;
@@ -123,33 +124,24 @@ namespace Grove
 
             TryRegisterWithCore();
 
-            _harmony = new Harmony(PluginGuid);
-            _harmony.PatchAll(typeof(BloodFeed));
-            _harmony.PatchAll(typeof(GrovePatches));
-            _harmony.PatchAll(typeof(Stow.StowPatches));
-            _harmony.PatchAll(typeof(Thicket.SkillGate));
-            _harmony.PatchAll(typeof(Thicket.Transplant));
-            _harmony.PatchAll(typeof(Thicket.Carry));
-            _harmony.PatchAll(typeof(Fertilise));
-            _harmony.PatchAll(typeof(Furrow.Sowing));
-            _harmony.PatchAll(typeof(Furrow.GridPlacement));
-            _harmony.PatchAll(typeof(Furrow.AreaPick));
-
-            // Without this the sapling still calls, and every one of them appears on top of
-            // it: the band is enforced by a prefix on SpawnArea.FindSpawnPoint, and an
-            // unapplied patch is a silent fallback to vanilla's uniform disc.
-            _harmony.PatchAll(typeof(BeckonSpawnPoint));
-            _harmony.PatchAll(typeof(BeckonWave));
-
-            // Keeps the sapling out of people's homes. Without it applying, the ghost stays
-            // green over a longhouse and the seed goes in.
-            _harmony.PatchAll(typeof(Wilderness));
-
-            // Everything this mod puts into a world, declared once and kept there by the
-            // suite's shared registry. Prefabs re-registers all four into every world that
-            // loads and asks the live scene each time rather than trusting a flag of ours,
-            // which is the whole reason that file exists - a post standing in a world was
-            // destroyed for want of exactly this.
+            // The prefabs are declared BEFORE anything is patched, and that order is the whole
+            // point rather than tidiness.
+            //
+            // These four are the only things here that can cost somebody their world. ZNetScene
+            // discards any ZDO whose prefab name will not resolve, silently and permanently, so
+            // a Heartwood, a sapling, a spirit or a stow post standing in a world is deleted the
+            // moment this mod loads without having declared it. Everything below is a feature:
+            // if a patch does not apply, something does not work and you can read about it.
+            //
+            // They used to sit after thirteen PatchAll calls. Any one of those throwing - one
+            // renamed method after a game update, which is ordinary - took the declarations with
+            // it, so the first failure of a feature was also the permanent loss of everything
+            // built. Declare first, then patch.
+            //
+            // Keep is only a declaration; Prefabs.Tick() from Update does the live registration
+            // and re-does it for every world that loads, asking the scene each time rather than
+            // trusting a flag of ours. That is the whole reason that file exists - a post
+            // standing in a world was destroyed for want of exactly this.
             Prefabs.Log = Logger;
 
             // Heartwood first: it is the only item of the four, the sapling's cost names it
@@ -169,11 +161,74 @@ namespace Grove
             if (Stow.StowConfig.PostEnabled.Value)
                 Prefabs.Keep(Stow.StowPost.Name, Stow.StowPost.Build, buildTool: "Hammer");
 
-            Log.LogInfo(PluginName + " " + PluginVersion + " by " + PluginAuthor + " - ready.");
+            _harmony = new Harmony(PluginGuid);
+
+            // Each group applied on its own, so one failure costs one feature rather than every
+            // feature after it in the list.
+            int failed = 0;
+            failed += Apply("blood feeding", typeof(BloodFeed));
+            failed += Apply("grove", typeof(GrovePatches));
+            failed += Apply("stow", typeof(Stow.StowPatches));
+            failed += Apply("thicket skill gate", typeof(Thicket.SkillGate));
+            failed += Apply("thicket transplanting", typeof(Thicket.Transplant));
+            failed += Apply("thicket carrying", typeof(Thicket.Carry));
+            failed += Apply("fertilising", typeof(Fertilise));
+            failed += Apply("furrow sowing", typeof(Furrow.Sowing));
+            failed += Apply("furrow grid placement", typeof(Furrow.GridPlacement));
+            failed += Apply("furrow area picking", typeof(Furrow.AreaPick));
+
+            // Without this the sapling still calls, and every one of them appears on top of
+            // it: the band is enforced by a prefix on SpawnArea.FindSpawnPoint, and an
+            // unapplied patch is a silent fallback to vanilla's uniform disc.
+            failed += Apply("beckon spawn point", typeof(BeckonSpawnPoint));
+            failed += Apply("beckon waves", typeof(BeckonWave));
+
+            // Keeps the sapling out of people's homes. Without it applying, the ghost stays
+            // green over a longhouse and the seed goes in.
+            failed += Apply("wilderness check", typeof(Wilderness));
+
+            if (failed == 0)
+            {
+                Log.LogInfo(PluginName + " " + PluginVersion + " by " + PluginAuthor + " - ready.");
+            }
+            else
+            {
+                // Not the "ready." line, which is what an absence check greps for. The prefabs
+                // are safe either way - that is what the reordering above buys - so this says
+                // which half is affected rather than reading as total failure.
+                Log.LogError(PluginName + " " + PluginVersion + " came up with " + failed
+                    + " of its patch groups unapplied - see the errors above. The four prefabs "
+                    + "ARE declared, so nothing standing in a world is at risk; the features "
+                    + "behind those patches are off.");
+            }
 
             if (GroveConfig.TestMode.Value)
                 Log.LogWarning("TEST MODE: a sapling needs three greydwarfs, not sixty. "
                                + "Turn TestMode off in the config before playing for real.");
+        }
+
+        /// <summary>
+        /// One patch group, applied so its failure cannot take the rest of the mod with it.
+        /// Returns 1 when it failed, so the caller can just add them up.
+        ///
+        /// Harmony throws out of PatchAll when a target cannot be resolved - a rename, a changed
+        /// signature, an ambiguous overload - which is the ordinary state of affairs on the first
+        /// launch after a game update. Catching per group turns "Vaettir did nothing" into
+        /// "Vaettir lost transplanting", and names which.
+        /// </summary>
+        private int Apply(string what, Type patches)
+        {
+            try
+            {
+                _harmony.PatchAll(patches);
+                return 0;
+            }
+            catch (Exception e)
+            {
+                Log.LogError("Vaettir could not apply its " + what + " patches, so that feature "
+                    + "is off for this session. The rest of the mod is unaffected. " + e.Message);
+                return 1;
+            }
         }
 
         /// <summary>
