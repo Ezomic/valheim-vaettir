@@ -277,6 +277,20 @@ namespace Grove
             return GroveConfig.SpiritName.Value;
         }
 
+        /// <summary>
+        /// How far up the hover text floats. New in Valheim 1.0 - Hoverable grew a third member,
+        /// so every implementer has to answer.
+        ///
+        /// Zero, matching the vanilla default: every vanilla implementer returns a serialized
+        /// m_hoverOffset and the prefabs that ship leave it at zero. The spirit is built from
+        /// scratch rather than cloned, so there is no donor value to inherit and no reason to
+        /// invent one.
+        /// </summary>
+        public float GetHoverOffset()
+        {
+            return 0f;
+        }
+
         public string GetHoverText()
         {
             return Localization.instance.Localize(
@@ -334,7 +348,13 @@ namespace Grove
                 return true;
             }
 
-            inventory.AddItem(HeartwoodPrefab.Name, amount, 1, 0, 0L, "");
+            // The `false` is Valheim 1.0's new `cheated` flag, inserted before `pickedUp` and
+            // required, so the old six-argument call no longer compiles. False is the honest
+            // answer and not merely the one that preserves behaviour: this heartwood is the
+            // payment for a sapling somebody grew and fed, which is the most earned item in
+            // the mod. Marking it cheated would put a permanent mark on the character's record
+            // for playing the mod as intended - and Dyrr reads that record at the door.
+            inventory.AddItem(HeartwoodPrefab.Name, amount, 1, 0, 0L, "", cheated: false);
 
             user.Message(MessageHud.MessageType.Center, Localization.instance.Localize(
                 "The " + GetHoverName().ToLowerInvariant()

@@ -379,6 +379,18 @@ namespace Grove
             return _piece != null ? _piece.m_name : GroveConfig.SaplingName.Value;
         }
 
+        /// <summary>
+        /// How far up the hover text floats. New in Valheim 1.0 - Hoverable grew a third member,
+        /// so every implementer has to answer.
+        ///
+        /// Zero, matching the vanilla default: every vanilla implementer returns a serialized
+        /// m_hoverOffset and the prefabs that ship leave it there.
+        /// </summary>
+        public float GetHoverOffset()
+        {
+            return 0f;
+        }
+
         public string GetHoverText()
         {
             var stage = Mathf.Clamp(Mathf.FloorToInt(Progress * StageNames.Length),
