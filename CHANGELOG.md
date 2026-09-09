@@ -3,6 +3,23 @@
 Notable changes to Vaettir. Format follows [Keep a Changelog](https://keepachangelog.com),
 and the mod uses [semantic versioning](https://semver.org).
 
+## [1.5.0] - 2026-09-09
+
+Rebuilt for Valheim 1.0. This version does not run on pre-1.0 Valheim, and the previous
+one does not run on 1.0.
+
+### Fixed
+
+- **A patch failure can no longer delete what you built.** The four prefabs were declared after
+  thirteen `PatchAll` calls, so any one of those throwing - one renamed method after a game
+  update, which is ordinary - took the declarations with it. That is not a lost feature: the
+  game discards any saved object whose prefab name does not resolve, so every Heartwood,
+  sapling, spirit and stow post in the world went with it. They are declared first now, and
+  each patch group is applied on its own so one failure costs one feature and says which.
+- **Runs on Valheim 1.0.** `Hoverable` gained a member, and `Inventory.AddItem` gained a
+  required flag - the spirit's heartwood is handed over as legitimately earned, which is what
+  it is.
+
 ## [1.4.2] - 2026-09-01
 
 ### Added
