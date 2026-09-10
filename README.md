@@ -44,7 +44,7 @@ Every number above is a config default and can be changed.
 ## Installation
 
 Install [BepInEx for Valheim](https://thunderstore.io/c/valheim/p/denikson/BepInExPack_Valheim/)
-(5.4.2333 is what this is built against), then put the `Vaettir` folder from the release into
+(5.4.2350 is what this is built against), then put the `Vaettir` folder from the release into
 `BepInEx/plugins/`. It is a single DLL plus the `.obj`, `.png` and `.col` files that sit
 beside it, read at runtime, so they all have to stay in that folder together.
 
