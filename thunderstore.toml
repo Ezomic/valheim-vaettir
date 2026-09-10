@@ -24,6 +24,14 @@ outdir = "./build"
 source = "./package/BepInEx/plugins/Vaettir"
 target = "plugins/Vaettir"
 
+[[build.copy]]
+source = "./LICENSE"
+target = "plugins/Vaettir/LICENSE"
+
+[[build.copy]]
+source = "./CHANGELOG.md"
+target = "CHANGELOG.md"
+
 [publish]
 repository = "https://thunderstore.io"
 communities = [ "valheim" ]
