@@ -3,6 +3,44 @@
 Notable changes to Vaettir. Format follows [Keep a Changelog](https://keepachangelog.com),
 and the mod uses [semantic versioning](https://semver.org).
 
+## [1.5.1] - 2026-09-10
+
+Two long-standing stowing-post bugs, both older than Valheim 1.0, and the reason neither had
+been found: nothing in the run said a word about either.
+
+### Fixed
+
+- **A chest you had once opened was never used again.** `Container.IsInUse()` returns the raw
+  `m_inUse` field, but `Container.SetInUse` only assigns that field when the caller owns the
+  ZNetView. So on a client that does not own the chest the value is wrong in both directions,
+  and worst of all a chest this client opened and then lost ownership of never receives its
+  `SetInUse(false)` - the guard drops it - leaving it "occupied" for the rest of the session.
+  `Depositor.Usable` rejected it there, before the chest's rule was ever read, and the post
+  reported having nowhere to go while a correctly configured chest stood in range.
+
+  Now asked the way vanilla asks it in `UpdateUseVisual`: the field when we own the chest, and
+  `ZDOVars.s_inUse` off the ZDO when we do not.
+
+- **The spirit flew back and forth without ever delivering.** A trip carried an
+  `ItemDrop.ItemData` reference, and `Container` rebuilds its entire inventory from the ZDO on
+  every revision change - which a stow run causes constantly, because each deposit changes a
+  container. `Inventory.ContainsItem` is reference equality on a `List`, so the reference was
+  orphaned in flight almost every time. `Move` treated that as handled and returned silently,
+  so the spirit landed, moved nothing, and set off again forever.
+
+  The item is re-found on arrival by shared name, quality, variant and world level - the same
+  fields `Inventory.FindFreeStackItem` uses to decide two stacks may merge, so anything matched
+  is something the destination would have stacked with the original anyway.
+
+  This one was hidden behind the first: with the chest excluded, no trip was ever dispatched.
+
+### Changed
+
+- **The run explains itself now.** A homeless report lists, per item, every usable chest, the
+  rule it carries and whether it wanted the item, refused it, or was full. `Move`'s three
+  silent exits each say which one fired. Previously the log could show "2 usable chest(s)" and
+  then nothing at all, which is the state both bugs above lived in.
+
 ## [1.5.0] - 2026-09-09
 
 Rebuilt for Valheim 1.0. This version does not run on pre-1.0 Valheim, and the previous

@@ -392,6 +392,67 @@ namespace Stow
             return best == null ? null : best.Container;
         }
 
+        /// <summary>
+        /// Say, per item, what every chest in range wanted and how the item scored against it.
+        ///
+        /// "Nowhere to go" with usable chests standing right there is the state this mod has
+        /// been unable to explain since it was written. CollectChests already says why a chest
+        /// was *ineligible* - out of range, locked, on a cart - but a chest that passes all of
+        /// that and simply does not want the item produced no line at all, so the log read
+        /// "2 usable chest(s)" followed by silence and the only way on was to read the source.
+        ///
+        /// Called from the homeless report rather than from BestChestWithRoom, which runs
+        /// every frame for every item to drive the placement preview. The report is already
+        /// rate-limited to once per change of contents, which is the right frequency for
+        /// something this wordy.
+        /// </summary>
+        public static void ExplainHomeless(Vector3 point, Inventory inventory)
+        {
+            if (inventory == null || !StowConfig.Verbose.Value) return;
+
+            var rules = new List<ChestFilter.Rule>();
+            CollectChests(point, rules);
+
+            if (rules.Count == 0)
+            {
+                StowRuntime.Log.LogInfo("Stow: nothing to explain - no usable chest in range.");
+                return;
+            }
+
+            foreach (var item in inventory.GetAllItems())
+            {
+                if (item == null || item.m_shared == null) continue;
+
+                var line = new System.Text.StringBuilder();
+                line.Append("Stow: ").Append(item.m_stack).Append("x ")
+                    .Append(item.m_shared.m_name).Append(" -> ");
+
+                foreach (var rule in rules)
+                {
+                    var tier = rule.Match(item);
+                    var raw = ChestFilter.Read(rule.Container);
+
+                    line.Append(Describe(rule.Container))
+                        .Append(" [").Append(raw.Length == 0 ? "no rule" : raw).Append("] ");
+
+                    if (tier == ChestFilter.TierNone)
+                    {
+                        line.Append(rule.Refuses(item) ? "refuses it" : "does not want it");
+                    }
+                    else
+                    {
+                        var room = rule.Container.GetInventory();
+                        line.Append("wants it (tier ").Append(tier).Append(")")
+                            .Append(room != null && room.CanAddItem(item, 1) ? "" : " but is full");
+                    }
+
+                    line.Append("; ");
+                }
+
+                StowRuntime.Log.LogInfo(line.ToString());
+            }
+        }
+
         // ------------------------------------------------------------------ gathering
 
         public static void CollectChests(Vector3 point, List<ChestFilter.Rule> into)
@@ -433,7 +494,7 @@ namespace Stow
         }
 
         /// <summary>Something to call a chest in a log line.</summary>
-        private static string Describe(Container container)
+        internal static string Describe(Container container)
         {
             var name = container.m_name;
             if (string.IsNullOrEmpty(name)) name = container.name;
@@ -463,7 +524,7 @@ namespace Stow
             if (container.m_privacy != Container.PrivacySetting.Public)
                 return "its privacy is " + container.m_privacy + ", and only Public chests are used";
 
-            if (container.IsInUse()) return "somebody has it open";
+            if (InUse(container, nview)) return "somebody has it open";
 
             if (container.m_checkGuardStone
                 && !PrivateArea.CheckAccess(container.transform.position))
@@ -495,12 +556,48 @@ namespace Stow
             if (container.GetComponentInParent<Ship>() != null) return false;
 
             if (container.m_privacy != Container.PrivacySetting.Public) return false;
-            if (container.IsInUse()) return false;
+            if (InUse(container, nview)) return false;
 
             if (container.m_checkGuardStone && !PrivateArea.CheckAccess(container.transform.position))
                 return false;
 
             return true;
+        }
+
+        /// <summary>
+        /// Is somebody actually in this chest, asked the way vanilla asks it.
+        ///
+        /// Container.IsInUse() returns the raw m_inUse field and ignores ownership, but
+        /// Container.SetInUse only assigns that field when the caller owns the ZNetView:
+        ///
+        ///     public void SetInUse(bool inUse)
+        ///     {
+        ///         if (m_nview.IsOwner() &amp;&amp; m_inUse != inUse) { m_inUse = inUse; ... }
+        ///     }
+        ///
+        /// So on a client that does not own the chest the field is whatever that client last
+        /// managed to set, and it is wrong in both directions: a chest somebody else has open
+        /// reads as free, and worse, a chest this client opened and then lost ownership of
+        /// never gets its SetInUse(false) - the guard drops it - so it reads as permanently
+        /// occupied for the rest of the session.
+        ///
+        /// That last one is the bug behind "the post says it has nowhere to go" while a
+        /// correctly configured chest sits in range: Usable rejects it here, before the rule
+        /// is ever consulted, and the post is left holding items with no explanation. It has
+        /// been reported on a live server and reproduced on the dev machine, and it predates
+        /// Valheim 1.0.
+        ///
+        /// The authoritative value is on the ZDO, and vanilla's own UpdateUseVisual reads it
+        /// exactly this way - m_inUse when it owns the chest, ZDOVars.s_inUse when it does
+        /// not. This mirrors that rather than inventing a third answer.
+        /// </summary>
+        private static bool InUse(Container container, ZNetView nview)
+        {
+            if (nview == null || !nview.IsValid()) return false;
+            if (nview.IsOwner()) return container.IsInUse();
+
+            var zdo = nview.GetZDO();
+            return zdo != null && zdo.GetInt(ZDOVars.s_inUse) == 1;
         }
 
         private static bool Stowable(Player player, ItemDrop.ItemData item)

@@ -322,13 +322,85 @@ namespace Stow
         /// Returns false only for the one pathological case worth remembering: room was
         /// offered and nothing was taken.
         /// </summary>
+        /// <summary>
+        /// The same item again, after the post's inventory has been rebuilt underneath us.
+        ///
+        /// Matched on the fields the game itself uses to decide two stacks are the same thing
+        /// (Inventory.FindFreeStackItem: shared name, quality, world level), plus variant, so
+        /// a re-found item is always one the destination would have merged with the original.
+        /// </summary>
+        private static ItemDrop.ItemData Refind(Inventory from, ItemDrop.ItemData item)
+        {
+            if (from == null || item == null || item.m_shared == null) return null;
+
+            foreach (var candidate in from.GetAllItems())
+            {
+                if (candidate == null || candidate.m_shared == null) continue;
+                if (candidate.m_shared.m_name != item.m_shared.m_name) continue;
+                if (candidate.m_quality != item.m_quality) continue;
+                if (candidate.m_variant != item.m_variant) continue;
+                if (candidate.m_worldLevel != item.m_worldLevel) continue;
+
+                return candidate;
+            }
+
+            return null;
+        }
+
         private bool Move(Inventory from, Container into, ItemDrop.ItemData item,
                           ref string cargo, bool celebrate)
         {
-            if (from == null || into == null || item == null) return true;
-            if (!from.ContainsItem(item)) return true;
-            if (!Depositor.Usable(into, _post.transform.position, StowConfig.Range.Value))
+            // Each of these three used to return true - "handled" - and say nothing, which is
+            // how a spirit could fly the full round trip and land with the item still in the
+            // post, over and over, with an empty log. Returning true is right: none of them is
+            // the pathological "offered room and took none" this method reports. Being silent
+            // about them was not.
+            if (from == null || into == null || item == null)
+            {
+                if (StowConfig.Verbose.Value)
+                    StowRuntime.Log.LogInfo("Stow: trip arrived with nothing to move - "
+                        + "source, target or item went away mid-flight.");
                 return true;
+            }
+
+            if (!from.ContainsItem(item))
+            {
+                // The trip holds an ItemDrop.ItemData reference, and Container rebuilds its
+                // whole inventory from the ZDO whenever the revision changes - which a stow
+                // run causes constantly, since every deposit changes a container. So the
+                // objects in the post's list are replaced mid-flight and Inventory.ContainsItem,
+                // which is reference equality on a List, finds nothing.
+                //
+                // This returned true and said nothing, so the spirit flew the full round trip,
+                // landed, moved nothing, and started again - forever, with an empty log. It is
+                // the bug behind "the spirit keeps going back and forth without depositing",
+                // and it predates Valheim 1.0.
+                //
+                // Re-found by identity rather than by reference. Deciding it is the same item
+                // on name, quality, variant and world level is not an approximation: those are
+                // exactly the fields Inventory.FindFreeStackItem uses to decide two stacks may
+                // merge, so anything this matches is something the destination would have
+                // stacked together anyway.
+                var again = Refind(from, item);
+
+                if (again == null)
+                {
+                    if (StowConfig.Verbose.Value)
+                        StowRuntime.Log.LogInfo("Stow: the " + item.m_shared.m_name
+                            + " the spirit set off with has left the post entirely.");
+                    return true;
+                }
+
+                item = again;
+            }
+
+            if (!Depositor.Usable(into, _post.transform.position, StowConfig.Range.Value))
+            {
+                if (StowConfig.Verbose.Value)
+                    StowRuntime.Log.LogInfo("Stow: " + Depositor.Describe(into)
+                        + " stopped being usable while the spirit was in the air.");
+                return true;
+            }
 
             cargo = ItemGroups.PrefabNameOf(item);
 
@@ -505,6 +577,10 @@ namespace Stow
             var signature = Signature(inventory);
             if (signature == _homelessSaid) return;
             _homelessSaid = signature;
+
+            // Gated on Verbose inside, and rate-limited by the signature check above, so this
+            // prints once per change of contents rather than once per scan.
+            Depositor.ExplainHomeless(_post.transform.position, inventory);
 
             Announce(0);
         }
