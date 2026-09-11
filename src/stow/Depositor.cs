@@ -383,6 +383,38 @@ namespace Stow
 
         // ------------------------------------------------------------------ choosing
 
+        /// <summary>
+        /// How many stacks in this inventory no chest in range will take.
+        ///
+        /// Exists because the post's hover text used to answer this with NrOfItems() - the
+        /// count of everything it held - and then called the answer "with nowhere to go". It
+        /// asserted a diagnosis it had never computed, so a post holding one stack that was
+        /// merely waiting for its turn said the same words as a post holding one nothing
+        /// wanted. A player reported that as the mod being broken, twice, and both times it
+        /// sent the search somewhere real but unrelated.
+        ///
+        /// Asked the same way a run asks it: the item needs a rule that wants it AND a chest
+        /// with room. "Wanted but everywhere is full" is homeless for now and counts, because
+        /// from where the player stands it is the same thing - the stack is not moving.
+        /// </summary>
+        public static int Homeless(Inventory source, Vector3 origin)
+        {
+            if (source == null || !ItemGroups.Ready) return 0;
+
+            var rules = new List<ChestFilter.Rule>();
+            CollectChests(origin, rules);
+
+            var stuck = 0;
+
+            foreach (var item in source.GetAllItems())
+            {
+                if (item == null || item.m_shared == null) continue;
+                if (BestChestWithRoom(rules, item) == null) stuck++;
+            }
+
+            return stuck;
+        }
+
         private static int BestTier(List<ChestFilter.Rule> rules, ItemDrop.ItemData item)
         {
             var best = ChestFilter.TierNone;
@@ -640,6 +672,30 @@ namespace Stow
         /// no private field to go stale. Reading IsInUse() here instead is what left the last
         /// hole: a chest whose m_inUse had stranded still read as occupied to its own owner.
         /// </summary>
+        /// <summary>
+        /// Is anybody actually in this container, for callers that only hold the Container.
+        ///
+        /// Public because the post asks this about ITSELF, from CarryRun.Available, and that
+        /// caller was still reading Container.IsInUse() directly long after this file stopped
+        /// doing so. Fixing one caller of a broken question and leaving the other is how the
+        /// stowing post kept refusing to dispatch after the bug behind it was fixed: the
+        /// chests were reachable again and the post never set off, because the post believed
+        /// somebody was standing in it.
+        ///
+        /// Worse there than here, because you have to open a post to put anything in it. That
+        /// is the act that sets the flag, so losing ownership before the window closes strands
+        /// it - and building a new post does not help, since using it recreates the state.
+        /// </summary>
+        public static bool Occupied(Container container)
+        {
+            if (container == null) return false;
+
+            ZNetView nview;
+            if (!container.TryGetComponent(out nview)) return false;
+
+            return InUse(container, nview);
+        }
+
         private static bool InUse(Container container, ZNetView nview)
         {
             if (nview == null || !nview.IsValid()) return false;

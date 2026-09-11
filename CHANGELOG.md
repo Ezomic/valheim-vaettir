@@ -3,6 +3,33 @@
 Notable changes to Vaettir. Format follows [Keep a Changelog](https://keepachangelog.com),
 and the mod uses [semantic versioning](https://semver.org).
 
+## [1.5.2] - 2026-09-11
+
+The stowing post still refused to send its spirit anywhere after 1.5.1, reported by the same
+player who found the original bug. Same root cause, one caller further on.
+
+### Fixed
+
+- **The post would not dispatch a single trip, and said nothing.** 1.5.1 stopped trusting
+  `Container.IsInUse()` for destination chests, because the raw `m_inUse` field is only ever
+  written by the peer that owns the ZNetView and strands the moment ownership moves.
+  `CarryRun.Available` was still asking that same question about the **post itself**, so the
+  chests became reachable and the post never set off - the fix could not reach the person it
+  was written for.
+
+  It is worse on a post than on a chest, because you have to open a post to put anything in
+  it. That is the act that sets the flag, so losing ownership before the window closes strands
+  it permanently - and building a new post does not help, because using it recreates the
+  state. Both callers go through one helper now.
+
+- **The post claimed "nowhere to go" about things that had somewhere to go.** The hover text
+  counted `NrOfItems()` - everything the post held - and called that number homeless. A post
+  between runs holding one perfectly placeable stack said exactly what a post holding one
+  nothing wanted says. It counts what it claims now, and says "waiting" for the rest.
+
+  That sentence is what both reports quoted, and it was never evidence about chests. It sent
+  three rounds of searching at real but unrelated bugs.
+
 ## [1.5.1] - 2026-09-10
 
 Two long-standing stowing-post bugs, both older than Valheim 1.0, and the reason neither had

@@ -632,8 +632,17 @@ namespace Stow
         {
             if (inventory.NrOfItems() == 0) return false;
 
+            // Through Depositor.Occupied, not Container.IsInUse(). The raw field is only ever
+            // written by the peer that owns the ZNetView, so a post opened and then handed on
+            // before the window closed reads as occupied for good - and this gate then refuses
+            // to dispatch a single trip, for the rest of the session, silently.
+            //
+            // That is the bug a player kept reporting after the chest-side fix shipped: the
+            // spirit sat there doing nothing beside a correctly configured chest two metres
+            // away. Depositor stopped trusting the field for destinations in 1.5.1 and this
+            // caller was missed, which is the whole reason the fix did not reach him.
             var container = _post.Container;
-            return container == null || !container.IsInUse();
+            return !Depositor.Occupied(container);
         }
 
         // ------------------------------------------------------------------ fallbacks

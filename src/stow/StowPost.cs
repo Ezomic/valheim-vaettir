@@ -121,7 +121,20 @@ namespace Stow
             // ferrying them would be the mod contradicting itself on screen.
             if (_run != null && _run.Working) return "carrying " + waiting;
             if (waiting == 0) return null;
-            return waiting + " with nowhere to go";
+
+            // Counted, not assumed. This used to report `waiting` - everything in the post -
+            // as having nowhere to go, which is a different question from the one the words
+            // ask. A post between runs holding one placeable stack said exactly what a post
+            // holding one genuinely homeless stack says, and a player reported the mod as
+            // broken on the strength of that sentence twice. Both times there was a real bug
+            // underneath, and neither of them was the one this line was describing.
+            var stuck = Depositor.Homeless(_container.GetInventory(), transform.position);
+
+            if (stuck == 0)
+                return waiting + " waiting";
+
+            return stuck + " with nowhere to go"
+                 + (stuck < waiting ? ", " + (waiting - stuck) + " waiting" : "");
         }
 
         // ------------------------------------------------------------------ emptying
