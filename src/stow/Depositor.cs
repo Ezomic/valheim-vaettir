@@ -524,7 +524,8 @@ namespace Stow
             if (container.m_privacy != Container.PrivacySetting.Public)
                 return "its privacy is " + container.m_privacy + ", and only Public chests are used";
 
-            if (InUse(container, nview)) return "somebody has it open";
+            if (InUse(container, nview))
+                return nview.IsOwner() ? "you have it open" : "somebody has it open";
 
             if (container.m_checkGuardStone
                 && !PrivateArea.CheckAccess(container.transform.position))
@@ -587,17 +588,53 @@ namespace Stow
         /// been reported on a live server and reproduced on the dev machine, and it predates
         /// Valheim 1.0.
         ///
-        /// The authoritative value is on the ZDO, and vanilla's own UpdateUseVisual reads it
-        /// exactly this way - m_inUse when it owns the chest, ZDOVars.s_inUse when it does
-        /// not. This mirrors that rather than inventing a third answer.
+        /// And the stuck state is self-sealing, which is why it never heals on its own.
+        /// UpdateUseVisual is the only code that ever writes ZDOVars.s_inUse, it is reached
+        /// only from CheckForChanges through Load(), and Load() begins:
+        ///
+        ///     if (DataRevision == m_lastRevision) return false;
+        ///     if (m_inUse) return false;
+        ///
+        /// So a stranded m_inUse blocks the one path that would clear it, on the instance and
+        /// in the world file both - and that chest also stops reloading its contents from the
+        /// ZDO for as long as the instance lives.
+        ///
+        /// Hence the two questions below, neither of which is m_inUse.
+        ///
+        /// When we do NOT own the chest, the ZDO carries the shared answer, and vanilla's own
+        /// UpdateUseVisual reads it exactly this way in its non-owner branch.
+        ///
+        /// When we DO own it, nobody else can have it open: opening a chest transfers
+        /// ownership to the opener, because Container.RPC_RequestOpen ends in SetOwner(uid).
+        /// So the only honest question is whether *we* have it open, and the game answers that
+        /// directly through public API - IsContainerOpen plus the grid's bound inventory - with
+        /// no private field to go stale. Reading IsInUse() here instead is what left the last
+        /// hole: a chest whose m_inUse had stranded still read as occupied to its own owner.
         /// </summary>
         private static bool InUse(Container container, ZNetView nview)
         {
             if (nview == null || !nview.IsValid()) return false;
-            if (nview.IsOwner()) return container.IsInUse();
+            if (nview.IsOwner()) return OpenHere(container);
 
             var zdo = nview.GetZDO();
             return zdo != null && zdo.GetInt(ZDOVars.s_inUse) == 1;
+        }
+
+        /// <summary>
+        /// Does the local player have this exact chest open.
+        ///
+        /// IsContainerOpen is the gate rather than the whole answer because ContainerGrid keeps
+        /// the last inventory it was handed after the window closes - UpdateContainer stops
+        /// calling UpdateInventory but nothing clears the reference. Asked in this order the
+        /// pair is exact.
+        /// </summary>
+        private static bool OpenHere(Container container)
+        {
+            var gui = InventoryGui.instance;
+            if (gui == null || !gui.IsContainerOpen()) return false;
+
+            var grid = gui.ContainerGrid;
+            return grid != null && grid.GetInventory() == container.GetInventory();
         }
 
         private static bool Stowable(Player player, ItemDrop.ItemData item)

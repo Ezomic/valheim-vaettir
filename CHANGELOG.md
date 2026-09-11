@@ -18,8 +18,21 @@ been found: nothing in the run said a word about either.
   `Depositor.Usable` rejected it there, before the chest's rule was ever read, and the post
   reported having nowhere to go while a correctly configured chest stood in range.
 
-  Now asked the way vanilla asks it in `UpdateUseVisual`: the field when we own the chest, and
-  `ZDOVars.s_inUse` off the ZDO when we do not.
+  It is worse than a stale read, because the state seals itself in. `UpdateUseVisual` is the
+  only code that ever writes `ZDOVars.s_inUse`, it is reached only from `CheckForChanges`
+  through `Load()`, and `Load()` returns false outright while `m_inUse` is true. So the flag
+  blocks the one path that would clear it - on the instance and in the world file both - and
+  stops that chest reloading its contents from the ZDO into the bargain.
+
+  `m_inUse` is no longer consulted at all. When we do not own the chest, `ZDOVars.s_inUse` off
+  the ZDO carries the shared answer, which is what vanilla's own `UpdateUseVisual` reads in its
+  non-owner branch. When we do own it, nobody else can have it open - opening transfers
+  ownership, because `Container.RPC_RequestOpen` ends in `SetOwner(uid)` - so the only honest
+  question is whether *we* have it open, and `InventoryGui` answers that through public API
+  with no private field to go stale.
+
+  Both halves matter and they cover different people. A player on a shared server hits the
+  non-owner path; a player in singleplayer owns every ZDO and only ever hits the owner one.
 
 - **The spirit flew back and forth without ever delivering.** A trip carried an
   `ItemDrop.ItemData` reference, and `Container` rebuilds its entire inventory from the ZDO on
