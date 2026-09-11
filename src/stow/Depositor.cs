@@ -151,6 +151,11 @@ namespace Stow
             var inventory = target.GetInventory();
             if (inventory == null) return -1;
 
+            // Asked before anything is added anywhere. AddItem writes to the destination
+            // immediately, so a source that turns out not to hold this item is not a failed
+            // move, it is a duplication - the chest keeps what the post never gave up.
+            if (!source.ContainsItem(item)) return -1;
+
             // Same handshake the game does for Take All: own it, then write to it.
             // Without this the write lands on a copy the owner will overwrite.
             nview.ClaimOwnership();
@@ -176,12 +181,36 @@ namespace Stow
             // return still means the remainder is on the item it was handed.
             var went = placed ? take : take - load.m_stack;
 
-            item.m_stack -= went;
-
-            if (item.m_stack <= 0)
+            // Through Inventory.RemoveItem rather than by writing item.m_stack, and the
+            // difference is the whole bug: the field write is invisible to the inventory,
+            // so Inventory.Changed never fires, Container.OnContainerChanged never runs, and
+            // the post's ZDO is never saved. The chest's write goes through - AddItem does
+            // call Changed - so the post reloads its old contents from a stale ZDO and the
+            // coal comes back, while the chest keeps what it was given. Every trip after that
+            // is a fresh duplication.
+            //
+            // This is why the old code only looked correct: it did call source.RemoveItem
+            // once the stack hit zero, which is the path singleplayer testing takes with a
+            // small stack, and which is also the only path that ever ran before trips started
+            // landing at all. A partial take - which is every trip of a stack larger than
+            // ItemsPerTrip - silently skipped the save.
+            //
+            // RemoveItem(item, amount) clamps to the stack, removes the entry outright when
+            // the whole thing goes, and calls Changed either way.
+            if (went > 0)
             {
-                source.RemoveItem(item);
-                emptied = true;
+                emptied = went >= item.m_stack;
+
+                if (!source.RemoveItem(item, went))
+                {
+                    // Unreachable given the ContainsItem check above, and said out loud
+                    // anyway: reaching here means the destination has been given items the
+                    // source still holds.
+                    StowRuntime.Log.LogError(
+                        "Stow: " + went + "x " + item.m_shared.m_name + " went into "
+                        + target.m_name + " and could not be taken out of the source. "
+                        + "That is a duplication - report it.");
+                }
             }
 
             if (went > 0 && StowConfig.Verbose.Value)

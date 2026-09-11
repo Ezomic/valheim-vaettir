@@ -47,6 +47,20 @@ been found: nothing in the run said a word about either.
 
   This one was hidden behind the first: with the chest excluded, no trip was ever dispatched.
 
+- **A stow could duplicate what it moved.** `Depositor.Deposit` took the trip's share out of
+  the source by writing `item.m_stack` directly, and only called `Inventory.RemoveItem` once
+  the stack reached zero. A raw field write is invisible to the inventory: `Inventory.Changed`
+  never fires, so `Container.OnContainerChanged` never runs and the post's ZDO is never saved.
+  The destination's side does save - `AddItem` calls `Changed` - so the post reloaded its old
+  contents from a stale ZDO, the stack came back, and the next trip moved it again. Measured at
+  21 coal in the post producing 140 in the chest.
+
+  Only a partial take was affected, which is every trip of a stack larger than `ItemsPerTrip`,
+  and it needs a trip to actually land - so it was invisible for as long as the two bugs above
+  kept trips from landing at all. The removal goes through `Inventory.RemoveItem(item, amount)`
+  now, and the source is checked for the item before anything is added anywhere, because an add
+  that succeeds beside a removal that fails is the definition of this bug.
+
 ### Changed
 
 - **The run explains itself now.** A homeless report lists, per item, every usable chest, the
