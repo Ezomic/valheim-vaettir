@@ -92,6 +92,18 @@ namespace Stow
 
         private readonly StowPost _post;
         private readonly List<Courier> _couriers = new List<Courier>();
+        // Stacks another courier has already claimed, so two spirits do not plan the same
+        // one. Held by reference, and List.Contains is reference equality - which means every
+        // entry here is orphaned the moment a Container rebuilds its inventory from the ZDO,
+        // exactly as the trip's own item reference was before 1.5.1 re-found it on arrival.
+        //
+        // Left as it is deliberately. Since 1.5.1 takes its share out through
+        // Inventory.RemoveItem, an orphaned reservation costs a redundant trip and nothing
+        // else - the second spirit lands, re-finds whatever is actually left, and moves that
+        // or nothing. It cannot double-spend a stack any more. And Couriers defaults to 1, so
+        // there is no second planner today at all; this only becomes visible if that is
+        // raised. Fixing it means matching by identity the way Refind does, and that is a
+        // change worth making on its own rather than beside three bug fixes.
         private readonly List<ItemDrop.ItemData> _reserved = new List<ItemDrop.ItemData>();
         private readonly List<Container> _touched = new List<Container>();
 
