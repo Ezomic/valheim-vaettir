@@ -17,7 +17,8 @@ namespace Stow
     /// </summary>
     internal static class Depositor
     {
-        private static readonly Collider[] Hits = new Collider[256];
+        // Grown on demand rather than fixed, and that is the whole point - see Overlap.
+        private static Collider[] _hits = new Collider[256];
 
         private sealed class Plan
         {
@@ -516,19 +517,65 @@ namespace Stow
 
         // ------------------------------------------------------------------ gathering
 
+        /// <summary>
+        /// Every collider within range, with the buffer grown until it actually fits.
+        ///
+        /// This was a fixed Collider[256] and one OverlapSphereNonAlloc call, which is a
+        /// silent truncation: the method fills what you give it, returns the count it wrote,
+        /// and never says there were more. No mask either, so all 256 slots were open to
+        /// every wall, beam, floor, roof and terrain collider in the sphere.
+        ///
+        /// In a test world that is a handful of objects and the chests are always in it. In a
+        /// real base 256 is spent on structure before the containers are reached, and the post
+        /// reports "0 usable chest(s)" beside a chest two metres away. It fails precisely
+        /// where the mod is used and passes precisely where it is tested, which is why this
+        /// survived four rounds of fixes and three reports from the same player.
+        ///
+        /// Grown rather than masked. A layer mask would be faster and is the obvious answer,
+        /// but it hardcodes an assumption about which layers a container can sit on - vanilla
+        /// chests, ships, carts and anything another mod adds - and a wrong mask fails exactly
+        /// the same silent way. Doubling until the result fits cannot miss anything.
+        /// </summary>
+        private static int Overlap(Vector3 point, float range)
+        {
+            while (true)
+            {
+                var count = Physics.OverlapSphereNonAlloc(point, range, _hits);
+
+                // A full buffer means "at least this many", never "this many". The only safe
+                // reading is that it overflowed.
+                if (count < _hits.Length) return count;
+
+                if (_hits.Length >= 16384)
+                {
+                    StowRuntime.Log.LogWarning(
+                        "Stow: more than " + _hits.Length + " colliders within " + range
+                        + "m of the post, which is past anything expected. Some chests may be "
+                        + "invisible to it. Reduce Sorting/Range.");
+                    return count;
+                }
+
+                _hits = new Collider[_hits.Length * 2];
+
+                if (StowConfig.Verbose.Value)
+                    StowRuntime.Log.LogInfo("Stow: the collider buffer filled, growing to "
+                        + _hits.Length + " and looking again.");
+            }
+        }
+
         public static void CollectChests(Vector3 point, List<ChestFilter.Rule> into)
         {
             into.Clear();
 
             var range = StowConfig.Range.Value;
-            var count = Physics.OverlapSphereNonAlloc(point, range, Hits);
+            var count = Overlap(point, range);
 
             var seen = new List<Container>();
             var verbose = StowConfig.Verbose.Value;
 
             for (var i = 0; i < count; i++)
             {
-                var container = Hits[i].GetComponentInParent<Container>();
+                var container = _hits[i].GetComponentInParent<Container>();
                 if (container == null || seen.Contains(container)) continue;
                 seen.Add(container);
 

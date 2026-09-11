@@ -3,6 +3,30 @@
 Notable changes to Vaettir. Format follows [Keep a Changelog](https://keepachangelog.com),
 and the mod uses [semantic versioning](https://semver.org).
 
+## [1.5.3] - 2026-09-11
+
+The bug the previous three releases were chasing. None of them was it.
+
+### Fixed
+
+- **The post could not see the chests in a real base.** `CollectChests` searched with a fixed
+  `Collider[256]` and a single `Physics.OverlapSphereNonAlloc` call, with no layer mask. That
+  is a silent truncation: the method fills the buffer you hand it, returns how many it wrote,
+  and never reports that there were more. Every wall, beam, floor, roof tile and terrain
+  collider within range competed for those 256 slots.
+
+  In a test world that is a handful of objects and the chests are always found. Measured in a
+  real base: over 1,024 colliders within 12m of one post, and all 24 of its chests invisible.
+  The post reported "0 usable chest(s)" with a configured chest two metres away.
+
+  It fails exactly where the mod is used and passes exactly where it is tested, which is why
+  it survived three releases and four reports from the same player. The buffer doubles until
+  the result fits now, so nothing can be missed, and it says so when it grows.
+
+  Not fixed with a layer mask, though that would be faster: a mask hardcodes an assumption
+  about which layers a container may sit on - chests, ships, carts, anything another mod adds -
+  and a wrong mask fails the same silent way this did.
+
 ## [1.5.2] - 2026-09-11
 
 The stowing post still refused to send its spirit anywhere after 1.5.1, reported by the same
