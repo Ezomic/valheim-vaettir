@@ -3,6 +3,20 @@
 Notable changes to Vaettir. Format follows [Keep a Changelog](https://keepachangelog.com),
 and the mod uses [semantic versioning](https://semver.org).
 
+## [Unreleased]
+
+### Fixed
+
+- **Transplant is back in the cultivator's menu.** Valheim 1.0 rebuilt the build menu, and the
+  new one draws repair-type entries as a special button beside the tag list instead of in the
+  piece grid, then hides that whole column for a tool using the simplified menu, which the
+  cultivator does. Transplant wore that type so its click would land on the world rather than
+  place a piece, so it vanished from the menu while staying registered, unlocked and in the
+  table - nothing in the log said a word. It is now an ordinary entry beside the crops, taking
+  the menu category and usage tags of whatever else is in that table, and the click is caught in
+  `Player.TryPlacePiece` rather than `Player.Repair`. Digging, carrying and replanting are
+  unchanged, and it still costs no resources, stamina, durability or building skill.
+
 ## [1.5.4] - 2026-09-12
 
 ### Changed

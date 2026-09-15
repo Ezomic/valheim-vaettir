@@ -166,6 +166,15 @@ namespace Thicket
             var tool = WildPrefab.BuildTool();
             if (tool != null && !table.m_pieces.Contains(tool))
             {
+                // Beside the crops, in every sense the menu cares about. A piece built
+                // from nothing is category Misc with no usage tags, and the menu files
+                // pieces by both: a tab the cultivator's other entries do not use is a
+                // tab the player has no reason to look in, and a piece tagged with
+                // nothing disappears the moment they pick a tag. Copying both off a
+                // sibling in this very table is the only answer that cannot be wrong
+                // about where the crops live, now or after a game update.
+                SitWithTheCrops(tool, table);
+
                 table.m_pieces.Add(tool);
                 GrovePlugin.Log.LogInfo("Transplant added to the cultivator table ("
                     + table.m_pieces.Count + " pieces).");
@@ -215,6 +224,30 @@ namespace Thicket
             }
 
             return done;
+        }
+
+        /// <summary>
+        /// Gives the tool the menu category and usage tags of the pieces already in this
+        /// table, so it is filed where the crops are. Silent when the table holds nothing
+        /// else: the defaults are then as good an answer as any.
+        /// </summary>
+        private static void SitWithTheCrops(GameObject tool, PieceTable table)
+        {
+            Piece ours;
+            if (!tool.TryGetComponent(out ours)) return;
+
+            foreach (var other in table.m_pieces)
+            {
+                if (other == null || other == tool) continue;
+
+                Piece piece;
+                if (!other.TryGetComponent(out piece)) continue;
+                if (piece.m_repairPiece || piece.m_removePiece) continue;
+
+                ours.m_category = piece.m_category;
+                ours.m_usage = piece.m_usage;
+                return;
+            }
         }
 
         private static bool Register(WildPlant plant, PieceTable table)

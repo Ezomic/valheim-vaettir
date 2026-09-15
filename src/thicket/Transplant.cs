@@ -13,14 +13,25 @@ namespace Thicket
     /// suppresses the whole hover/interact pipeline. Nothing hovered, E placed. He
     /// found it, and he named the fix: "maybe add an option to the cultivator menu."
     ///
-    /// So Transplant is now a menu entry beside the crops, wearing m_repairPiece the
-    /// way the hammer's repair does - the one kind of selected piece that CLICKS ON
-    /// THE WORLD instead of placing into it. Player.UpdatePlacement routes the press
-    /// to Player.Repair, stamina and build-mode already handled; a prefix takes over
-    /// when the selected piece is ours: click a wild roster plant and it goes into
-    /// your arms (Carry.cs); click open ground while carrying and it goes back down.
-    /// Vanilla's repair never runs for this piece - GetHoveringPiece only finds
-    /// Pieces, and a bush is not one, so there is nothing to fight over.
+    /// So Transplant is a menu entry beside the crops, and the click it produces is
+    /// taken over: click a wild roster plant and it goes into your arms (Carry.cs);
+    /// click open ground while carrying and it goes back down.
+    ///
+    /// The third design, and the reason is the menu. The entry wore m_repairPiece - the
+    /// one kind of selected piece that clicks on the world instead of into it, routed to
+    /// Player.Repair - until Valheim 1.0 rebuilt the build menu. The new menu draws
+    /// repair and remove entries as a special button beside the tag list rather than in
+    /// the piece grid, and hides that whole column for a tool asking for the simplified
+    /// menu, which the cultivator does. The entry was still registered, still known,
+    /// still in the table, and simply never drawn.
+    ///
+    /// Now it is an ordinary piece and the press arrives at Player.TryPlacePiece, which
+    /// a prefix takes over when the selected piece is ours. That is the last gate before
+    /// the placement itself, and it runs before the status checks, so the click still
+    /// counts while the ghost is refusing to be placed - which it always is, since the
+    /// thing being aimed at is a bush and not ground. Returning false leaves the caller
+    /// believing nothing was placed, which is true: no resources, no stamina, no
+    /// durability, no build skill.
     /// </summary>
     [HarmonyPatch]
     internal static class Transplant
@@ -37,11 +48,15 @@ namespace Thicket
         }
 
         [HarmonyPrefix]
-        [HarmonyPatch(typeof(Player), "Repair")]
-        private static bool Click(Player __instance, Piece repairPiece)
+        [HarmonyPatch(typeof(Player), nameof(Player.TryPlacePiece))]
+        private static bool Click(Player __instance, Piece piece, ref bool __result)
         {
-            if (repairPiece == null
-                || repairPiece.gameObject.name != WildPrefab.ToolName) return true;
+            if (piece == null
+                || piece.gameObject.name != WildPrefab.ToolName) return true;
+
+            // Nothing was placed, whatever happens below. The caller spends resources,
+            // stamina, durability and build skill on a true.
+            __result = false;
 
             if (Carry.Carrying)
             {

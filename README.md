@@ -130,8 +130,8 @@ never touched. By default only the crop you clicked is taken, so a mixed bed com
 a time. Every neighbour goes through vanilla's own `Interact`, so skill gain, the level bonus
 roll, drop scaling and ownership are identical to picking each by hand.
 
-**Transplanting.** Select **Transplant** on the cultivator (it sits beside the crops, and works
-like the hammer's repair entry) and click a wild plant. It comes up into your arms, no item and
+**Transplanting.** Select **Transplant** on the cultivator, where it sits beside the crops, and
+click a wild plant. It comes up into your arms, no item and
 no inventory slot. While carrying you can walk but not run, jump, attack, use the hotbar or
 equip anything. Click open ground where that kind grows to plant it, or press R to set it down
 where you stand regardless of biome. Dying or logging out plants it at your feet. The same

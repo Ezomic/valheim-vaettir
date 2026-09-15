@@ -416,11 +416,22 @@ namespace Thicket
         private static GameObject _tool;
 
         /// <summary>
-        /// The Transplant entry on the cultivator: a piece that is never placed. It
-        /// wears m_repairPiece, which is the one kind of selected piece that clicks on
-        /// the world instead of into it - Player.UpdatePlacement routes the press to
-        /// Repair and our prefix takes it from there. No ZNetView, no model: it exists
-        /// only as a button with an icon.
+        /// The Transplant entry on the cultivator: a piece that is never placed. No
+        /// ZNetView, no model, no cost - it exists only as a button with an icon, and
+        /// the click it produces is taken over in Transplant.cs.
+        ///
+        /// It used to wear m_repairPiece, the one kind of selected piece that clicks on
+        /// the world instead of into it, which was exactly the right shape until
+        /// Valheim 1.0 rebuilt the build menu. The new menu keeps repair and remove
+        /// entries out of the piece grid and draws them as a special button beside the
+        /// tag list (BuildUi.UpdatePieceButtons), and the tag list is hidden for a tool
+        /// whose table asks for the simplified menu. On the cultivator the entry
+        /// therefore stopped being drawn at all, while remaining registered, known and
+        /// selectable by every check a mod can make - which is why this took a read of
+        /// the decompiled menu to find rather than a log line.
+        ///
+        /// So it is an ordinary piece now, sitting in the grid beside the crops, and
+        /// the click is caught in Player.TryPlacePiece instead of Player.Repair.
         /// </summary>
         public static GameObject BuildTool()
         {
@@ -436,7 +447,9 @@ namespace Thicket
                 "Click a wild plant to dig it up, roots and all. You can only walk "
                 + "while you carry it; click open ground to plant it back down. Each "
                 + "plant asks its own Farming level.";
-            piece.m_repairPiece = true;
+            // Ordinary, deliberately. See the note above: a repair piece is not drawn
+            // in the cultivator's menu at all since 1.0.
+            piece.m_repairPiece = false;
             piece.m_resources = new Piece.Requirement[0];
             piece.m_groundPiece = false;
 
