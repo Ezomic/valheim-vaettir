@@ -295,7 +295,13 @@ def fork():
              side * 90.0, -6.0, "bark", sides=7)
     collide((0.0, 0.0, 1.00), (0.80, 0.40, 0.50))
 
-    heartwood((0.0, 0.0, 0.97), size=1.0)
+    # Seated, not hovering. The arms' inner faces meet at about z 0.74 and part at 34
+    # degrees, so at 0.97 - where the lump first sat - the V was already wider than it
+    # and it floated with daylight on every side, which the review caught. At 0.91 its
+    # sides bite into both arms, and a cradle sunk into the crotch under it gives the
+    # underside something to rest on: the gantry's cradle, so the two share an idiom.
+    cradle((0.0, 0.0, 0.85))
+    heartwood((0.0, 0.0, 0.91), size=1.0)
 
     # Wider than the fork, so it overhangs the sawn ends and reads as a roof set on
     # the tree rather than a board balanced on two stubs - and low enough that each
