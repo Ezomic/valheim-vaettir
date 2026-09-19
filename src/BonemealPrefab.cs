@@ -100,7 +100,11 @@ namespace Grove
 
             if (_holder == null)
             {
-                _holder = new GameObject("GroveBonemealHolder");
+                // Named for Devkit's site export, which reads a prefab's mod off its holder's
+                // name minus "Prefabs" and silently drops anything else. Bonemeal is the only
+                // mod-made Recipe in the whole suite, so the old name left the site's items
+                // list empty on every page.
+                _holder = new GameObject("VaettirPrefabs");
                 _holder.SetActive(false);
                 Object.DontDestroyOnLoad(_holder);
             }

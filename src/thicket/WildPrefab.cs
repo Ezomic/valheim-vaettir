@@ -89,7 +89,10 @@ namespace Thicket
         {
             if (_holder == null)
             {
-                _holder = new GameObject("ThicketHolder");
+                // Same name as the other holders in this mod on purpose: Devkit's site export
+                // reads a prefab's mod off its holder's name minus "Prefabs", so a descriptive
+                // name is a prefab missing from the site.
+                _holder = new GameObject("VaettirPrefabs");
                 _holder.SetActive(false);
                 Object.DontDestroyOnLoad(_holder);
             }
