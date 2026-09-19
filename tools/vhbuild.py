@@ -40,6 +40,15 @@ TINTS = {
     "stone": (0.44, 0.43, 0.40, 1.0),
     "seed":  (0.34, 0.28, 0.16, 1.0),
 
+    # Flax. Lives here rather than in the one script that first needed it, because
+    # tint() SKIPS any material name it does not know and a skipped material keeps
+    # Blender's default near-white BSDF - so a group registered by a design script at
+    # module level comes out bone-white in every OTHER script that stages that .obj,
+    # with no warning. The winch's coil did exactly that in the first grow2 lineup,
+    # and near-white reads as a colour-space bug rather than as a missing dict key.
+    # A shared group is a shared fact; it belongs in the shared table.
+    "rope":  (0.47, 0.39, 0.25, 1.0),
+
     # Warm gold. Mistlands owns teal and pale green-white, so the family resemblance
     # to a wisp is kept and the colour is where it parts company.
     "core":  (1.00, 0.74, 0.30, 1.0),
