@@ -227,6 +227,19 @@ namespace Grove
             Prefabs.Keep(Stow.StowPost.Name, Stow.StowPost.Build,
                          buildTool: Stow.StowConfig.PostEnabled.Value ? "Hammer" : null);
 
+            // The three post upgrades, on the same terms as the post itself and for the
+            // same reason: declared always, and the setting decides only whether they can
+            // be built. stow_rail, stow_perch and hod_jib become permanent names the first
+            // time one of them is placed in any world, so from then on a load that does not
+            // declare them is a load that discards them.
+            var upgradeTool = Stow.PostUpgrades.Enabled.Value ? "Hammer" : null;
+            Prefabs.Keep(Stow.PostUpgrades.Rail.PrefabName, Stow.PostUpgrades.BuildRail,
+                         buildTool: upgradeTool);
+            Prefabs.Keep(Stow.PostUpgrades.Perch.PrefabName, Stow.PostUpgrades.BuildPerch,
+                         buildTool: upgradeTool);
+            Prefabs.Keep(Stow.PostUpgrades.Jib.PrefabName, Stow.PostUpgrades.BuildJib,
+                         buildTool: upgradeTool);
+
             // ---- past this line a failure costs a feature, never a world ----
 
             // The wild plants bind their own rows, one per plant, so the defaults live
@@ -419,6 +432,14 @@ namespace Grove
                         Stow.StowConfig.Messages, Stow.StowConfig.Verbose,
                         Stow.StowConfig.LookForProps);
 
+            // Whether an upgrade draws its motes while you look at it. Core's own comment
+            // on Suite.Local names a hover-text toggle as exactly this kind of thing: it
+            // changes what is on one player's screen and nothing about how the world plays.
+            // Everything else in the Upgrades section - the costs, the range that decides
+            // which post a piece serves, the names, the models - stays synced, because both
+            // ends have to agree about a piece that exists in the world.
+            Suite.Local(Stow.PostUpgrades.ShowLink);
+
             // The carried plant's look in your arms, and Thicket's own chatter.
             Suite.Local(Thicket.ThicketConfig.Scale,
                         Thicket.ThicketConfig.SayTheLevel,
@@ -456,6 +477,14 @@ namespace Grove
             // moment - it is a piece somebody builds - and this reprices its recipe when it
             // does, so it is never "done" and simply keeps being called.
             StowCoupling.Apply();
+
+            // The same idea for the upgrades, and it is not the same call because the
+            // coupling amends somebody else's recipe while this writes our own. Both are
+            // idempotent, both are cheap once satisfied, and both exist because a recipe is
+            // resolved ItemDrops rather than names - so it has to be written again once the
+            // item database has our heartwood in it, or the two pieces that cost one stand
+            // in the hammer without it.
+            Stow.PostUpgrades.Reprice();
 
             // Takes map pins off saplings that are no longer there. Throttled to one sweep
             // a second inside, and it runs from here rather than from the sapling because

@@ -91,6 +91,68 @@ namespace Stow
             return container != null && container.GetComponent<StowPost>() != null;
         }
 
+        // ------------------------------------------------------------------ upgrades
+
+        /// <summary>
+        /// The nearest post to a point, or null.
+        ///
+        /// Here rather than in PostUpgrades because the list of posts is this class's, and
+        /// handing it out would be handing out something that can go stale. An upgrade asks
+        /// this once a second; nothing else needs it yet.
+        ///
+        /// Placement ghosts are skipped. The translucent post following somebody's cursor
+        /// is a real instance of the prefab with this component awake on it, and without
+        /// the check an upgrade already built would re-point its motes at whatever a player
+        /// happened to be holding - and, once the effects land, briefly change its own
+        /// behaviour to serve a post that does not exist.
+        /// </summary>
+        internal static StowPost Nearest(Vector3 point, float range)
+        {
+            StowPost best = null;
+            var bestSq = range * range;
+
+            for (var i = 0; i < All.Count; i++)
+            {
+                var post = All[i];
+                if (post == null || !post.Placed) continue;
+
+                var distance = (post.transform.position - point).sqrMagnitude;
+                if (distance > bestSq) continue;
+
+                bestSq = distance;
+                best = post;
+            }
+
+            return best;
+        }
+
+        /// <summary>
+        /// A built post rather than a ghost. Asked of the ZNetView each time instead of
+        /// being latched in Awake - the answer is a live fact about this object, and a
+        /// bool of ours is exactly the kind of thing that outlives what made it true.
+        /// </summary>
+        private bool Placed
+        {
+            get
+            {
+                var nview = GetComponent<ZNetView>();
+                return nview != null && nview.GetZDO() != null;
+            }
+        }
+
+        /// <summary>
+        /// Whether this post currently has a given upgrade standing beside it.
+        ///
+        /// The one question the three effects ask, and it is answered from the world every
+        /// time: build a perch and the post gains a courier in the same second, tear it
+        /// down and it loses one. Nothing caches "this post is upgraded" anywhere, which is
+        /// the only arrangement that cannot outlive the piece that justified it.
+        /// </summary>
+        public bool Has(UpgradeKind kind)
+        {
+            return PostUpgrades.Has(this, kind);
+        }
+
         // ------------------------------------------------------------------ hover
 
         /// <summary>

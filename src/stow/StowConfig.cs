@@ -218,6 +218,15 @@ namespace Stow
                 "Hammer,Hoe,Cultivator",
                 "For KeyStow only: prefab names that never leave your pack. Comma-separated.");
 
+            // ---------------------------------------------------------- the upgrades
+
+            // Their own file, their own section, one call. The three pieces you build
+            // beside a post are a feature of their own - each turns on a different rule -
+            // and their settings read better next to each other than scattered through the
+            // post's, the sorting's and the carrier's sections by which number they happen
+            // to change.
+            PostUpgrades.Bind(config);
+
             // Not bound here. Diagnostics/Verbose belongs to GroveConfig, and binding the
             // same section and key twice throws. One mod, one switch.
             Verbose = Grove.GroveConfig.Verbose;

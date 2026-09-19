@@ -303,6 +303,15 @@ namespace Stow
             CarrierModel.Invalidate();
             Flare.Invalidate();
             CarriedItem.Invalidate();
+
+            // The upgrades' recipes, which are resolved ItemDrops out of whichever item
+            // database was loaded when they were written, and the vanilla connection effect
+            // they borrow, which is a prefab off whichever scene was loaded. Neither
+            // survives a world honestly, and the recipe is the one that matters: left
+            // alone, the perch and the jib would keep a heartwood requirement pointing at
+            // the previous world's item.
+            PostUpgrades.Invalidate();
+            PostUpgrade.ForgetConnectionPrefab();
         }
     }
 }
