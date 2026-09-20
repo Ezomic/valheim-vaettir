@@ -31,7 +31,7 @@ namespace Grove
     {
         public const string PluginGuid = "ezomic.valheim.vaettir";
         public const string PluginName = "Vaettir";
-        public const string PluginVersion = "1.5.5";
+        public const string PluginVersion = "1.6.0";
         public const string PluginAuthor = "Robbin Thijssen";
 
         /// <summary>Core's plugin GUID. Optional - see TryRegisterWithCore.</summary>
@@ -227,6 +227,19 @@ namespace Grove
             Prefabs.Keep(Stow.StowPost.Name, Stow.StowPost.Build,
                          buildTool: Stow.StowConfig.PostEnabled.Value ? "Hammer" : null);
 
+            // The three post upgrades, on the same terms as the post itself and for the
+            // same reason: declared always, and the setting decides only whether they can
+            // be built. stow_rail, stow_perch and hod_jib become permanent names the first
+            // time one of them is placed in any world, so from then on a load that does not
+            // declare them is a load that discards them.
+            var upgradeTool = Stow.PostUpgrades.Enabled.Value ? "Hammer" : null;
+            Prefabs.Keep(Stow.PostUpgrades.Rail.PrefabName, Stow.PostUpgrades.BuildRail,
+                         buildTool: upgradeTool);
+            Prefabs.Keep(Stow.PostUpgrades.Perch.PrefabName, Stow.PostUpgrades.BuildPerch,
+                         buildTool: upgradeTool);
+            Prefabs.Keep(Stow.PostUpgrades.Jib.PrefabName, Stow.PostUpgrades.BuildJib,
+                         buildTool: upgradeTool);
+
             // ---- past this line a failure costs a feature, never a world ----
 
             // The wild plants bind their own rows, one per plant, so the defaults live
@@ -237,6 +250,18 @@ namespace Grove
             Furrow.FurrowConfig.Bind(Config);
             Thicket.WildPlants.Bind(Config);
             Stow.StowRuntime.Log = Logger;
+
+            // The bench service: Hirsla folded in as the hod jib's payload. It binds its own
+            // [Hod] section, wires the shared biome index's seams and decides whether another
+            // mod in this process is already counting the same chests.
+            //
+            // After GroveConfig.Bind, because HodConfig's Verbose entry is a pointer at
+            // GroveConfig's rather than a second switch - one mod, one diagnostics flag, and
+            // binding the same section and key twice throws. After the prefab declarations,
+            // because nothing that can throw belongs in front of them; the jib's PREFAB is
+            // declared above through PostUpgrades and does not depend on any of this, so a
+            // Hod that failed to bind would cost the service and never a piece.
+            Hod.HodRuntime.Bind(Config);
 
             // Caught, because joining the gate is worth nothing next to the rest of Awake.
             // Suite.Register and every Suite.Local below it name config entries by reference
@@ -271,6 +296,29 @@ namespace Grove
             failed += Apply("furrow sowing", typeof(Furrow.Sowing));
             failed += Apply("furrow grid placement", typeof(Furrow.GridPlacement));
             failed += Apply("furrow area picking", typeof(Furrow.AreaPick));
+
+            // The bench service, in three groups rather than one, because they fail
+            // independently and they fail differently. The crafting patches are the feature;
+            // the requirement lines are the explanation of it; the world hooks are what keeps
+            // its gate and its withdrawal RPCs attached to the world that is actually loaded.
+            // Losing the third while keeping the first would be the worst of the three - an
+            // ungated bench - so it is named separately in the log rather than hidden inside
+            // "hod".
+            failed += Apply("hod crafting", typeof(Hod.HodCrafting));
+            failed += Apply("hod requirement lines", typeof(Hod.HodRequirement));
+
+            // This one's result is read rather than only counted, and that is the one place
+            // in this method where a failed patch group has to do more than be reported.
+            // HodWorld is what builds the biome index, and an index that was never built is
+            // INCOMPLETE - which HodGate answers openly for, on purpose, because an incomplete
+            // index at startup must not shut every chest. So losing this group alone would
+            // leave the crafting patches above running against a gate that lets everything
+            // through: a bench serving black metal with nothing killed, silently, which is the
+            // exact opposite of the only thing this feature promises. It shuts the service
+            // instead.
+            var worldHooks = Apply("hod world hooks", typeof(Hod.HodWorld));
+            failed += worldHooks;
+            if (worldHooks != 0) Hod.HodRuntime.LoseWorldHooks();
 
             // Without this the sapling still calls, and every one of them appears on top of
             // it: the band is enforced by a prefix on SpawnArea.FindSpawnPoint, and an
@@ -419,6 +467,28 @@ namespace Grove
                         Stow.StowConfig.Messages, Stow.StowConfig.Verbose,
                         Stow.StowConfig.LookForProps);
 
+            // Whether an upgrade draws its motes while you look at it. Core's own comment
+            // on Suite.Local names a hover-text toggle as exactly this kind of thing: it
+            // changes what is on one player's screen and nothing about how the world plays.
+            // Everything else in the Upgrades section - the costs, the range that decides
+            // which post a piece serves, the names, the models - stays synced, because both
+            // ends have to agree about a piece that exists in the world.
+            Suite.Local(Stow.PostUpgrades.ShowLink);
+
+            // The bench service's four display settings, on the same argument. What is drawn
+            // on one player's requirement line, what a refused craft says to them, and whether
+            // a spirit flies across their own screen are all decisions about their screen and
+            // nothing about how the world plays.
+            //
+            // Everything else in [Hod] stays SYNCED, and each one deliberately. HodEnabled,
+            // HodRange, BossBiomes, AllowUnclassified and BiomeOverrides together decide which
+            // materials a bench may draw on and from how far - the rule the server owns, and
+            // the one thing this feature is actually about. RequestTimeout is synced too
+            // because it is half of a protocol: a requester that gives up in one second while
+            // the owner answers in three is a chest that intermittently does nothing.
+            Suite.Local(Hod.HodConfig.ShowChestTotals, Hod.HodConfig.ChestTotalFormat,
+                        Hod.HodConfig.ShortMessage, Hod.HodConfig.ShowFlight);
+
             // The carried plant's look in your arms, and Thicket's own chatter.
             Suite.Local(Thicket.ThicketConfig.Scale,
                         Thicket.ThicketConfig.SayTheLevel,
@@ -457,6 +527,14 @@ namespace Grove
             // does, so it is never "done" and simply keeps being called.
             StowCoupling.Apply();
 
+            // The same idea for the upgrades, and it is not the same call because the
+            // coupling amends somebody else's recipe while this writes our own. Both are
+            // idempotent, both are cheap once satisfied, and both exist because a recipe is
+            // resolved ItemDrops rather than names - so it has to be written again once the
+            // item database has our heartwood in it, or the two pieces that cost one stand
+            // in the hammer without it.
+            Stow.PostUpgrades.Reprice();
+
             // Takes map pins off saplings that are no longer there. Throttled to one sweep
             // a second inside, and it runs from here rather than from the sapling because
             // by the time a sapling could tell you it has gone, it is gone.
@@ -466,6 +544,13 @@ namespace Grove
             // pieces above, and reads the two stow keys. Last, because it is the half of
             // the mod that depends on the heartwood existing.
             Stow.StowRuntime.Tick();
+
+            // The bench service's own drain: outstanding withdrawals that nobody answered,
+            // show flights that have landed, and the global-key recompute. Deliberately not
+            // behind a player check - a withdrawal can be in flight while the world is being
+            // left, and letting go of it is the whole job. Every call inside returns on its
+            // first line when there is nothing to do, which is nearly every frame.
+            Hod.HodRuntime.Tick();
 
             // Says which Farming level a locked plant wants. Driven from here rather than
             // from inside the gate itself, which the Hud asks about every piece in the open

@@ -1,0 +1,56 @@
+# Vaettir: which rails count, and which are just furniture.
+#
+# Plan steps 17 and 18. A rail feeds the post it stands beside, one rail per post, within
+# UpgradeRange - and a rail that does none of those things says so when you look at it
+# rather than sitting there looking identical to one that works.
+#
+# The hover text is the only place any of this is reported, which is why it is asserted.
+#
+# Stand on flat ground with about ten metres clear, away from other posts.
+
+clear
+give Hammer:1,Hoe:1
+give FineWood:250,BronzeNails:40,IronNails:52,LeatherScraps:40,GroveHeartwood:6
+god
+ghost
+sweep
+
+wipe 16
+wait 1
+
+place stow_post 4 0
+wait 6
+grid stow_post 6x2
+
+# One rail, in range, and TIGHT against the post - 1m out. Which rail a post is served by
+# is decided by distance TO THE POST, nearest wins, so the working one has to be the one
+# standing closest to it.
+place stow_rail 4 1
+wait 4
+grid stow_post 6x4
+hover stow_rail feeding
+
+# A second rail beside the same post adds nothing, and admits it. TWO distances have to
+# come out right here and only one of them is obvious:
+#
+#   further from the POST than the first rail (2m against 1m), or it wins the contest and
+#   the redundant one is the other rail;
+#   nearer to YOU than the first rail (2m against 4.1m), because `hover` reads the closest
+#   piece with that name.
+#
+# The first version of this got the second right and the first wrong: it moved this rail
+# nearer to the player and left both rails 2.05m from the post, which is a tie broken on
+# instance id - so which rail called itself redundant was arbitrary, and the run where it
+# picked the other one read as the rule not working at all.
+place stow_rail 2 0
+wait 3
+hover stow_rail adds_nothing
+grid stow_post 6x4
+
+break stow_rail
+wait 2
+
+# A rail further away than UpgradeRange, which is 5m, feeds nothing at all.
+place stow_rail 12 0
+wait 3
+grid stow_post 6x4

@@ -1,0 +1,133 @@
+# Vaettir: a chest that is not yours, and an owner who never answers.
+#
+# I had written this off as impossible on one machine. It is not. Ownership is a number on
+# the ZDO, and Devkit already writes it - `strand` hands the nearest chest to another peer if
+# one is connected and to an invented one otherwise, and either makes IsOwner() false. Which
+# is the whole of what "somebody else's chest" means to the code.
+#
+# `strand` has to HOLD it there, and the first version of this scenario did not know that.
+# ZDOMan.ReleaseZDOS sweeps every two seconds and adopts any nearby chest whose owner is
+# nobody or whose owner is a peer that never shows up - so a solo world takes the chest back
+# before the craft is ever pressed. This scenario passed twice on that: once because the
+# assertion counted stacks instead of items, and once because the chest it crafted against
+# was its own again. Devkit now re-asserts the foreign owner every frame until the run ends.
+#
+# So this enters the half that early-returns in a solo world: HodWithdraw.Ask, the routed
+# request, the correlation id, and the five second timeout.
+#
+# WHAT IT PROVES DEPENDS ON WHERE IT RUNS, and the difference matters:
+#
+#   Solo - the owner is a peer that was never there, the request goes out and no reply comes
+#   back. This proves the part that matters most when an owner does not answer: NOTHING IS
+#   TAKEN AND NOTHING IS CONJURED. The craft declines and the chest is untouched.
+#
+#   On the dev server - the owner is the server, the request is answered, and the same
+#   scenario is the whole round trip. Run it there and the last assertions change: the craft
+#   succeeds and the chest goes down by exactly one bow.
+#
+# Still out of reach either way: two players crafting from one chest in the same second.
+# That is a race between two machines and there is no honest way to stage it on one.
+#
+# Stand on flat ground with about ten metres clear, away from other posts and chests.
+
+clear
+give Hammer:1,Hoe:1
+give FineWood:250,BronzeNails:40,IronNails:52,Chain:4,GroveHeartwood:6
+# LeatherScraps:1 is not a typo and is not spare material. A recipe only appears in the
+# crafting panel once the character has CARRIED every one of its materials at least once -
+# Player.m_knownMaterial, filled by picking things up - so a character that has never held
+# leather scraps cannot craft a bow however full the chest beside it is. It is stripped
+# again below with the wood, so nothing here is self-funded.
+give Wood:100,Stone:40,LeatherScraps:1
+god
+ghost
+sweep
+
+wipe 16
+wait 1
+
+key defeated_eikthyr
+
+flatten
+wait 1
+
+place wood_beam 3.2 1.0 5 0.01
+place wood_beam 3.4 -1.0 -174 0.00
+place wood_floor 4.2 1.1 -174 0.02
+place wood_floor 4.4 -0.9 -174 0.03
+place wood_beam 4.1 2.1 -84 0.00
+place wood_beam 4.5 -1.9 -84 0.03
+place wood_beam 5.2 1.2 -174 0.00
+place wood_beam 5.4 -0.8 -174 0.06
+place piece_workbench 4.6 0.1 -174 0.10
+place wood_pole2 3.1 2.0 5 1.04
+place wood_pole2 3.5 -2.0 5 1.00
+place woodwall 4.1 2.1 96 1.00
+place woodwall 4.5 -1.9 -84 1.03
+place woodwall 5.2 1.2 5 1.00
+place woodwall 5.4 -0.8 5 1.06
+place wood_pole2 5.1 2.2 5 1.01
+place wood_pole2 5.5 -1.8 5 1.07
+place wood_roof_ocorner_45 4.2 1.1 5 2.02
+place wood_roof_ocorner_45 4.4 -0.9 -84 2.03
+place wood_beam 4.1 2.1 95 2.00
+place wood_beam 4.5 -1.9 -84 2.03
+place wood_beam 5.2 1.2 5 2.00
+place wood_beam 5.4 -0.8 5 2.06
+place wood_beam_45 3.2 1.0 -174 3.01
+place wood_beam_45 3.4 -1.0 6 3.00
+wait 2
+
+place stow_post 9 2
+wait 6
+place hod_jib 9 4
+wait 4
+
+# The chest goes within 8m of you, because `strand` takes the nearest one within that.
+place piece_chest_wood 6 1
+wait 2
+
+# Claimed before stocking, so that what `strand` hands away afterwards is a real chest with
+# a real owner rather than one that was never owned. See vaettir-jib-takes-once for why a
+# freshly placed chest is not spendable for a second or two.
+claim piece_chest_wood
+wait 2
+stock piece_chest_wood Wood:20,LeatherScraps:16
+stacks piece_chest_wood 2
+
+strip Wood,LeatherScraps
+wait 1
+
+# From here it is somebody else's chest, and stays one until this scenario finishes.
+strand piece_chest_wood
+wait 1
+
+goto piece_workbench
+wait 1
+use piece_workbench
+
+# Counting still works: reading a chest does not need to own it. Hod DOES skip a chest
+# somebody has open, which is a different state and a different scenario - `strand` writes
+# ownership and nothing else for exactly that reason.
+craftable Bow yes
+
+craft Bow
+wait 8
+
+# Solo, nobody answered. The craft declined and the chest kept everything.
+#
+# The exact amounts, and the empty pack, because this scenario's whole question is which of
+# two things happened and `stacks 2` is true of both. Ten wood taken out of a stack of
+# twenty leaves a stack of ten - still one stack, still two in the chest - so the first
+# version of this passed without ever looking at the thing it was written to check. The
+# first run after the upgrade-kit fix went through with no refusal logged at all, which is
+# how the hole was found.
+#
+# ON THE DEV SERVER the owner answers, so these become Wood 10, LeatherScraps 8, Bow 1.
+stacks piece_chest_wood 2
+holds piece_chest_wood Wood 20
+holds piece_chest_wood LeatherScraps 16
+carrying Bow 0
+ground 0
+
+close

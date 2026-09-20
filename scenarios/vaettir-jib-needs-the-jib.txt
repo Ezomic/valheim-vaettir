@@ -1,0 +1,93 @@
+# Vaettir: the chest only counts because a jib is standing there.
+#
+# The control for vaettir-jib-gate. That scenario proves a boss key changes the answer, and
+# it would prove exactly the same thing if the jib did nothing and the key were being read
+# by something else entirely. This one changes the jib instead of the key.
+#
+# Same setup, Eikthyr dead throughout, and the only thing that moves is whether the jib is
+# standing. If `craftable Bow` is yes before the jib is built, the chest is being counted by
+# something that is not the jib. If it is still yes after the jib is broken, nothing ever
+# stopped counting it.
+#
+# Stand on flat ground with about eight metres clear, away from other posts and chests.
+
+clear
+give Hammer:1,Hoe:1
+give FineWood:250,BronzeNails:40,IronNails:52,Chain:4,GroveHeartwood:6
+give Wood:100,LeatherScraps:60,Stone:40
+god
+ghost
+sweep
+
+# Take down whatever the last run left standing, so this spot can be used again
+# instead of walking to fresh ground every time. It removes EVERYTHING built
+# within 14m, not just what a scenario placed - do not run this near a real base.
+wipe 14
+wait 1
+
+# Level the ground first. place raycasts each piece to its own height, so on a slope a
+# captured build lands in pieces and anything unsupported is gone within a second.
+flatten
+wait 1
+
+key defeated_eikthyr
+
+# The shelter, captured from one Robbin built by hand after three attempts at guessing
+# the geometry failed three different ways. The workbench line is part of it: the bench
+# has to sit where the shed actually covers, which is not something to work out twice.
+# Lowest pieces first, so nothing is placed on something that is not there yet.
+place wood_beam 3.2 1.0 5 0.01
+place wood_beam 3.4 -1.0 -174 0.00
+place wood_floor 4.2 1.1 -174 0.02
+place wood_floor 4.4 -0.9 -174 0.03
+place wood_beam 4.1 2.1 -84 0.00
+place wood_beam 4.5 -1.9 -84 0.03
+place wood_beam 5.2 1.2 -174 0.00
+place wood_beam 5.4 -0.8 -174 0.06
+place piece_workbench 4.6 0.1 -174 0.10
+place wood_pole2 3.1 2.0 5 1.04
+place wood_pole2 3.5 -2.0 5 1.00
+place woodwall 4.1 2.1 96 1.00
+place woodwall 4.5 -1.9 -84 1.03
+place woodwall 5.2 1.2 5 1.00
+place woodwall 5.4 -0.8 5 1.06
+place wood_pole2 5.1 2.2 5 1.01
+place wood_pole2 5.5 -1.8 5 1.07
+place wood_roof_ocorner_45 4.2 1.1 5 2.02
+place wood_roof_ocorner_45 4.4 -0.9 -84 2.03
+place wood_beam 4.1 2.1 95 2.00
+place wood_beam 4.5 -1.9 -84 2.03
+place wood_beam 5.2 1.2 5 2.00
+place wood_beam 5.4 -0.8 5 2.06
+place wood_beam_45 3.2 1.0 -174 3.01
+place wood_beam_45 3.4 -1.0 6 3.00
+wait 2
+place stow_post 9 2
+wait 6
+place piece_chest_wood 7 3
+wait 2
+
+stock piece_chest_wood Wood:100,LeatherScraps:50
+# Walk to the bench and press E on it. m_currentStation is set by exactly one thing in
+# the whole game - CraftingStation.Interact - so standing near a bench is not being at
+# one, and neither is anything short of actually using it.
+goto piece_workbench
+wait 1
+use piece_workbench
+wait 1
+
+strip Wood,LeatherScraps
+
+# A post with no jib beside it. The chest is full and must not count.
+craftable Bow no
+
+place hod_jib 9 4
+wait 4
+craftable Bow yes
+
+break hod_jib
+wait 3
+craftable Bow no
+
+# Shut the crafting panel use opened.
+close

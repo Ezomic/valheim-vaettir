@@ -1,0 +1,60 @@
+# Vaettir, TWO CLIENTS - the side that asks for somebody else's material.
+#
+# Run this one on client B. Its partner is paired-vaettir-owner.txt on client A, which builds
+# everything and stocks the chest. Read that file's header for how to set the pair up; this
+# one is the short half.
+#
+# What it proves: a craft paid for out of a chest this client does not own and may not write
+# to. The whole withdrawal round trip - Ask, the routed request, the correlation id, the
+# owner's clamp against live stock, the reply, and the material landing in this pack before
+# ConsumeResources is reached.
+#
+# Press Run on this whenever you like. It waits for the other client.
+
+clear
+give Hammer:1,Hoe:1
+god
+ghost
+sweep
+
+# One of each, then thrown away. Carrying a material once is how a character comes to know
+# it, and a recipe whose materials are unknown is not in the crafting panel at all - so this
+# is about the panel listing the bow, not about paying for it. Everything is stripped
+# immediately: a single plank in this pack and the craft is partly self-funded, which is the
+# one thing this scenario must not allow.
+give Wood:1,LeatherScraps:1
+strip Wood,LeatherScraps
+wait 1
+
+waitfor rig_chest_ready 300
+
+# A built it, so find it rather than assume where it is.
+goto piece_workbench
+wait 1
+use piece_workbench
+
+# Counting is optimistic by design and does not need ownership: this reads the replica of a
+# chest belonging to somebody else, and vanilla refreshes that about once a second.
+craftable Bow yes
+
+craft Bow
+
+# Longer than the solo scenarios wait, and for a reason. The press fires the request, the
+# owner answers over the wire, and only then is there anything in this pack to spend. Ask's
+# own patience is five seconds and the craft timer is about two, so eight is the floor and
+# twelve is the number that does not fail on a slow frame.
+wait 12
+
+# The bow exists and was paid for out of a chest on another machine.
+carrying Bow 1
+
+# And this client's replica of that chest agrees. It is not the authoritative copy - the
+# owner's side asserts that - but a disagreement here would mean the reply and the removal
+# had come apart, which is precisely the failure that duplicates items.
+holds piece_chest_wood Wood 0
+holds piece_chest_wood LeatherScraps 0
+
+ground 0
+close
+
+key rig_b_crafted

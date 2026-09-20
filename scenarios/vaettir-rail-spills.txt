@@ -1,0 +1,50 @@
+# Vaettir: a full post loses its rail and spills what will not fit.
+#
+# This is steps 14, 15, 19 and 20 of the hand-written plan, as one keypress.
+#
+# The post is 6x2 alone and 6x4 with a rail, which is a reinforced chest. Breaking the rail
+# takes it back to 6x2: twelve stacks stay, twelve land on the grass - the same thing that
+# happens when you break a chest.
+#
+# WHY THE WAITS ARE SO LONG. PostSize holds a post that has never recorded a size at its
+# WIDEST for the first five seconds after it wakes (SettleSeconds), on purpose - a post that
+# guessed small and guessed wrong would truncate a grid it had not finished reading. So a
+# freshly placed post really is 6x4 for five seconds and only then becomes 6x2, and asking
+# before that is asking the wrong question. The first run of this scenario waited 2 and
+# failed on exactly that.
+#
+# Stand on flat ground with about six metres clear in front of you, and NOT within twenty
+# metres of another stowing post - the steps find pieces by name and take the nearest.
+
+clear
+give Hammer:1,Hoe:1
+give FineWood:250,BronzeNails:40,IronNails:52,LeatherScraps:16,GroveHeartwood:6
+god
+ghost
+
+# Anything already lying about would be counted as spill later.
+sweep
+
+# Take down whatever the last run left standing, so this spot can be used again
+# instead of walking to fresh ground every time. It removes EVERYTHING built
+# within 14m, not just what a scenario placed - do not run this near a real base.
+wipe 14
+wait 1
+
+place stow_post 4 0
+wait 6
+grid stow_post 6x2
+
+place stow_rail 4 2
+wait 4
+grid stow_post 6x4
+
+fill stow_post 24
+stacks stow_post 24
+
+break stow_rail
+wait 4
+
+grid stow_post 6x2
+stacks stow_post 12
+ground 12

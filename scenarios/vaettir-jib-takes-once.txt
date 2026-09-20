@@ -1,0 +1,120 @@
+# Vaettir: crafting takes from the chest exactly once, and exactly what it costs.
+#
+# The half that was never tested. Every assertion before this one asked whether a recipe
+# READS as makeable; none of them made anything, which left the part that actually moves
+# items untouched - and moving items is where a mod of this kind goes wrong. Counting a
+# chest twice is a display bug. Taking from it twice is duplication.
+#
+# A Crude bow costs Wood 10 and LeatherScraps 8. The chest starts with exactly 20 and 16,
+# which is two bows' worth, so after one craft it must hold 10 and 8 - and after two, none.
+# Round numbers on purpose: "it went down by about the right amount" is not an assertion.
+#
+# Stand on flat ground with about ten metres clear, away from other posts and chests.
+
+clear
+give Hammer:1,Hoe:1
+give FineWood:250,BronzeNails:40,IronNails:52,Chain:4,GroveHeartwood:6
+# LeatherScraps:1 is not a typo and is not spare material. A recipe only appears in the
+# crafting panel once the character has CARRIED every one of its materials at least once -
+# Player.m_knownMaterial, filled by picking things up - so a character that has never held
+# leather scraps cannot craft a bow however full the chest beside it is. It is stripped
+# again below with the wood, so nothing here is self-funded.
+give Wood:100,Stone:40,LeatherScraps:1
+god
+ghost
+sweep
+
+wipe 16
+wait 1
+
+key defeated_eikthyr
+
+flatten
+wait 1
+
+# The shed, so the bench can be crafted at. Captured from one built by hand.
+place wood_beam 3.2 1.0 5 0.01
+place wood_beam 3.4 -1.0 -174 0.00
+place wood_floor 4.2 1.1 -174 0.02
+place wood_floor 4.4 -0.9 -174 0.03
+place wood_beam 4.1 2.1 -84 0.00
+place wood_beam 4.5 -1.9 -84 0.03
+place wood_beam 5.2 1.2 -174 0.00
+place wood_beam 5.4 -0.8 -174 0.06
+place piece_workbench 4.6 0.1 -174 0.10
+place wood_pole2 3.1 2.0 5 1.04
+place wood_pole2 3.5 -2.0 5 1.00
+place woodwall 4.1 2.1 96 1.00
+place woodwall 4.5 -1.9 -84 1.03
+place woodwall 5.2 1.2 5 1.00
+place woodwall 5.4 -0.8 5 1.06
+place wood_pole2 5.1 2.2 5 1.01
+place wood_pole2 5.5 -1.8 5 1.07
+place wood_roof_ocorner_45 4.2 1.1 5 2.02
+place wood_roof_ocorner_45 4.4 -0.9 -84 2.03
+place wood_beam 4.1 2.1 95 2.00
+place wood_beam 4.5 -1.9 -84 2.03
+place wood_beam 5.2 1.2 5 2.00
+place wood_beam 5.4 -0.8 5 2.06
+place wood_beam_45 3.2 1.0 -174 3.01
+place wood_beam_45 3.4 -1.0 6 3.00
+wait 2
+
+place stow_post 9 2
+wait 6
+place hod_jib 9 4
+wait 4
+place piece_chest_wood 7 3
+wait 2
+
+# Take ownership of the chest before putting anything in. A freshly placed chest can
+# have an OWNERLESS ZDO for a second or two, and Hod counts an ownerless chest for the
+# display while refusing to spend out of it - correctly, because nobody may write to an
+# ownerless ZDO and a removal that never reached it would come back on the next revision.
+# So the panel says yes and the payment honestly says no, for about two seconds.
+#
+# A player never meets that window. A scenario places, stocks and crafts inside it, and the
+# first run of this refused both crafts and read exactly like a bug in the mod.
+claim piece_chest_wood
+wait 2
+
+# Exactly two bows' worth, and nothing else in there.
+stock piece_chest_wood Wood:20,LeatherScraps:16
+stacks piece_chest_wood 2
+
+# Your own pack holds none of it, so every plank spent has to come out of that chest.
+strip Wood,LeatherScraps
+wait 1
+
+goto piece_workbench
+wait 1
+use piece_workbench
+craftable Bow yes
+
+craft Bow
+wait 6
+
+# One bow made: ten wood and eight scraps gone, and both stacks still there.
+#
+# The amounts rather than the stack count, because a stack count cannot tell this apart
+# from nothing having happened at all - twenty wood and ten wood are both "one stack". The
+# bow in the pack is the other half of the same question: a craft that is refused and a
+# craft that happens for free both leave a chest looking plausible.
+stacks piece_chest_wood 2
+holds piece_chest_wood Wood 10
+holds piece_chest_wood LeatherScraps 8
+carrying Bow 1
+
+craft Bow
+wait 6
+
+# Two bows made: the chest is empty. Not "nearly", not "one stack left".
+stacks piece_chest_wood 0
+holds piece_chest_wood Wood 0
+holds piece_chest_wood LeatherScraps 0
+carrying Bow 2
+
+# And a third cannot be made out of nothing.
+craftable Bow no
+
+close

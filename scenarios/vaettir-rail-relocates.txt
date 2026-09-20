@@ -1,0 +1,43 @@
+# Vaettir: a shrink relocates before it drops, and drops nothing when it does not have to.
+#
+# The case a full post cannot test. Fill all 24, then take 12 out of the TOP rows, and what
+# is left is twelve stacks sitting in the two rows that are about to stop existing, with
+# twelve free slots above them. Break the rail and every one of them should move up.
+#
+# If this passes and vaettir-rail-spills also passes, relocation and spilling are both real.
+# If this drops twelve, the shrink is throwing rows away rather than moving what fits.
+#
+# The long waits are PostSize's five second settle - see the note in vaettir-rail-spills.
+#
+# Stand on flat ground with about six metres clear in front of you, and NOT within twenty
+# metres of another stowing post.
+
+clear
+give Hammer:1,Hoe:1
+give FineWood:250,BronzeNails:40,IronNails:52,LeatherScraps:16,GroveHeartwood:6
+god
+ghost
+sweep
+
+# Take down whatever the last run left standing, so this spot can be used again
+# instead of walking to fresh ground every time. It removes EVERYTHING built
+# within 14m, not just what a scenario placed - do not run this near a real base.
+wipe 14
+wait 1
+
+place stow_post 4 0
+wait 6
+place stow_rail 4 2
+wait 4
+grid stow_post 6x4
+
+fill stow_post 24
+thin stow_post 12
+stacks stow_post 12
+
+break stow_rail
+wait 4
+
+grid stow_post 6x2
+stacks stow_post 12
+ground 0

@@ -32,6 +32,12 @@ namespace Stow
         private CarryRun _run;
         private SpiritView _view;
 
+        /// <summary>
+        /// When this post came into the world, for PostSize. A shrink has to wait for the
+        /// zone around it to finish loading, and there is no event for that.
+        /// </summary>
+        private float _awoke;
+
         public Container Container { get { return _container; } }
 
         private void Awake()
@@ -40,6 +46,18 @@ namespace Stow
             _container = GetComponent<Container>();
             _run = new CarryRun(this);
             _view = new SpiritView(this);
+            _awoke = Time.time;
+
+            // Before anything else touches the inventory. Container.Awake has just built it
+            // at the prefab's own size and its first load of the saved items is already
+            // scheduled, so this is the last moment at which the grid can be set without an
+            // item being thrown away for being in a column that does not exist yet. Whether
+            // there is a rail outside is not knowable this early and does not need to be -
+            // the post's own ZDO remembers what size it was last settled at, which is an
+            // exact answer available right here. Only a post that has never recorded one
+            // falls back to opening at its widest.
+            PostSize.Open(this, _container);
+
             All.Add(this);
         }
 
@@ -72,6 +90,13 @@ namespace Stow
         {
             if (_container == null) return;
 
+            // Before the carrier, and outside the CarrierEnabled gate below: the size of
+            // the post is a fact about the piece rather than about the ferrying, and a
+            // player who has turned the spirits off still built a creel rail and still
+            // expects the slots it paid for.
+            Neighbours();
+            PostSize.Apply(this, _container, _railed, _awoke);
+
             // Turned off while spirits are out. The owner stops publishing and every
             // client drops what it was drawing, so nothing is left hanging in the air.
             if (!StowConfig.CarrierEnabled.Value)
@@ -89,6 +114,256 @@ namespace Stow
         public static bool Is(Container container)
         {
             return container != null && container.GetComponent<StowPost>() != null;
+        }
+
+        // ------------------------------------------------------------------ upgrades
+
+        /// <summary>
+        /// The nearest post to a point, or null.
+        ///
+        /// Here rather than in PostUpgrades because the list of posts is this class's, and
+        /// handing it out would be handing out something that can go stale. An upgrade asks
+        /// this once a second; nothing else needs it yet.
+        ///
+        /// Placement ghosts are skipped. The translucent post following somebody's cursor
+        /// is a real instance of the prefab with this component awake on it, and without
+        /// the check an upgrade already built would re-point its motes at whatever a player
+        /// happened to be holding - and, once the effects land, briefly change its own
+        /// behaviour to serve a post that does not exist.
+        /// </summary>
+        internal static StowPost Nearest(Vector3 point, float range)
+        {
+            StowPost best = null;
+            var bestSq = range * range;
+
+            for (var i = 0; i < All.Count; i++)
+            {
+                var post = All[i];
+                if (post == null || !post.Placed) continue;
+
+                var distance = (post.transform.position - point).sqrMagnitude;
+                if (distance > bestSq) continue;
+
+                bestSq = distance;
+                best = post;
+            }
+
+            return best;
+        }
+
+        /// <summary>
+        /// A built post rather than a ghost. Asked of the ZNetView each time instead of
+        /// being latched in Awake - the answer is a live fact about this object, and a
+        /// bool of ours is exactly the kind of thing that outlives what made it true.
+        /// </summary>
+        private bool Placed
+        {
+            get
+            {
+                var nview = GetComponent<ZNetView>();
+                return nview != null && nview.GetZDO() != null;
+            }
+        }
+
+        /// <summary>
+        /// Whether this post currently has a given upgrade standing beside it.
+        ///
+        /// The one question the three effects ask, and it is answered from the world every
+        /// time: build a perch and the post gains a courier in the same second, tear it
+        /// down and it loses one. Nothing caches "this post is upgraded" anywhere, which is
+        /// the only arrangement that cannot outlive the piece that justified it.
+        /// </summary>
+        public bool Has(UpgradeKind kind)
+        {
+            return PostUpgrades.Has(this, kind);
+        }
+
+        /// <summary>Seconds between asking the world what is standing beside this post.</summary>
+        private const float NeighbourInterval = 0.5f;
+
+        private bool _railed;
+        private bool _perched;
+        private float _nextNeighbours;
+
+        /// <summary>
+        /// Re-asks which upgrades are beside this post, twice a second.
+        ///
+        /// A sample of a live answer, which is a different thing from a remembered one and
+        /// the distinction is the whole reason this is safe. Nothing writes it down: it is
+        /// not on the ZDO, it does not survive the component, and a post loaded into a new
+        /// world starts with both of these false and works them out again from the pieces
+        /// that are actually there. The most a torn-down rail can buy anybody is half a
+        /// second of a post that has not noticed yet.
+        ///
+        /// Asked on a timer rather than every frame because three effects want the answer
+        /// and two of them - the inventory size and the courier count - are checked from an
+        /// Update. Each call walks the placed upgrades in the loaded zones; that is a
+        /// handful of pieces and it is cheap, but it is not free, and nothing here changes
+        /// at sixty hertz.
+        /// </summary>
+        private void Neighbours()
+        {
+            if (Time.time < _nextNeighbours) return;
+            _nextNeighbours = Time.time + NeighbourInterval;
+
+            _railed = Has(UpgradeKind.Rail);
+            _perched = Has(UpgradeKind.Perch);
+        }
+
+        // ------------------------------------------------------------------ the ground
+
+        private bool _neighbourhoodLoaded;
+        private float _nextNeighbourhoodCheck;
+
+        /// <summary>
+        /// Whether the ground an upgrade could be standing on is actually in the world
+        /// right now.
+        ///
+        /// The question PostSize has to ask before it narrows a post, and it is a different
+        /// question from "is there a rail registered". <see cref="Nearest"/> and
+        /// PostUpgrade.Has both answer out of a list of components, and a component only
+        /// exists while ZNetScene has the object instantiated - which it decides **by
+        /// sector**, not by distance to this post. A zone is 64m across and an upgrade may
+        /// stand UpgradeRange (5m) away, so a post and its rail either side of a zone line
+        /// have a whole range of player positions at which the post is loaded and the rail
+        /// is not. To the post that looks exactly like a rail that has been taken down, and
+        /// it is not a timing problem: no length of wait fixes it, because the rail is not
+        /// late, it is absent. Shrinking on it would have emptied a storage post every time
+        /// its base was approached from one particular direction.
+        ///
+        /// Asked of the game rather than guessed, and of both halves of it:
+        ///
+        ///   ZNetScene.OutsideActiveArea  is vanilla's own test for "would an object here be
+        ///                                destroyed by the streaming pass" - the same
+        ///                                Chebyshev-to-the-reference-zone rule
+        ///                                CreateDestroyObjects uses.
+        ///   ZoneSystem.IsZoneLoaded      is "this zone is generated AND is not still
+        ///                                handing out its objects", which is precisely the
+        ///                                several-frames instantiation race the five-second
+        ///                                timer in PostSize used to stand in for.
+        ///
+        /// Both are cheap - no allocation, no sector walk - but they are asked of five
+        /// points, so they ride the same half-second cadence as <see cref="Neighbours"/>
+        /// rather than being paid per frame. A stale answer costs at most half a second of
+        /// a post that has not noticed yet, and it is only ever read on a frame where a
+        /// shrink is being contemplated, which is rare.
+        /// </summary>
+        internal bool NeighbourhoodLoaded()
+        {
+            if (Time.time < _nextNeighbourhoodCheck) return _neighbourhoodLoaded;
+            _nextNeighbourhoodCheck = Time.time + NeighbourInterval;
+
+            _neighbourhoodLoaded = AreaLoaded();
+            return _neighbourhoodLoaded;
+        }
+
+        private bool AreaLoaded()
+        {
+            var scene = ZNetScene.instance;
+            var zones = ZoneSystem.instance;
+
+            // No scene is not "nothing is standing there", it is "nobody can say", and the
+            // answer to that is always the one that changes nothing.
+            if (scene == null || zones == null || ZNet.instance == null) return false;
+
+            var here = transform.position;
+            if (!Loaded(scene, zones, here)) return false;
+
+            // The four corners of the box an upgrade could be standing in. Corners rather
+            // than the four axis points because the box is square and a corner is the
+            // farthest a rail can be - a rail exactly on the diagonal is the one the axis
+            // points would miss.
+            var reach = Mathf.Max(0f, PostUpgrades.Range.Value);
+
+            for (var sx = -1; sx <= 1; sx += 2)
+                for (var sz = -1; sz <= 1; sz += 2)
+                    if (!Loaded(scene, zones, here + new Vector3(sx * reach, 0f, sz * reach)))
+                        return false;
+
+            return true;
+        }
+
+        private static bool Loaded(ZNetScene scene, ZoneSystem zones, Vector3 point)
+        {
+            return !scene.OutsideActiveArea(point) && zones.IsZoneLoaded(point);
+        }
+
+        // A ShrinkBlocked(bool) used to live here, with a _shrinkBlocked field and a hover
+        // line reading "too full to shrink". Both are gone as of 2026-09-20: a post that
+        // loses an upgrade now always gives up the slots and drops whatever will not fit,
+        // the way breaking a chest does, so there is no longer a state where the rail is
+        // gone and the grid has not changed - and therefore nothing for a hover line to
+        // explain. See the comment in PostSize.Apply.
+
+        private bool _faulted;
+
+        /// <summary>
+        /// Whether a resize on this post has already gone wrong once.
+        ///
+        /// Never cleared, on purpose. It is set by the one branch in PostSize that is not
+        /// supposed to be reachable at all - a stack that could not be taken out of the
+        /// inventory to be moved, which needs another mod forcing Inventory.RemoveItem to
+        /// false - and the resize is put back when it happens. Without a latch the post
+        /// would try the whole thing again on the very next frame and go on trying, so what
+        /// is meant to be one loud error becomes a stream of them and a piece of furniture
+        /// that resizes itself sixty times a second.
+        /// </summary>
+        internal bool Faulted { get { return _faulted; } }
+
+        internal void ShrinkFaulted()
+        {
+            if (_faulted) return;
+            _faulted = true;
+
+            StowRuntime.Log.LogError(
+                "A stowing post could not move a stack out of a slot it was about to lose, "
+                + "so the slot has been given back and nothing was touched. The post keeps "
+                + "its current size for the rest of this session. This should not be "
+                + "possible unless another mod is refusing Inventory.RemoveItem - please "
+                + "report it with your mod list.");
+        }
+
+        /// <summary>
+        /// How many items this post's spirit carries in one trip.
+        ///
+        /// Per post rather than per world since the creel rail: the number used to be read
+        /// straight out of config wherever it was needed, which is exactly the shape that
+        /// cannot express "this post, the one with the rail beside it".
+        ///
+        /// Taken as the larger of the two so a rail can only ever help. Zero is the special
+        /// case and it means "the whole stack, however large" - so a post already set to
+        /// carry everything cannot be improved on, and a rail configured to zero beats any
+        /// finite base.
+        /// </summary>
+        public int ItemsPerTrip
+        {
+            get
+            {
+                var basic = StowConfig.ItemsPerTrip.Value;
+                if (!_railed) return basic;
+
+                if (basic <= 0) return basic;
+
+                var railed = PostUpgrades.RailItemsPerTrip.Value;
+                return railed <= 0 ? railed : Mathf.Max(basic, railed);
+            }
+        }
+
+        /// <summary>
+        /// How many spirits this post flies at once - two with a perch, one without.
+        ///
+        /// The clamp stays where it was, in CarryRun, because it is a fact about the
+        /// ferrying rather than about the piece.
+        /// </summary>
+        public int Couriers
+        {
+            get
+            {
+                var basic = StowConfig.Couriers.Value;
+                if (!_perched) return basic;
+
+                return Mathf.Max(basic, PostUpgrades.PerchCouriers.Value);
+            }
         }
 
         // ------------------------------------------------------------------ hover
@@ -111,6 +386,12 @@ namespace Stow
         /// </summary>
         public string StatusLine()
         {
+            // A faulted post is stuck at whatever size it is and will not try again this
+            // session, which is invisible otherwise. This used to be covered by the "too
+            // full to shrink" line, which said the wrong thing about it even then - a fault
+            // is another mod refusing Inventory.RemoveItem, not a post with no room.
+            if (_faulted) return "stuck at this size - check the log";
+
             var waiting = _container != null && _container.GetInventory() != null
                 ? _container.GetInventory().NrOfItems()
                 : 0;
@@ -225,8 +506,16 @@ namespace Stow
             if (container != null)
             {
                 container.m_name = StowConfig.PostName.Value;
-                container.m_width = Mathf.Clamp(StowConfig.PostWidth.Value, 1, 8);
-                container.m_height = Mathf.Clamp(StowConfig.PostHeight.Value, 1, 4);
+
+                // The prefab's baseline only. Container.Awake reads these two fields once,
+                // to build the inventory, and never again - so since the creel rail made
+                // the size a property of one post rather than of the mod, what is written
+                // here is just where a placed copy starts before PostSize sizes it from
+                // what is standing beside it. Left in step with PostSize.Plain all the same:
+                // a prefab claiming a different size from every instance of it is a lie
+                // waiting to be read by the next person.
+                container.m_width = PostSize.Plain.x;
+                container.m_height = PostSize.Plain.y;
 
                 // An empty post is the normal resting state - it has just done its job.
                 // Inheriting a donor that tidies itself away would delete the piece every

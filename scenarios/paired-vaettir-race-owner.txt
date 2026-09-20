@@ -1,0 +1,136 @@
+# Vaettir, TWO CLIENTS - two players spending out of one chest at the same moment.
+#
+# Run this on client A. Its partner is paired-vaettir-race-asker.txt on client B. See
+# paired-vaettir-owner.txt for how to set the rig up; this pair uses the same one.
+#
+# WHAT IT IS FOR. Everything else about the hod jib can be wrong by a number. This can be
+# wrong by an ITEM. The chest holds exactly one bow's worth - 10 wood and 8 leather scraps -
+# and two players ask for it inside the same second. One of them must come away with a bow
+# and the other must come away with nothing. Two bows out of one bow's worth is duplication,
+# and duplication is the failure this whole design exists to prevent: display is optimistic,
+# payment is authoritative, and the owner clamps every withdrawal against live stock.
+#
+# The two sides are not symmetric and that is the point. THIS client owns the chest, so its
+# craft takes the fast path and spends straight out of it. The other client has to ask, and
+# its request is in flight while this one is spending. That is the dangerous combination
+# rather than a convenient one.
+#
+# HOW CLOSE IS "THE SAME MOMENT". A global key set here reaches the other client over the
+# server, so it starts a frame or two behind - about 30ms against a craft timer of two
+# seconds. Both DoCrafting calls therefore land inside the same handful of frames, which is
+# as close as two machines can be brought without a third one to referee. It is not the same
+# frame and this file does not claim to be.
+#
+# WHY BOTH SIDES DROP WHAT THEY GOT. No step can see the other client's pack, so "between
+# the two of you there is one bow" is not a question either side can ask. The ground is
+# shared. Both drop, both count, and both are entitled to the same answer.
+
+clear
+give Hammer:1,Hoe:1
+give FineWood:250,BronzeNails:40,IronNails:52,Chain:4,GroveHeartwood:6
+# LeatherScraps:1 is not a typo and is not spare material. A recipe only appears in the
+# crafting panel once the character has CARRIED every one of its materials at least once -
+# Player.m_knownMaterial, filled by picking things up - so a character that has never held
+# leather scraps cannot craft a bow however full the chest beside it is. It is stripped
+# again below with the wood, so nothing here is self-funded.
+give Wood:100,Stone:40,LeatherScraps:1
+god
+ghost
+sweep
+
+unkey rig_race_ready
+unkey rig_race_set
+unkey rig_race_go
+unkey rig_a_dropped
+unkey rig_b_dropped
+
+wipe 16
+wait 1
+
+key defeated_eikthyr
+
+flatten
+wait 1
+
+place wood_beam 3.2 1.0 5 0.01
+place wood_beam 3.4 -1.0 -174 0.00
+place wood_floor 4.2 1.1 -174 0.02
+place wood_floor 4.4 -0.9 -174 0.03
+place wood_beam 4.1 2.1 -84 0.00
+place wood_beam 4.5 -1.9 -84 0.03
+place wood_beam 5.2 1.2 -174 0.00
+place wood_beam 5.4 -0.8 -174 0.06
+place piece_workbench 4.6 0.1 -174 0.10
+place wood_pole2 3.1 2.0 5 1.04
+place wood_pole2 3.5 -2.0 5 1.00
+place woodwall 4.1 2.1 96 1.00
+place woodwall 4.5 -1.9 -84 1.03
+place woodwall 5.2 1.2 5 1.00
+place woodwall 5.4 -0.8 5 1.06
+place wood_pole2 5.1 2.2 5 1.01
+place wood_pole2 5.5 -1.8 5 1.07
+place wood_roof_ocorner_45 4.2 1.1 5 2.02
+place wood_roof_ocorner_45 4.4 -0.9 -84 2.03
+place wood_beam 4.1 2.1 95 2.00
+place wood_beam 4.5 -1.9 -84 2.03
+place wood_beam 5.2 1.2 5 2.00
+place wood_beam 5.4 -0.8 5 2.06
+place wood_beam_45 3.2 1.0 -174 3.01
+place wood_beam_45 3.4 -1.0 6 3.00
+wait 2
+
+place stow_post 9 2
+wait 6
+place hod_jib 9 4
+wait 4
+place piece_chest_wood 7 3
+wait 2
+
+claim piece_chest_wood
+wait 2
+
+# One bow. Not two, not one and a spare plank.
+stock piece_chest_wood Wood:10,LeatherScraps:8
+holds piece_chest_wood Wood 10
+holds piece_chest_wood LeatherScraps 8
+
+strip Wood,LeatherScraps
+wait 1
+
+key rig_race_ready
+
+# B walks to the bench and says so. Getting there is slow and must not be part of the race.
+waitfor rig_race_set 300
+
+goto piece_workbench
+wait 1
+use piece_workbench
+craftable Bow yes
+
+# The starting gun, and then straight into it with nothing in between.
+key rig_race_go
+craft Bow
+
+wait 12
+
+# Whatever this client came away with goes on the floor where both can count it. Zero is a
+# perfectly good outcome here - it means the other client won.
+close
+drop Bow
+key rig_a_dropped
+
+waitfor rig_b_dropped 120
+wait 2
+
+# THE ASSERTION. One bow's worth of material existed, so one bow exists.
+dropped Bow 1
+
+# And the owner's copy of the chest - the authoritative one - was emptied once, not twice.
+holds piece_chest_wood Wood 0
+holds piece_chest_wood LeatherScraps 0
+
+unkey rig_race_ready
+unkey rig_race_set
+unkey rig_race_go
+unkey rig_a_dropped
+unkey rig_b_dropped

@@ -113,7 +113,13 @@ namespace Stow
                 if (target == null) break;
 
                 bool emptied;
-                var went = Deposit(source, target, item, out emptied);
+
+                // The global figure, and it is the right one here: this is the instant
+                // path - the old everything-at-once behaviour and the optional keybind -
+                // which loops until the stack is gone whatever the cap is. There is no post
+                // in sight on the keybind path to ask for a per-post one.
+                var went = Deposit(source, target, item, StowConfig.ItemsPerTrip.Value,
+                                   out emptied);
                 if (went < 0) break;
 
                 moved += went;
@@ -139,8 +145,14 @@ namespace Stow
         /// spirit picked the stack up. Both callers share the write itself, which is the
         /// part with the ownership handshake in it and the part worth having one copy of.
         /// </summary>
+        /// <param name="cap">
+        /// How much of the stack this one move may take, or 0 for all of it. Passed in
+        /// rather than read from config, because since the creel rail it is a property of
+        /// the post the trip started from and not of the mod - two posts in one storage
+        /// room can legitimately disagree about it.
+        /// </param>
         public static int Deposit(Inventory source, Container target,
-                                  ItemDrop.ItemData item, out bool emptied)
+                                  ItemDrop.ItemData item, int cap, out bool emptied)
         {
             emptied = false;
 
@@ -170,7 +182,6 @@ namespace Stow
             // into AddItem is a copy carrying the trip's share; the original is decremented
             // by however much of that copy the chest actually took. A chest that offers
             // room and then takes none leaves both untouched.
-            var cap = StowConfig.ItemsPerTrip.Value;
             var take = cap > 0 ? Mathf.Min(cap, item.m_stack) : item.m_stack;
 
             var load = item.Clone();

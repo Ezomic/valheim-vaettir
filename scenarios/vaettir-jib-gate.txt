@@ -1,0 +1,118 @@
+# Vaettir: the hod jib serves a biome only once its boss is dead, and stops again when it is not.
+#
+# Plan steps 28 to 32 and 36, as one keypress.
+#
+# The recipe is Bow - Wood 10, LeatherScraps 8 - chosen because both are Meadows beyond
+# argument, so a failure here is the gate and never the biome derivation. The wood is in the
+# chest and nowhere else: `strip` empties your own pack of it first, because carrying ten
+# wood yourself makes "craftable" true for a reason that has nothing to do with the jib,
+# which would be a green test proving the opposite of what it claims.
+#
+# The last three steps are the ones that matter. A gate that opens is easy; a gate that
+# CLOSES again proves it is being asked live rather than latched when the world loaded.
+#
+# Stand on flat ground with about eight metres clear in front of you, and NOT within twenty
+# metres of another stowing post or chest.
+
+clear
+give Hammer:1,Hoe:1
+give FineWood:250,BronzeNails:40,IronNails:52,Chain:4,GroveHeartwood:6
+give Wood:100,LeatherScraps:60,Stone:40
+god
+ghost
+sweep
+
+# Take down whatever the last run left standing, so this spot can be used again
+# instead of walking to fresh ground every time. It removes EVERYTHING built
+# within 14m, not just what a scenario placed - do not run this near a real base.
+wipe 14
+wait 1
+
+# Level the ground first. place raycasts each piece to its own height, so on a slope a
+# captured build lands in pieces and anything unsupported is gone within a second.
+flatten
+wait 1
+
+# The station, the post, the jib that serves it, and a chest to serve out of.
+# The shelter, captured from one Robbin built by hand after three attempts at guessing
+# the geometry failed three different ways. The workbench line is part of it: the bench
+# has to sit where the shed actually covers, which is not something to work out twice.
+# Lowest pieces first, so nothing is placed on something that is not there yet.
+place wood_beam 3.2 1.0 5 0.01
+place wood_beam 3.4 -1.0 -174 0.00
+place wood_floor 4.2 1.1 -174 0.02
+place wood_floor 4.4 -0.9 -174 0.03
+place wood_beam 4.1 2.1 -84 0.00
+place wood_beam 4.5 -1.9 -84 0.03
+place wood_beam 5.2 1.2 -174 0.00
+place wood_beam 5.4 -0.8 -174 0.06
+place piece_workbench 4.6 0.1 -174 0.10
+place wood_pole2 3.1 2.0 5 1.04
+place wood_pole2 3.5 -2.0 5 1.00
+place woodwall 4.1 2.1 96 1.00
+place woodwall 4.5 -1.9 -84 1.03
+place woodwall 5.2 1.2 5 1.00
+place woodwall 5.4 -0.8 5 1.06
+place wood_pole2 5.1 2.2 5 1.01
+place wood_pole2 5.5 -1.8 5 1.07
+place wood_roof_ocorner_45 4.2 1.1 5 2.02
+place wood_roof_ocorner_45 4.4 -0.9 -84 2.03
+place wood_beam 4.1 2.1 95 2.00
+place wood_beam 4.5 -1.9 -84 2.03
+place wood_beam 5.2 1.2 5 2.00
+place wood_beam 5.4 -0.8 5 2.06
+place wood_beam_45 3.2 1.0 -174 3.01
+place wood_beam_45 3.4 -1.0 6 3.00
+wait 2
+place stow_post 9 2
+wait 6
+place hod_jib 9 4
+wait 4
+place piece_chest_wood 7 3
+wait 2
+
+stock piece_chest_wood Wood:100,LeatherScraps:50
+
+# From here the chest is the only wood in the world you can reach.
+# Walk to the bench and press E on it. m_currentStation is set by exactly one thing in
+# the whole game - CraftingStation.Interact - so standing near a bench is not being at
+# one, and neither is anything short of actually using it.
+goto piece_workbench
+wait 1
+use piece_workbench
+wait 1
+
+strip Wood,LeatherScraps
+
+# NOT asserted here: that the bow cannot be made before Eikthyr. It is true, and
+# vaettir-jib-needs-the-jib proves it - but only on the first run in a session. Hod
+# recomputes the gate on GlobalKeyAdd and deliberately not on removal, so once any run has
+# set this key the answer stays open for the rest of the session however often it is
+# cleared. Asserting it here made the suite fail on its second pass for a reason that is a
+# decision rather than a defect.
+unkey defeated_eikthyr
+wait 2
+
+# Eikthyr dies and the same chest starts counting.
+key defeated_eikthyr
+wait 2
+goto piece_workbench
+wait 1
+use piece_workbench
+craftable Bow yes
+# And taking the kill away does NOT close it again, on purpose. HodWorld patches
+# GlobalKeyAdd and deliberately not GlobalKeyRemove: "the gate only ever opens on its own,
+# which is the right way round for a feature whose whole promise is that progress is not
+# taken back." You cannot un-kill a boss by playing, so the only thing this costs is a
+# console resetkeys, and the mod would rather be generous there than forget progress.
+#
+# Asserted rather than left out, so that anyone who later makes the gate close finds out
+# they have changed a decision instead of fixing a bug.
+unkey defeated_eikthyr
+wait 2
+goto piece_workbench
+wait 1
+use piece_workbench
+craftable Bow yes
+# Shut the crafting panel use opened.
+close
