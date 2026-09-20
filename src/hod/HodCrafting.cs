@@ -641,6 +641,40 @@ namespace Hod
         }
 
         /// <summary>
+        /// Whether this requirement is one the station in front of the player actually
+        /// charges for - and a 1.0 change that made every craft at a bench refuse.
+        ///
+        /// Valheim 1.0 added <c>Piece.Requirement.m_upgraderResource</c> and the upgrade kits
+        /// that go with it, and a recipe now carries BOTH sets of costs in one m_resources
+        /// array. A Crude bow lists Wood 10, LeatherScraps 8 and one weapon upgrade kit, and
+        /// which of those you are asked for depends on where you are standing:
+        /// <c>CraftingStation.m_upgrader</c> is false at a workbench and true at an upgrader,
+        /// and vanilla skips every requirement whose flag does not match it - in
+        /// Player.HaveRequirementItems AND in Player.ConsumeResources, with the same line.
+        ///
+        /// So the kit is invisible at a bench and the wood is invisible at an upgrader.
+        /// Walking m_resources without that filter asks for both at once, which is a cost no
+        /// station in the game charges and nobody can pay: the panel un-greys the bow
+        /// (vanilla's gate, correctly filtered), the craft timer runs, and CraftStart refuses
+        /// it a second later for want of an upgrade kit. Every craft, at every bench, with the
+        /// jib built - the feature was entirely dead in 1.0 and the message blamed the chests.
+        ///
+        /// Vanilla's own condition is written as the skip; this is its negation, with the
+        /// null checks folded in because every caller wanted those anyway. The `discover`
+        /// branch is not represented - nothing here ever runs with it set.
+        /// </summary>
+        private static bool Applies(Player player, Piece.Requirement requirement)
+        {
+            if (requirement == null || requirement.m_resItem == null) return false;
+
+            var station = player == null ? null : player.GetCurrentCraftingStation();
+
+            return station != null
+                ? station.m_upgrader == requirement.m_upgraderResource
+                : !requirement.m_upgraderResource;
+        }
+
+        /// <summary>
         /// Whether every requirement of this recipe can be paid for out of spendable stock.
         ///
         /// The per-quality maximum, because that is exactly how Player.HaveRequirementItems
@@ -666,7 +700,7 @@ namespace Hod
 
             foreach (var requirement in recipe.m_resources)
             {
-                if (requirement == null || requirement.m_resItem == null) continue;
+                if (!Applies(player, requirement)) continue;
 
                 var needed = requirement.GetAmount(quality) * multiplier;
                 if (needed <= 0) continue;
@@ -724,7 +758,7 @@ namespace Hod
         {
             foreach (var requirement in recipe.m_resources)
             {
-                if (requirement == null || requirement.m_resItem == null) continue;
+                if (!Applies(player, requirement)) continue;
 
                 var needed = requirement.GetAmount(quality) * multiplier;
                 if (needed <= 0) continue;
@@ -771,7 +805,7 @@ namespace Hod
         {
             foreach (var requirement in recipe.m_resources)
             {
-                if (requirement == null || requirement.m_resItem == null) continue;
+                if (!Applies(player, requirement)) continue;
 
                 var needed = requirement.GetAmount(quality) * multiplier;
                 if (needed <= 0) continue;
@@ -931,7 +965,7 @@ namespace Hod
 
             foreach (var requirement in recipe.m_resources)
             {
-                if (requirement == null || requirement.m_resItem == null) continue;
+                if (!Applies(player, requirement)) continue;
 
                 var needed = requirement.GetAmount(quality) * multiplier;
                 if (needed <= 0) continue;
@@ -972,7 +1006,7 @@ namespace Hod
 
             foreach (var requirement in recipe.m_resources)
             {
-                if (requirement == null || requirement.m_resItem == null) continue;
+                if (!Applies(player, requirement)) continue;
 
                 var needed = requirement.GetAmount(quality) * multiplier;
                 if (needed <= 0) continue;
@@ -1025,7 +1059,7 @@ namespace Hod
 
             foreach (var requirement in recipe.m_resources)
             {
-                if (requirement == null || requirement.m_resItem == null) continue;
+                if (!Applies(player, requirement)) continue;
 
                 var needed = requirement.GetAmount(quality) * multiplier;
                 if (needed <= 0) continue;
