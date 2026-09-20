@@ -3,11 +3,17 @@
 Notable changes to Vaettir. Format follows [Keep a Changelog](https://keepachangelog.com),
 and the mod uses [semantic versioning](https://semver.org).
 
-## [Unreleased]
+## [1.6.0] - 2026-09-20
 
 Three pieces you build beside a stowing post, and the one of them that changes how crafting
-works. Version left unset deliberately - this has been proved by scripted scenarios in a
-fresh world and has not been played.
+works.
+
+**Three new prefab names become permanent with this release** - `stow_rail`, `hod_jib` and
+`stow_perch`. Once one is standing in a world, removing the mod or renaming the piece
+discards that object's ZDO silently, the same as it would for a stowing post.
+
+Proved by scripted scenarios in a fresh world, including the withdrawal round trip and the
+one-chest race across two clients. Not played.
 
 ### Added
 
