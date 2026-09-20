@@ -23,6 +23,13 @@ wait 1
 
 key defeated_eikthyr
 
+# A workbench, because a wood wall needs one in range before it can be built at all.
+# Without it uildable woodwall no passes for the wrong reason - the same trap the
+# crafting steps fell into twice. It needs no roof: a roof gates crafting AT a station,
+# not building near one.
+place piece_workbench 2 -3
+wait 2
+
 place stow_post 4 0
 wait 6
 place hod_jib 4 2

@@ -84,10 +84,14 @@ wait 1
 
 strip Wood,LeatherScraps
 
-# No boss down: the Meadows is shut and the bow cannot be made.
+# NOT asserted here: that the bow cannot be made before Eikthyr. It is true, and
+# vaettir-jib-needs-the-jib proves it - but only on the first run in a session. Hod
+# recomputes the gate on GlobalKeyAdd and deliberately not on removal, so once any run has
+# set this key the answer stays open for the rest of the session however often it is
+# cleared. Asserting it here made the suite fail on its second pass for a reason that is a
+# decision rather than a defect.
 unkey defeated_eikthyr
 wait 2
-craftable Bow no
 
 # Eikthyr dies and the same chest starts counting.
 key defeated_eikthyr
