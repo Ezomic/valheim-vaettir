@@ -96,8 +96,10 @@ wait 2
 # Eikthyr dies and the same chest starts counting.
 key defeated_eikthyr
 wait 2
+goto piece_workbench
+wait 1
+use piece_workbench
 craftable Bow yes
-
 # And taking the kill away does NOT close it again, on purpose. HodWorld patches
 # GlobalKeyAdd and deliberately not GlobalKeyRemove: "the gate only ever opens on its own,
 # which is the right way round for a feature whose whole promise is that progress is not
@@ -108,7 +110,9 @@ craftable Bow yes
 # they have changed a decision instead of fixing a bug.
 unkey defeated_eikthyr
 wait 2
+goto piece_workbench
+wait 1
+use piece_workbench
 craftable Bow yes
-
 # Shut the crafting panel use opened.
 close
