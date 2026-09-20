@@ -51,7 +51,7 @@ namespace Stow
             PostName = config.Bind("Post", "PostName", "Stowing post",
                 "What the piece and its window are called.");
 
-            PostCost = config.Bind("Post", "PostCost", "FineWood:20,BronzeNails:20",
+            PostCost = config.Bind("Post", "PostCost", "FineWood:40,BronzeNails:20",
                 "What it costs to build, as Item:Amount pairs. Nails put it past the "
                 + "forge rather than in the first camp: a post that sorts a storage room "
                 + "should arrive when there is a storage room to sort. Bronze nails rather "

@@ -238,7 +238,7 @@ namespace Stow
                 "What the creel rail is called.");
 
             Rail.Cost = config.Bind("Upgrades", "RailCost",
-                "FineWood:10,IronNails:10,LeatherScraps:8",
+                "FineWood:25,IronNails:10,LeatherScraps:8",
                 "What the creel rail costs, as Item:Amount pairs.\n"
                 + "No heartwood: this is joinery, not a second spirit. Iron nails where the "
                 + "post itself takes bronze, so the post arrives out of the Black Forest and "
@@ -295,17 +295,20 @@ namespace Stow
                 "What the spirit perch is called.");
 
             Perch.Cost = config.Bind("Upgrades", "PerchCost",
-                "GroveHeartwood:1,FineWood:10,IronNails:6,Crystal:6",
+                "GroveHeartwood:1,FineWood:25,IronNails:6,Silver:6",
                 "What the spirit perch costs. The heartwood is the reason it works at all: a "
                 + "second courier is a second spirit, and a spirit needs somewhere to live, "
                 + "which is the same argument that makes the post itself cost one.\n"
-                + "The crystal is what puts it a tier above the rail rather than beside it. "
+                + "The silver is what puts it a tier above the rail rather than beside it. "
                 + "Nothing gates a second spirit once it is standing - no boss, no key, it "
                 + "simply doubles what the post moves for the rest of the world's life - so "
                 + "it is the one of the three that has to be earned rather than afforded. "
-                + "Glazing a lantern house is also the honest use for the stuff. An item "
-                + "name that does not resolve is logged and skipped, which makes the piece "
-                + "cheaper rather than unbuildable - read the log after editing this.");
+                + "Silver rather than crystal, which was the first draft: crystal is what a "
+                + "mountain gives up to anyone who breaks a golem, where silver has to be "
+                + "found with a wishbone first. The piece that houses a spirit should cost "
+                + "the part of the mountain you went looking for. An item name that does "
+                + "not resolve is logged and skipped, which makes the piece cheaper rather "
+                + "than unbuildable - read the log after editing this.");
 
             Perch.Model = config.Bind("Upgrades", "PerchModel", "stow_perch.obj",
                 "The hand-built mesh the spirit perch wears.");
@@ -314,7 +317,7 @@ namespace Stow
                 "What the hod jib is called.");
 
             Jib.Cost = config.Bind("Upgrades", "JibCost",
-                "GroveHeartwood:1,FineWood:15,IronNails:10,Chain:2",
+                "GroveHeartwood:1,FineWood:35,IronNails:10,Chain:2",
                 "What the hod jib costs. A heartwood again, and for the same reason: "
                 + "something has to carry the material from the chest to the bench, and "
                 + "this is the arm it swings from. The chain is the pulley the heartwood "
