@@ -28,8 +28,10 @@ wait 4
 grid stow_post 6x4
 hover stow_rail feeding
 
-# A second rail beside the same post adds nothing, and admits it.
-place stow_rail 4 -2
+# A second rail beside the same post adds nothing, and admits it. Placed NEARER to you
+# than the first, because hover reads the closest one by that name and the two were
+# equidistant - so the assertion was quietly being made about the working rail.
+place stow_rail 2 0
 wait 3
 hover stow_rail adds_nothing
 grid stow_post 6x4

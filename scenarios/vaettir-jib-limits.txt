@@ -37,7 +37,7 @@ strip Wood,Stone
 wait 1
 
 # A wall costs wood. The chest has 200 of it, two metres away, under a working jib.
-buildable wood_wall no
+buildable woodwall no
 
 # And a workbench, which is the piece you would most want it to pay for.
 buildable piece_workbench no
@@ -46,4 +46,4 @@ buildable piece_workbench no
 # refusal above was about where the wood is rather than about the wall.
 give Wood:20
 wait 1
-buildable wood_wall yes
+buildable woodwall yes
