@@ -1,0 +1,118 @@
+# Vaettir, TWO CLIENTS - the side that owns the chest and answers for it.
+#
+# Run this one on client A. Its partner is paired-vaettir-asker.txt on client B, and neither
+# proves anything alone. What they prove together is the half of the hod jib that a single
+# machine structurally cannot reach: a chest whose owner is somebody else, who is there, and
+# who answers. Solo, HodWithdraw.Ask early-returns because every chest in the world is yours;
+# vaettir-jib-remote-chest reaches the request and the timeout by handing a chest to a peer
+# that does not exist, and stops exactly where a reply would come back.
+#
+# HOW TO RUN IT
+#
+#   1. sync-all so the client and the dev server are the SAME BUILD - Core's gate compares
+#      the compiler's build id, not the version.
+#   2. Start both clients and join the dev server. play2.ps1 mirrors this profile into
+#      own-profile-2; you need a second character, because Valheim will not load one that is
+#      already in play.
+#   3. Stand the two characters TOGETHER on flat ground, ten metres clear, away from
+#      anything built. B finds this client's bench by looking for the nearest one, so "near
+#      enough to see each other" is the whole requirement.
+#   4. Press Run on THIS one first. It builds everything and then waits for B.
+#   5. Press Run on paired-vaettir-asker.txt on the other client. It waits for the signal from
+#      here, so pressing it early is fine.
+#
+# The two sides talk through global keys, which the server broadcasts to everybody. The
+# names are deliberately not GlobalKeys members, so they are inert world state.
+
+clear
+give Hammer:1,Hoe:1
+give FineWood:250,BronzeNails:40,IronNails:52,Chain:4,GroveHeartwood:6
+give Wood:100,Stone:40
+god
+ghost
+sweep
+
+# Clear both signals before anything else. A run that was abandoned halfway leaves its key
+# set, and a `waitfor` on a key that is already set returns immediately - so the next pair
+# would run out of step and report whatever that produced.
+unkey rig_chest_ready
+unkey rig_b_crafted
+
+wipe 16
+wait 1
+
+key defeated_eikthyr
+
+flatten
+wait 1
+
+# The shed, so the bench is under a roof. Captured from one built by hand.
+place wood_beam 3.2 1.0 5 0.01
+place wood_beam 3.4 -1.0 -174 0.00
+place wood_floor 4.2 1.1 -174 0.02
+place wood_floor 4.4 -0.9 -174 0.03
+place wood_beam 4.1 2.1 -84 0.00
+place wood_beam 4.5 -1.9 -84 0.03
+place wood_beam 5.2 1.2 -174 0.00
+place wood_beam 5.4 -0.8 -174 0.06
+place piece_workbench 4.6 0.1 -174 0.10
+place wood_pole2 3.1 2.0 5 1.04
+place wood_pole2 3.5 -2.0 5 1.00
+place woodwall 4.1 2.1 96 1.00
+place woodwall 4.5 -1.9 -84 1.03
+place woodwall 5.2 1.2 5 1.00
+place woodwall 5.4 -0.8 5 1.06
+place wood_pole2 5.1 2.2 5 1.01
+place wood_pole2 5.5 -1.8 5 1.07
+place wood_roof_ocorner_45 4.2 1.1 5 2.02
+place wood_roof_ocorner_45 4.4 -0.9 -84 2.03
+place wood_beam 4.1 2.1 95 2.00
+place wood_beam 4.5 -1.9 -84 2.03
+place wood_beam 5.2 1.2 5 2.00
+place wood_beam 5.4 -0.8 5 2.06
+place wood_beam_45 3.2 1.0 -174 3.01
+place wood_beam_45 3.4 -1.0 6 3.00
+wait 2
+
+place stow_post 9 2
+wait 6
+place hod_jib 9 4
+wait 4
+place piece_chest_wood 7 3
+wait 2
+
+# This client owns the chest and keeps owning it. B never opens it, and walking past does
+# not take ownership - only Container.Interact's RPC_RequestOpen does - so the server's
+# release sweep leaves it here while this character stands in range.
+claim piece_chest_wood
+wait 2
+
+# Exactly one bow's worth, so "it went down by the right amount" and "it was emptied" are
+# the same sentence and neither can be confused with a second withdrawal.
+stock piece_chest_wood Wood:10,LeatherScraps:8
+holds piece_chest_wood Wood 10
+holds piece_chest_wood LeatherScraps 8
+
+# Nothing of the recipe in this pack either. If the owner's own stock could pay for it the
+# craft on the other machine would still succeed and nothing would have been proved.
+strip Wood,LeatherScraps
+wait 1
+
+key rig_chest_ready
+
+# B now crafts. The request arrives here, this client removes the material from its own
+# chest and sends back what it really took.
+waitfor rig_b_crafted 180
+wait 3
+
+# The owner's copy is the authoritative one. Exactly one bow's worth left, which is none.
+holds piece_chest_wood Wood 0
+holds piece_chest_wood LeatherScraps 0
+stacks piece_chest_wood 0
+
+# And nothing was conjured on the way: no second bow, nothing on the floor.
+carrying Bow 0
+ground 0
+
+unkey rig_chest_ready
+unkey rig_b_crafted
