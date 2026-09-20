@@ -143,10 +143,76 @@ namespace Stow
             {
                 var plain = Plain;
 
+                Vector2i donor;
+                var wanted = DonorGrid(out donor)
+                    ? donor
+                    : new Vector2i(PostUpgrades.RailWidth.Value, PostUpgrades.RailHeight.Value);
+
                 return new Vector2i(
-                    Mathf.Max(plain.x, Mathf.Clamp(PostUpgrades.RailWidth.Value, 1, 8)),
-                    Mathf.Max(plain.y, Mathf.Clamp(PostUpgrades.RailHeight.Value, 1, 4)));
+                    Mathf.Max(plain.x, Mathf.Clamp(wanted.x, 1, 8)),
+                    Mathf.Max(plain.y, Mathf.Clamp(wanted.y, 1, 4)));
             }
+        }
+
+        private static ZNetScene _donorScene;
+        private static string _donorAsked;
+        private static Vector2i _donorSize;
+        private static bool _donorFound;
+
+        /// <summary>
+        /// The grid of the vanilla container RailSizeFrom names, if it has one.
+        ///
+        /// Read off the real Container rather than copied into config as two numbers,
+        /// because "the same as a reinforced chest" is the intent and a pair of integers is
+        /// only a snapshot of it. piece_chest is 6x4 today; if that ever changes, a post
+        /// with a rail changes with it and nothing here has to be noticed and edited.
+        ///
+        /// Cached against the scene it was resolved in and the name it was asked for, which
+        /// is self-invalidating and needs no hook: a new world is a new ZNetScene, and a
+        /// config reload changes the string. Both comparisons are safe - ZNetScene derives
+        /// from UnityEngine.Object, and `!=` is the overload that treats a destroyed scene
+        /// as null, which is exactly the answer wanted.
+        ///
+        /// Falls back rather than throwing, and says so once. A post that cannot find its
+        /// donor is better off at RailWidth x RailHeight than at nothing, and a mod that
+        /// logged this every time Railed was read would fill the file - Railed is asked on
+        /// every window open and every settle check.
+        /// </summary>
+        private static bool DonorGrid(out Vector2i size)
+        {
+            var scene = ZNetScene.instance;
+            var asked = (PostUpgrades.RailSizeFrom.Value ?? "").Trim();
+
+            if (scene != _donorScene || asked != _donorAsked)
+            {
+                _donorScene = scene;
+                _donorAsked = asked;
+                _donorFound = false;
+
+                if (scene != null && asked.Length > 0)
+                {
+                    var prefab = scene.GetPrefab(asked);
+                    Container container;
+
+                    if (prefab == null)
+                        Grove.GrovePlugin.LogOnce("RailSizeFrom names '" + asked + "', which "
+                            + "is not a prefab in this world. A railed post falls back to "
+                            + "RailWidth and RailHeight.");
+                    else if (!prefab.TryGetComponent(out container)
+                             || container.m_width < 1 || container.m_height < 1)
+                        Grove.GrovePlugin.LogOnce("RailSizeFrom names '" + asked + "', which "
+                            + "is not a container. A railed post falls back to RailWidth and "
+                            + "RailHeight.");
+                    else
+                    {
+                        _donorSize = new Vector2i(container.m_width, container.m_height);
+                        _donorFound = true;
+                    }
+                }
+            }
+
+            size = _donorSize;
+            return _donorFound;
         }
 
         /// <summary>

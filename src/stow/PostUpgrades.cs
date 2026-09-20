@@ -200,6 +200,7 @@ namespace Stow
         /// deciding whether to spend a heartwood on a perch is reading this section rather
         /// than hunting through three others for the one line that says what they get.
         /// </summary>
+        public static ConfigEntry<string> RailSizeFrom;
         public static ConfigEntry<int> RailWidth;
         public static ConfigEntry<int> RailHeight;
         public static ConfigEntry<int> RailItemsPerTrip;
@@ -255,10 +256,35 @@ namespace Stow
                 "The hand-built mesh the creel rail wears, beside the dll. Its .col sidecar "
                 + "and its _icon.png are picked up from the same stem automatically.");
 
+            // A prefab name rather than two numbers, because the number wanted here is not
+            // one anybody should be typing. "The same as a reinforced chest" is the whole
+            // intent, and a pair of integers is a copy of an answer the game already has -
+            // it is right until Iron Gate retunes a chest, and then it is a lie nobody
+            // notices. Reading the real Container means the post matches by construction.
+            //
+            // It also lands 6x4 rather than 8x3, which is the same 24 slots in a better
+            // shape: the plain post is already 6 wide, so a rail now only adds rows. A
+            // shrink that loses rows and never columns is the easier half of PostSize's job
+            // and the one less likely to have to move anything at all.
+            //
+            // New key on purpose. Changing RailWidth's default would have done nothing on
+            // this machine - BepInEx writes every entry on first run and the saved value
+            // beats a new default, so every cfg already on disk says 8 and would have gone
+            // on saying 8. A key that has never been written gets its default.
+            RailSizeFrom = config.Bind("Upgrades", "RailSizeFrom", "piece_chest",
+                "The vanilla container a railed post matches the grid of. piece_chest is the "
+                + "reinforced chest, 6 across and 4 down. Other useful names: "
+                + "piece_chest_wood (the plain chest, 5x2), piece_chest_blackmetal, "
+                + "piece_chest_private.\n"
+                + "Leave it empty to use RailWidth and RailHeight instead. A name that is "
+                + "not a prefab, or is a prefab with no Container, falls back to those two "
+                + "and says so once in the log.");
+
             RailWidth = config.Bind("Upgrades", "RailWidth", 8,
                 "Slots across a post that has a creel rail beside it, instead of PostWidth. "
-                + "Eight is the width of your own pack, which is the widest grid the "
-                + "container window is built to draw.\n"
+                + "Only read when RailSizeFrom is empty or names something this world does "
+                + "not have. Eight is the width of your own pack, which is the widest grid "
+                + "the container window is built to draw.\n"
                 + "LOWERING THIS does not narrow a post that already has a rail standing "
                 + "beside it - a rail never takes slots away, which is what stops one "
                 + "player's copy of this file emptying everybody's posts on a server. Take "
@@ -267,12 +293,14 @@ namespace Stow
                 + "cannot find a home inside itself for everything in the slots it is losing "
                 + "simply keeps them, and says \"too full to shrink\" when you look at it.");
 
+            // This used to argue for three rather than four, on the grounds that a post
+            // holding as much as a chest is a chest. Robbin decided the opposite on
+            // 2026-09-20 - a railed post is a reinforced chest - so the argument is gone
+            // rather than left here contradicting what the mod does.
             RailHeight = config.Bind("Upgrades", "RailHeight", 3,
-                "Slots down a post that has a creel rail, instead of PostHeight. The same "
-                + "note as RailWidth applies to lowering it.\n"
-                + "Three rather than four because the post is meant to stay a table you "
-                + "pass things over rather than become the storage it is there to fill - a "
-                + "post that holds as much as a chest is a chest.");
+                "Slots down a post that has a creel rail, instead of PostHeight. Only read "
+                + "when RailSizeFrom is empty or does not resolve. The same note as "
+                + "RailWidth applies to lowering it.");
 
             RailItemsPerTrip = config.Bind("Upgrades", "RailItemsPerTrip", 20,
                 "How many items the spirit of a railed post carries in one trip, instead of "
