@@ -674,11 +674,42 @@ namespace Hod
                 var data = requirement.m_resItem.m_itemData;
                 var covered = false;
 
+                var best = 0;
+
                 for (var q = from; q <= data.m_shared.m_maxQuality && !covered; q++)
-                    covered = Spendable(player, data.m_shared.m_name, q) >= needed;
+                {
+                    var spendable = Spendable(player, data.m_shared.m_name, q);
+                    if (spendable > best) best = spendable;
+
+                    covered = spendable >= needed;
+                }
 
                 if (one && covered) return true;
-                if (!one && !covered) return false;
+
+                if (!one && !covered)
+                {
+                    // The numbers, not just the verdict. This refusal is the one place the
+                    // panel and the payment can disagree, and "the chests could not supply
+                    // it" beside a chest the player can see the contents of is the least
+                    // useful true sentence in the mod. Which requirement, how much was
+                    // wanted, what the pack held and what the owned chests held separates a
+                    // scope problem from an ownership one from a quality one without
+                    // another build.
+                    if (HodConfig.Verbose.Value && GrovePlugin.Log != null)
+                        GrovePlugin.Log.LogInfo(
+                            "Hod cannot pay for " + data.m_shared.m_name + ": needs " + needed
+                            + ", best spendable across qualities " + from + ".."
+                            + data.m_shared.m_maxQuality + " was " + best
+                            + " (carried " + CarriedOnly(player.GetInventory(),
+                                                         data.m_shared.m_name, 1, true)
+                            + ", owned chests " + HodChests.CountSpendable(
+                                                         data.m_shared.m_name, 1, true)
+                            + ", all chests in reach " + HodChests.CountAllowed(
+                                                         data.m_shared.m_name, 1, true)
+                            + ", chests in reach " + HodChests.Near().Count + ").");
+
+                    return false;
+                }
             }
 
             // An all-ingredients recipe that never failed is paid for; a one-ingredient recipe
