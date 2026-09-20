@@ -6,24 +6,28 @@ and the mod uses [semantic versioning](https://semver.org).
 ## [Unreleased]
 
 Three pieces you build beside a stowing post, and the one of them that changes how crafting
-works. Version left unset deliberately - nothing here has been run in a game yet.
+works. Version left unset deliberately - this has been proved by scripted scenarios in a
+fresh world and has not been played.
 
 ### Added
 
-- **Creel rail.** 10 fine wood, 10 iron nails, 8 leather scraps, on the hammer's Furniture tab.
-  Built within 5m of a stowing post it takes that post from 6x2 to 8x3 and from 10 items a trip
-  to 20. No heartwood: this is joinery, and it is the one upgrade that should be buildable the
+- **Creel rail.** 25 fine wood, 10 iron nails, 8 leather scraps, on the hammer's Furniture tab.
+  Built within 5m of a stowing post it makes that post hold exactly what a reinforced chest
+  holds - 6x2 becomes 6x4 - and takes it from 10 items a trip to 20. The grid is read off
+  `piece_chest` at runtime rather than written down, so a post is a chest by construction and
+  stays one if the game ever changes what a chest is. No heartwood: this is joinery, and it is the one upgrade that should be buildable the
   same evening as the post. Leather scraps are the woven part because that is this game's
   cordage - it is what the cart and the leather armour are strapped with, it is in the chest by
   the time anybody has iron nails, and it does not drag a storage-room accessory out to the
   Plains the way linen thread would.
 
-- **Spirit perch.** 1 heartwood, 10 fine wood, 6 iron nails. Two spirits fly from the post
+- **Spirit perch.** 1 heartwood, 25 fine wood, 6 iron nails, 6 silver. Two spirits fly from the post
   instead of one. The heartwood is the whole price and the rest is the stand it sits on: a
-  second courier is a second spirit, and a spirit needs somewhere to live. You can see it in
-  the piece, lit, which is why it is not simply an expensive plank.
+  second courier is a second spirit, and a spirit needs somewhere to live. The silver is what
+  puts it a tier above the rail rather than beside it. You can see it in the piece, lit, which
+  is why it is not simply an expensive plank.
 
-- **Hod jib.** 1 heartwood, 15 fine wood, 10 iron nails. While a crafting station is within 20m
+- **Hod jib.** 1 heartwood, 35 fine wood, 10 iron nails, 2 chain. While a crafting station is within 20m
   of the post, the crafting panel counts the material in the chests around **that post** and
   crafting spends out of them. A spirit then flies from the chest to the bench purely for show -
   it carries nothing and the item is already made.
@@ -63,10 +67,11 @@ works. Version left unset deliberately - nothing here has been run in a game yet
   loaded and then shrank it under an open window, and turning `UpgradesEnabled` off did not stop
   any of it.
 
-- **A resize never puts an item on the ground.** Anything in a slot that is going away is moved
-  to a slot that is not; if there is no room for all of it the post keeps the slots until there
-  is, and says `too full to shrink` when you look at it. Take a few stacks out and it settles by
-  itself.
+- **A post that loses slots drops what will not fit, the way a broken chest does.** Anything in
+  a slot that is going away is moved to a slot that is not, first; only the genuine overflow
+  lands at the post's feet. There is no refusal to shrink and no `too full to shrink` line - a
+  post that quietly kept two rows it was no longer entitled to was a post whose size did not
+  mean anything, and breaking a chest has always spilled its contents.
 
 - **A rail never takes slots away.** Lowering `RailWidth` or `RailHeight` does not narrow a post
   that still has a rail standing beside it - break the rail and build it again to apply the new

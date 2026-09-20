@@ -20,7 +20,8 @@ plant transplanting and a bonemeal recipe are here too.
 - **Chest rules.** A `Holds…` button in every chest window. Chests hold groups (ore, fuel,
   seeds, building materials) or single items, and can refuse things.
 - **Post upgrades.** Three pieces you build on the ground beside a post, the way a chopping
-  block stands beside a workbench. A **creel rail** takes it to 8x3 and 20 items a trip, a
+  block stands beside a workbench. A **creel rail** makes it hold what a reinforced chest holds
+  and carry 20 items a trip, a
   **spirit perch** flies a second spirit, and a **hod jib** lets a crafting station near the
   post build out of the chests around it.
 - **Planting grid.** From Farming 10 the cultivator's ghost snaps to a lattice so hand-placed
@@ -126,9 +127,9 @@ than quietly doing nothing.
 
 | Piece | Cost | What it does |
 | --- | --- | --- |
-| **Creel rail** | 10 fine wood, 10 iron nails, 8 leather scraps | The post holds 8x3 instead of 6x2, and its spirit carries 20 items a trip instead of 10 |
-| **Spirit perch** | 1 heartwood, 10 fine wood, 6 iron nails | Two spirits fly from the post instead of one |
-| **Hod jib** | 1 heartwood, 15 fine wood, 10 iron nails | A crafting station within 20m of the post can build out of the chests around that post |
+| **Creel rail** | 25 fine wood, 10 iron nails, 8 leather scraps | The post holds 6x4 instead of 6x2 - exactly a reinforced chest - and its spirit carries 20 items a trip instead of 10 |
+| **Spirit perch** | 1 heartwood, 25 fine wood, 6 iron nails, 6 silver | Two spirits fly from the post instead of one |
+| **Hod jib** | 1 heartwood, 35 fine wood, 10 iron nails, 2 chain | A crafting station within 20m of the post can build out of the chests around that post |
 
 The rail asks for no heartwood on purpose - it is joinery, and it is the one upgrade you should
 be able to build the same evening you build the post. The other two each house a heartwood and
@@ -140,13 +141,14 @@ same second; break it and it shrinks again. There is no flag on the post saying 
 could outlive the piece that justified it, and a post loaded into a world works it out again
 from the pieces that are actually standing there.
 
-### The post never drops what it is holding
+### Taking a rail down spills what will not fit
 
-Taking a rail down takes eight slots off a post that had things in them. What happens to those
-things is the one part of this worth stating plainly: **a resize never puts an item on the
-ground.** Anything in a slot that is going away is moved to a slot that is not, and if there is
-no room for all of it the post simply keeps the slots until there is. A post in that state says
-`too full to shrink` when you look at it. Take a few stacks out and it settles by itself.
+Taking a rail down takes twelve slots off a post that had things in them, and what happens to
+those things is the one part worth stating plainly: **anything that still has a slot keeps it,
+and the rest lands at the post's feet.** The same thing breaking a chest does, and for the same
+reason - a post that refused to shrink until you emptied it would be a post whose size did not
+mean what it said, and you would find out which by looking at a hover line rather than at the
+post.
 
 The same rule covers the config: lowering `RailWidth` does not narrow a post that still has a
 rail beside it. Break the rail and build it again to apply a new number.
