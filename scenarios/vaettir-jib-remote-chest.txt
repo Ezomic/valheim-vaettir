@@ -101,8 +101,19 @@ craft Bow
 wait 8
 
 # Solo, nobody answered. The craft declined and the chest kept everything.
-# ON THE DEV SERVER this is `stacks piece_chest_wood 2` with ten wood gone instead.
+#
+# The exact amounts, and the empty pack, because this scenario's whole question is which of
+# two things happened and `stacks 2` is true of both. Ten wood taken out of a stack of
+# twenty leaves a stack of ten - still one stack, still two in the chest - so the first
+# version of this passed without ever looking at the thing it was written to check. The
+# first run after the upgrade-kit fix went through with no refusal logged at all, which is
+# how the hole was found.
+#
+# ON THE DEV SERVER the owner answers, so these become Wood 10, LeatherScraps 8, Bow 1.
 stacks piece_chest_wood 2
+holds piece_chest_wood Wood 20
+holds piece_chest_wood LeatherScraps 16
+carrying Bow 0
 ground 0
 
 close

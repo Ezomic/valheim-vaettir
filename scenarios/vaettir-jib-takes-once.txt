@@ -90,13 +90,24 @@ craft Bow
 wait 6
 
 # One bow made: ten wood and eight scraps gone, and both stacks still there.
+#
+# The amounts rather than the stack count, because a stack count cannot tell this apart
+# from nothing having happened at all - twenty wood and ten wood are both "one stack". The
+# bow in the pack is the other half of the same question: a craft that is refused and a
+# craft that happens for free both leave a chest looking plausible.
 stacks piece_chest_wood 2
+holds piece_chest_wood Wood 10
+holds piece_chest_wood LeatherScraps 8
+carrying Bow 1
 
 craft Bow
 wait 6
 
 # Two bows made: the chest is empty. Not "nearly", not "one stack left".
 stacks piece_chest_wood 0
+holds piece_chest_wood Wood 0
+holds piece_chest_wood LeatherScraps 0
+carrying Bow 2
 
 # And a third cannot be made out of nothing.
 craftable Bow no
