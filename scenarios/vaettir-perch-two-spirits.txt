@@ -1,0 +1,52 @@
+# Vaettir: a spirit perch puts a second spirit in the air.
+#
+# Plan steps 24 and 25. The perch is the one upgrade whose whole result is something you
+# watch rather than something you can open, so the assertion counts what is actually in the
+# scene: ForestSpirit instances near the post.
+#
+# MatchContents is on by default, which is what makes this work without configuring
+# anything: a chest that already holds wood will take more wood. So the chest is seeded with
+# one of each kind first, and then the post has somewhere to send things.
+#
+# Timing is real here rather than instant. A spirit is born, flies, unloads and comes back,
+# so the counts are taken while the post still has plenty left to move.
+#
+# Stand on flat ground with about ten metres clear, away from other posts and chests.
+
+clear
+give Hammer:1,Hoe:1
+give FineWood:250,BronzeNails:40,IronNails:52,Silver:20,GroveHeartwood:6
+give Wood:200,Stone:200,Flint:100
+god
+ghost
+sweep
+
+wipe 16
+wait 1
+
+place stow_post 4 0
+wait 6
+
+place piece_chest_wood 6 3
+wait 2
+stock piece_chest_wood Wood:1,Stone:1,Flint:1
+
+# One spirit before the perch is built.
+stock stow_post Wood:150,Stone:150,Flint:90
+wait 2
+count ForestSpirit 1
+
+wait 6
+
+place stow_perch 4 2
+wait 3
+hover stow_perch two_spirits
+
+# Keep it loaded, so there is still work to hand out.
+stock stow_post Wood:50,Stone:50
+wait 3
+count ForestSpirit 2
+
+# And the chest has actually been receiving all along.
+wait 8
+stacks piece_chest_wood 3

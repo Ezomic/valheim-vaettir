@@ -1,0 +1,49 @@
+# Vaettir: what the hod jib refuses to do.
+#
+# Plan steps 38 and 41. The jib serves a bench and deliberately does not serve the hammer -
+# "building still spends what is in your own pack" is a promise the devlog makes in plain
+# words, and a promise is the thing that quietly stops being true.
+#
+# Eikthyr is dead throughout and the chest is full of wood, so every refusal here is the
+# jib declining rather than the gate being shut. Your own pack is emptied of wood first,
+# which is what makes the question meaningful at all.
+#
+# Stand on flat ground with about ten metres clear, away from other posts and chests.
+
+clear
+give Hammer:1,Hoe:1
+give FineWood:250,BronzeNails:40,IronNails:52,Chain:4,GroveHeartwood:6
+give Wood:100,Stone:40
+god
+ghost
+sweep
+
+wipe 16
+wait 1
+
+key defeated_eikthyr
+
+place stow_post 4 0
+wait 6
+place hod_jib 4 2
+wait 4
+place piece_chest_wood 6 3
+wait 2
+
+stock piece_chest_wood Wood:200,Stone:200
+
+# From here the chest holds everything and you hold nothing.
+strip Wood,Stone
+wait 1
+
+# A wall costs wood. The chest has 200 of it, two metres away, under a working jib.
+buildable wood_wall no
+
+# And a workbench, which is the piece you would most want it to pay for.
+buildable piece_workbench no
+
+# Put four wood back in your own pack and the same wall is buildable, which proves the
+# refusal above was about where the wood is rather than about the wall.
+give Wood:20
+wait 1
+buildable wood_wall yes

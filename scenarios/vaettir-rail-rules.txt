@@ -1,0 +1,43 @@
+# Vaettir: which rails count, and which are just furniture.
+#
+# Plan steps 17 and 18. A rail feeds the post it stands beside, one rail per post, within
+# UpgradeRange - and a rail that does none of those things says so when you look at it
+# rather than sitting there looking identical to one that works.
+#
+# The hover text is the only place any of this is reported, which is why it is asserted.
+#
+# Stand on flat ground with about ten metres clear, away from other posts.
+
+clear
+give Hammer:1,Hoe:1
+give FineWood:250,BronzeNails:40,IronNails:52,LeatherScraps:40,GroveHeartwood:6
+god
+ghost
+sweep
+
+wipe 16
+wait 1
+
+place stow_post 4 0
+wait 6
+grid stow_post 6x2
+
+# One rail, in range. The post grows and the rail says what it is feeding.
+place stow_rail 4 2
+wait 4
+grid stow_post 6x4
+hover stow_rail feeding
+
+# A second rail beside the same post adds nothing, and admits it.
+place stow_rail 4 -2
+wait 3
+hover stow_rail adds_nothing
+grid stow_post 6x4
+
+break stow_rail
+wait 2
+
+# A rail further away than UpgradeRange, which is 5m, feeds nothing at all.
+place stow_rail 12 0
+wait 3
+grid stow_post 6x4

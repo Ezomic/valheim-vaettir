@@ -1,0 +1,39 @@
+# Vaettir: a plain post is 6x2 and stays that way through an unload.
+#
+# Plan steps 5 to 8. The dull one, and the one that matters most: this is the path that has
+# actually destroyed things. ZNetScene tears a base down when you are far enough away and
+# rebuilds it when you come back, and a post that guesses its size wrong on the way back in
+# loads a grid of items into a smaller grid.
+#
+# The six second wait after placing is not padding. PostSize holds a post that has never
+# recorded a size at its WIDEST for five seconds, deliberately, so a fresh post really is
+# 6x4 for five seconds and only then becomes 6x2.
+#
+# Stand on flat ground with a few metres clear, and NOT near another stowing post.
+
+clear
+give Hammer:1,Hoe:1
+give FineWood:250,BronzeNails:40,GroveHeartwood:6
+god
+ghost
+sweep
+
+wipe 14
+wait 1
+
+place stow_post 4 0
+wait 6
+grid stow_post 6x2
+
+fill stow_post 12
+stacks stow_post 12
+
+# Out far enough that the base unloads, then back.
+move 250
+wait 3
+move -250
+wait 3
+
+grid stow_post 6x2
+stacks stow_post 12
+ground 0
