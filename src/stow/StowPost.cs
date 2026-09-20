@@ -288,33 +288,12 @@ namespace Stow
             return !scene.OutsideActiveArea(point) && zones.IsZoneLoaded(point);
         }
 
-        // ------------------------------------------------------------------ too full
-
-        private bool _shrinkBlocked;
-
-        /// <summary>
-        /// Told by PostSize when a post wants to give up slots and cannot, because what is
-        /// in them has nowhere to go inside what would be left.
-        ///
-        /// A post never throws its contents on the ground by itself, so a rail taken down
-        /// from a full post leaves the post at the size it already is until something is
-        /// taken out of it. That is the safe behaviour and it is also the confusing one -
-        /// the rail is visibly gone and the grid visibly has not changed - so the post says
-        /// so on its own hover line rather than leaving the player to conclude the mod is
-        /// broken. Said once in the log too, on the transition, because the hover line is
-        /// only read by somebody already standing there wondering.
-        /// </summary>
-        internal void ShrinkBlocked(bool blocked)
-        {
-            if (blocked == _shrinkBlocked) return;
-            _shrinkBlocked = blocked;
-
-            if (blocked)
-                StowRuntime.Log.LogInfo(
-                    "A stowing post has lost an upgrade and is too full to give up the "
-                    + "slots it bought. It keeps them until something is taken out of it - "
-                    + "nothing has been moved or dropped.");
-        }
+        // A ShrinkBlocked(bool) used to live here, with a _shrinkBlocked field and a hover
+        // line reading "too full to shrink". Both are gone as of 2026-09-20: a post that
+        // loses an upgrade now always gives up the slots and drops whatever will not fit,
+        // the way breaking a chest does, so there is no longer a state where the rail is
+        // gone and the grid has not changed - and therefore nothing for a hover line to
+        // explain. See the comment in PostSize.Apply.
 
         private bool _faulted;
 
@@ -333,8 +312,6 @@ namespace Stow
 
         internal void ShrinkFaulted()
         {
-            _shrinkBlocked = true;
-
             if (_faulted) return;
             _faulted = true;
 
@@ -409,11 +386,11 @@ namespace Stow
         /// </summary>
         public string StatusLine()
         {
-            // Ahead of everything else, because it is the only line here that explains why
-            // the post is not doing something the player just asked it to. A rail taken
-            // down from a full post leaves a grid that has visibly not changed, and silence
-            // there reads as the upgrade never having worked in the first place.
-            if (_shrinkBlocked) return "too full to shrink";
+            // A faulted post is stuck at whatever size it is and will not try again this
+            // session, which is invisible otherwise. This used to be covered by the "too
+            // full to shrink" line, which said the wrong thing about it even then - a fault
+            // is another mod refusing Inventory.RemoveItem, not a post with no room.
+            if (_faulted) return "stuck at this size - check the log";
 
             var waiting = _container != null && _container.GetInventory() != null
                 ? _container.GetInventory().NrOfItems()

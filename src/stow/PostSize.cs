@@ -324,7 +324,6 @@ namespace Stow
                 // dictionary lookup and never a revision.
                 if (settled && owner && !Same(recorded, wanted)) Record(nview, wanted);
 
-                post.ShrinkBlocked(false);
                 return;
             }
 
@@ -337,7 +336,6 @@ namespace Stow
                 Resize(container, inventory, wanted);
                 if (owner) Record(nview, wanted);
 
-                post.ShrinkBlocked(false);
                 return;
             }
 
@@ -365,14 +363,7 @@ namespace Stow
             // window, a delivery landing - the next save would write that copy over the
             // real one. Stow already routes every write through the owner for this reason;
             // this is the same rule applied to a read that can turn into a write.
-            if (!owner)
-            {
-                // And cleared on the way past, because a non-owner has no opinion about
-                // whether the post could shrink and should not be showing a hover line that
-                // says it has one. Ownership moves every couple of seconds on a busy server.
-                post.ShrinkBlocked(false);
-                return;
-            }
+            if (!owner) return;
 
             // Not while somebody has it open. Container.Load early-returns on m_inUse so
             // the write would stick, and the first version of this file used that to argue
@@ -394,19 +385,27 @@ namespace Stow
             // that direction, with the rail still standing five metres away.
             if (!post.NeighbourhoodLoaded()) return;
 
-            // **Nothing is ever thrown on the ground by a resize.** If every homeless stack
-            // cannot be found a slot inside the smaller grid, the shrink does not happen at
-            // all and the post keeps the size it has until there is room. A post that is too
-            // full to shrink is a post with some spare slots; the alternative is a mod that
-            // empties a player's storage onto the floor while they are not looking, and no
-            // arrangement of the guards above can be trusted enough to be worth that.
-            if (!Fits(inventory, wanted))
-            {
-                post.ShrinkBlocked(true);
-                return;
-            }
-
-            post.ShrinkBlocked(false);
+            // **A shrink always happens, and what has nowhere to go lands on the ground.**
+            //
+            // This used to refuse instead: a post whose homeless stacks could not all be
+            // found a slot inside the smaller grid kept the size it had until there was
+            // room, and said "too full to shrink" when you looked at it. That was written to
+            // avoid a mod emptying a player's storage onto the floor while they were not
+            // looking, which sounds unarguable and is not, because the game already does
+            // exactly that: break a chest in vanilla and its contents are on the grass.
+            // Robbin made the call on 2026-09-20 and the reason is one line - if you break a
+            // chest it also drops the items.
+            //
+            // It is the better rule for a second reason the refusal made obvious the first
+            // time it fired. Refusing leaves a post at a size that matches nothing: the rail
+            // is gone from the world and the grid it bought is still there, so the only way
+            // to find out why is to read a hover line. Spilling leaves a post that is
+            // exactly what is standing next to it, always, and a pile of items with an
+            // obvious cause.
+            //
+            // Spill relocates before it drops, so this is not "the last two rows go on the
+            // floor" - anything that can be fitted into a slot that still exists is, and
+            // only the genuine overflow is thrown. An emptier post loses nothing at all.
 
             // Resize first, spill second, and the order is load-bearing: Spill puts a
             // homeless stack back into the grid, and Inventory.FindEmptySlot searches
@@ -464,53 +463,24 @@ namespace Stow
         }
 
         /// <summary>
-        /// Whether every stack that would fall outside <paramref name="size"/> can be given
-        /// a slot inside it.
-        ///
-        /// Deliberately pessimistic: it counts whole slots and ignores the room left in
-        /// stacks that are already there, so three loose iron that vanilla would have merged
-        /// into an existing stack are counted as needing three slots. Being wrong this way
-        /// refuses a shrink that would have worked, and the post stays two columns wider
-        /// than it needs to be until something is taken out of it - which nobody is harmed
-        /// by. Being wrong the other way is the one outcome this whole file exists to
-        /// prevent, so the arithmetic is kept simple enough to read in one pass rather than
-        /// exact.
-        ///
-        /// What makes it sufficient: Inventory.AddItem tops up matching stacks first and
-        /// only then calls FindEmptySlot, so a stray that is offered at least one free slot
-        /// inside the grid is always placed. Spill removes each stray before it re-adds it,
-        /// so the strays still waiting occupy positions outside the grid that FindEmptySlot
-        /// never looks at.
-        /// </summary>
-        private static bool Fits(Inventory inventory, Vector2i size)
-        {
-            var strays = 0;
-            var inside = 0;
-
-            foreach (var item in inventory.GetAllItems())
-            {
-                if (item == null) continue;
-
-                if (item.m_gridPos.x < size.x && item.m_gridPos.y < size.y) inside++;
-                else strays++;
-            }
-
-            if (strays == 0) return true;
-
-            return strays <= size.x * size.y - inside;
-        }
-
-        /// <summary>
         /// Gets everything out of the slots that no longer exist.
         ///
-        /// Only ever called after <see cref="Fits"/> has said there is room for all of it,
-        /// so in practice this relocates and never drops. The drop path is kept all the same
-        /// and is vanilla's own - **ItemDrop.DropItem(item, 0, position, rotation)**, the
-        /// exact call Container.DropAllItems makes when a chest is destroyed, same scatter,
-        /// same random yaw, same 0 meaning "the whole stack" - because the alternative to
-        /// dropping a stack that unexpectedly would not fit is destroying it. It is the
-        /// backstop for the arithmetic being wrong, not the plan, and if it ever fires it
-        /// says so at error level.
+        /// Relocates what it can and drops the rest. Both halves are ordinary now - there
+        /// used to be a Fits() check upstream that refused the whole shrink rather than let
+        /// anything land on the grass, and the drop below was its backstop, logged at error
+        /// level for a case that was not supposed to be reachable.
+        ///
+        /// The drop is vanilla's own - **ItemDrop.DropItem(item, 0, position, rotation)**,
+        /// the exact call Container.DropAllItems makes when a chest is destroyed, same
+        /// scatter, same random yaw, same 0 meaning "the whole stack". That was chosen when
+        /// it was a backstop, for the good reason that a spill should look like the spill
+        /// every player has already seen, and it is the right call now that it is the plan:
+        /// breaking a rail off a full post and breaking a chest put items on the ground the
+        /// same way, because they are the same event.
+        ///
+        /// Relocation first is what stops this being "the last two rows go on the floor".
+        /// AddItem tops up matching stacks before it looks for an empty slot, so a stray
+        /// offered any room at all inside the grid is placed rather than thrown.
         ///
         /// The removal comes first on purpose. Inventory.AddItem tops up matching stacks
         /// before it looks for an empty slot, and a stack still in the list would be found
@@ -617,27 +587,20 @@ namespace Stow
             // back, delivered once.
             if (inventory.m_onChanged != null) inventory.m_onChanged();
 
-            if (dropped > 0)
-            {
-                StowRuntime.Log.LogError(
-                    "A stowing post shrank and " + dropped + " stack(s) would not fit "
-                    + "anywhere inside it, so they were dropped at its feet. Nothing should "
-                    + "reach this - the shrink is refused when it cannot relocate everything "
-                    + "- so please report it.");
+            StowRuntime.Log.LogInfo("Stowing post gave up " + strays.Count + " slot"
+                + (strays.Count == 1 ? "" : "s") + " with something in "
+                + (strays.Count == 1 ? "it" : "them") + "; " + rescued
+                + " moved to a slot that still exists, " + dropped + " dropped at its feet.");
 
-                if (StowConfig.Messages.Value && Player.m_localPlayer != null)
-                    Player.m_localPlayer.Message(MessageHud.MessageType.Center,
-                        Localization.instance.Localize(
-                            "The post shrank - " + dropped + " stack"
-                            + (dropped == 1 ? "" : "s") + " dropped at its feet."), 0, null);
-            }
-            else
-            {
-                StowRuntime.Log.LogInfo("Stowing post gave up " + strays.Count + " slot"
-                    + (strays.Count == 1 ? "" : "s") + " with something in "
-                    + (strays.Count == 1 ? "it" : "them") + "; " + rescued
-                    + " moved to a slot that still exists.");
-            }
+            // Said on screen only when something actually landed on the ground. A shrink
+            // that found room for everything is invisible and should stay that way; one
+            // that threw a dozen stacks into the grass is the player's problem to pick up
+            // and they should not have to notice it for themselves.
+            if (dropped > 0 && StowConfig.Messages.Value && Player.m_localPlayer != null)
+                Player.m_localPlayer.Message(MessageHud.MessageType.Center,
+                    Localization.instance.Localize(
+                        "The post shrank - " + dropped + " stack"
+                        + (dropped == 1 ? "" : "s") + " dropped at its feet."), 0, null);
 
             return stuck;
         }

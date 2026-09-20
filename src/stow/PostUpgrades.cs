@@ -289,9 +289,9 @@ namespace Stow
                 + "beside it - a rail never takes slots away, which is what stops one "
                 + "player's copy of this file emptying everybody's posts on a server. Take "
                 + "the rail down and build it again and the post comes back at the new "
-                + "number. Nothing is ever dropped on the ground by a resize: a post that "
-                + "cannot find a home inside itself for everything in the slots it is losing "
-                + "simply keeps them, and says \"too full to shrink\" when you look at it.");
+                + "number. A post that loses slots puts everything it can into the slots "
+                + "that are left and drops the rest at its feet, the same way breaking a "
+                + "chest does.");
 
             // This used to argue for three rather than four, on the grounds that a post
             // holding as much as a chest is a chest. Robbin decided the opposite on
