@@ -240,10 +240,10 @@ namespace Stow
             Rail.Cost = config.Bind("Upgrades", "RailCost",
                 "FineWood:10,IronNails:10,LeatherScraps:8",
                 "What the creel rail costs, as Item:Amount pairs.\n"
-                + "No heartwood: this is joinery, not a second spirit, and it is the one "
-                + "upgrade a player should be able to build the same evening they build the "
-                + "post. Fine wood and nails put it at exactly the post's own tier - the "
-                + "post is FineWood:20,IronNails:20 - and the woven part is LeatherScraps "
+                + "No heartwood: this is joinery, not a second spirit. Iron nails where the "
+                + "post itself takes bronze, so the post arrives out of the Black Forest and "
+                + "the rail that doubles it waits on the swamp. That gap is the point: you "
+                + "get the post, and then you improve it. The woven part is LeatherScraps "
                 + "because that is this game's cordage: it is what the cart and the leather "
                 + "armour are strapped with, it is in the chest by the time anyone has "
                 + "nails, and it does not drag a storage-room accessory out to the Plains "
@@ -295,12 +295,17 @@ namespace Stow
                 "What the spirit perch is called.");
 
             Perch.Cost = config.Bind("Upgrades", "PerchCost",
-                "GroveHeartwood:1,FineWood:10,IronNails:6",
-                "What the spirit perch costs. The heartwood is the whole price and the rest "
-                + "is the stand it sits on: a second courier is a second spirit, and a "
-                + "spirit needs somewhere to live - which is the same argument that makes "
-                + "the post itself cost one. You can see it in the piece, lit, which is why "
-                + "it is not simply an expensive plank.");
+                "GroveHeartwood:1,FineWood:10,IronNails:6,Crystal:6",
+                "What the spirit perch costs. The heartwood is the reason it works at all: a "
+                + "second courier is a second spirit, and a spirit needs somewhere to live, "
+                + "which is the same argument that makes the post itself cost one.\n"
+                + "The crystal is what puts it a tier above the rail rather than beside it. "
+                + "Nothing gates a second spirit once it is standing - no boss, no key, it "
+                + "simply doubles what the post moves for the rest of the world's life - so "
+                + "it is the one of the three that has to be earned rather than afforded. "
+                + "Glazing a lantern house is also the honest use for the stuff. An item "
+                + "name that does not resolve is logged and skipped, which makes the piece "
+                + "cheaper rather than unbuildable - read the log after editing this.");
 
             Perch.Model = config.Bind("Upgrades", "PerchModel", "stow_perch.obj",
                 "The hand-built mesh the spirit perch wears.");
@@ -309,12 +314,21 @@ namespace Stow
                 "What the hod jib is called.");
 
             Jib.Cost = config.Bind("Upgrades", "JibCost",
-                "GroveHeartwood:1,FineWood:15,IronNails:10",
+                "GroveHeartwood:1,FineWood:15,IronNails:10,Chain:2",
                 "What the hod jib costs. A heartwood again, and for the same reason: "
-                + "something has to be carrying the material from the chest to the bench, "
-                + "and this is the arm it swings from. Dearer than the perch in ordinary "
-                + "materials because it is the upgrade that changes how crafting itself "
-                + "behaves.");
+                + "something has to carry the material from the chest to the bench, and "
+                + "this is the arm it swings from. The chain is the pulley the heartwood "
+                + "hangs in, which is what the model actually shows, and a sunken crypt is "
+                + "where you find one.\n"
+                + "It is deliberately NOT the dearest of the three, which looks wrong until "
+                + "you remember what gates it. The jib is the only upgrade the boss rule "
+                + "already holds back: it fetches nothing at all until a biome's boss is "
+                + "down. Price it at black metal and you would build it after Yagluth with "
+                + "everything up to the Plains already open, so the rule would withhold "
+                + "Mistlands and Ashlands for an evening and then stop mattering. At the "
+                + "swamp you own it for most of the game and the rule does its work the "
+                + "whole way. The rail and the perch are the opposite - nothing gates them "
+                + "once built - so they carry the cost instead.");
 
             Jib.Model = config.Bind("Upgrades", "JibModel", "hod_jib.obj",
                 "The hand-built mesh the hod jib wears.");

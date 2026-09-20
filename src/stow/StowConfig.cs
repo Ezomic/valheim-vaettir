@@ -51,10 +51,13 @@ namespace Stow
             PostName = config.Bind("Post", "PostName", "Stowing post",
                 "What the piece and its window are called.");
 
-            PostCost = config.Bind("Post", "PostCost", "FineWood:20,IronNails:20",
+            PostCost = config.Bind("Post", "PostCost", "FineWood:20,BronzeNails:20",
                 "What it costs to build, as Item:Amount pairs. Nails put it past the "
                 + "forge rather than in the first camp: a post that sorts a storage room "
-                + "should arrive when there is a storage room to sort. An item name that "
+                + "should arrive when there is a storage room to sort. Bronze nails rather "
+                + "than iron, so the post lands with the Black Forest behind you and the "
+                + "creel rail that doubles it waits for the swamp - the post is the thing "
+                + "you get, the upgrades are the thing you work towards. An item name that "
                 + "does not resolve is logged and skipped, which makes the post cheaper "
                 + "rather than unbuildable - check the log after editing this.");
 
