@@ -2,17 +2,24 @@
 #
 # I had written this off as impossible on one machine. It is not. Ownership is a number on
 # the ZDO, and Devkit already writes it - `strand` hands the nearest chest to another peer if
-# one is connected and to nobody at all otherwise, and either makes IsOwner() false. Which is
-# the whole of what "somebody else's chest" means to the code.
+# one is connected and to an invented one otherwise, and either makes IsOwner() false. Which
+# is the whole of what "somebody else's chest" means to the code.
+#
+# `strand` has to HOLD it there, and the first version of this scenario did not know that.
+# ZDOMan.ReleaseZDOS sweeps every two seconds and adopts any nearby chest whose owner is
+# nobody or whose owner is a peer that never shows up - so a solo world takes the chest back
+# before the craft is ever pressed. This scenario passed twice on that: once because the
+# assertion counted stacks instead of items, and once because the chest it crafted against
+# was its own again. Devkit now re-asserts the foreign owner every frame until the run ends.
 #
 # So this enters the half that early-returns in a solo world: HodWithdraw.Ask, the routed
 # request, the correlation id, and the five second timeout.
 #
 # WHAT IT PROVES DEPENDS ON WHERE IT RUNS, and the difference matters:
 #
-#   Solo - the owner is nobody, the request reaches no one, no reply comes. This proves the
-#   part that matters most when an owner does not answer: NOTHING IS TAKEN AND NOTHING IS
-#   CONJURED. The craft declines and the chest is untouched.
+#   Solo - the owner is a peer that was never there, the request goes out and no reply comes
+#   back. This proves the part that matters most when an owner does not answer: NOTHING IS
+#   TAKEN AND NOTHING IS CONJURED. The craft declines and the chest is untouched.
 #
 #   On the dev server - the owner is the server, the request is answered, and the same
 #   scenario is the whole round trip. Run it there and the last assertions change: the craft
@@ -86,8 +93,8 @@ stacks piece_chest_wood 2
 strip Wood,LeatherScraps
 wait 1
 
-# From here it is somebody else's chest.
-strand
+# From here it is somebody else's chest, and stays one until this scenario finishes.
+strand piece_chest_wood
 wait 1
 
 goto piece_workbench
