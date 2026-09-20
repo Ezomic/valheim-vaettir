@@ -51,7 +51,7 @@ plant transplanting and a bonemeal recipe are here too.
    dies. It says when something is hitting it and when it is gone.
 6. When it opens a **forest spirit** rises out of it. Press use once and it folds itself into a
    **heartwood**.
-7. Build a **stowing post**: 20 fine wood, 20 iron nails and 1 heartwood, hammer, Furniture tab.
+7. Build a **stowing post**: 40 fine wood, 20 bronze nails and 1 heartwood, hammer, Furniture tab.
    Taking the post down gives the heartwood back.
 
 The sapling's hover text carries its stage and its exact count, so `rooting ( 18 / 50 )` tells
@@ -322,7 +322,7 @@ the mod. Edit the cfg.
 | --- | --- | --- |
 | `PostEnabled` | true | Put the post in the hammer's menu. The prefab is registered either way, so turning it off never deletes a post already built |
 | `PostName` | Stowing post | Name of the piece and its window |
-| `PostCost` | `FineWood:20,IronNails:20` | Build cost, before the heartwood is added |
+| `PostCost` | `FineWood:40,BronzeNails:20` | Build cost, before the heartwood is added |
 | `PostWidth` / `PostHeight` | 6 / 2 | Slots across and down |
 | `CoupleToStow` | true | Add the heartwood to the post's cost. Off puts it back to wood and nails |
 | `StowPostCost` | `GroveHeartwood:1` | What is added to that cost. An ingredient already there is raised, not counted twice |
@@ -355,9 +355,9 @@ the mod. Edit the cfg.
 | `UpgradeScale` | 1 | Scale of all three pieces |
 | `ShowLink` | true | Draw the run of motes from a piece to its post while you look at it. Local to you |
 | `RailName` / `PerchName` / `JibName` | Creel rail / Spirit perch / Hod jib | Names of the pieces |
-| `RailCost` | `FineWood:10,IronNails:10,LeatherScraps:8` | Build cost of the creel rail |
-| `PerchCost` | `GroveHeartwood:1,FineWood:10,IronNails:6` | Build cost of the spirit perch |
-| `JibCost` | `GroveHeartwood:1,FineWood:15,IronNails:10` | Build cost of the hod jib |
+| `RailCost` | `FineWood:25,IronNails:10,LeatherScraps:8` | Build cost of the creel rail |
+| `PerchCost` | `GroveHeartwood:1,FineWood:25,IronNails:6,Silver:6` | Build cost of the spirit perch |
+| `JibCost` | `GroveHeartwood:1,FineWood:35,IronNails:10,Chain:2` | Build cost of the hod jib |
 | `RailModel` / `PerchModel` / `JibModel` | `stow_rail.obj` / `stow_perch.obj` / `hod_jib.obj` | Meshes beside the DLL. Their `.col` and `_icon.png` are picked up automatically |
 | `RailWidth` / `RailHeight` | 8 / 3 | Slots across and down on a railed post, instead of `PostWidth` / `PostHeight` |
 | `RailItemsPerTrip` | 20 | Items a railed post's spirit carries per trip, instead of `ItemsPerTrip`. 0 carries the whole stack |

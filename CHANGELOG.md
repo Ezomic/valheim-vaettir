@@ -3,6 +3,49 @@
 Notable changes to Vaettir. Format follows [Keep a Changelog](https://keepachangelog.com),
 and the mod uses [semantic versioning](https://semver.org).
 
+## [1.6.1] - 2026-09-20
+
+### Fixed
+
+- **The creel rail, the spirit perch and the hod jib stood in the hammer for free.** Their
+  recipes are written out of resolved items rather than names, so they are written again once
+  the item database is loaded - and the code that did the writing read a field that nothing
+  ever assigned. It found nothing to reprice on every frame and skipped all three silently, so
+  each piece kept the one recipe it was given at build time: written while ObjectDB was still
+  the stub that holds no items, where every name in the cost failed to resolve and the list
+  came out empty. An empty list is a piece that costs nothing. Found by building one.
+
+  Two changes, because either one alone would have hidden the other. The reprice asks the
+  scene for the piece every pass, which is the rule the rest of this mod already follows and
+  survives a world reload; and a recipe is now written only when every name in it resolved.
+  Half a recipe is a discount and none at all is a free buildable, and both are worse than a
+  piece that keeps the price it has for another frame. If a name never resolves - a typo in
+  the config, or an item from a mod that is not installed - the piece keeps the cost it was
+  cloned with and the log says which line to look at.
+
+- **The stowing post had the same hole**, quietly. Its cost is written once when the piece is
+  built, and on a client joining a server that happens before the server's item list has
+  arrived, so fine wood and nails resolved to nothing and the heartwood was merged into an
+  empty recipe. The post then cost one heartwood and nothing else - or was missing from the
+  hammer entirely, because a piece whose materials you have never held is not listed at all.
+  The post is now priced from a loaded database like the upgrades, and re-priced for every
+  world.
+
+### Changed
+
+- **A changed default reaches a machine that has already run this mod.** BepInEx writes every
+  setting on first run and the saved value beats a new default in code, so when the post's
+  cost moved to 40 fine wood and 20 bronze nails in 1.6.0, every existing install kept 20 fine
+  wood and 20 iron nails and nothing anywhere said so. The config now carries a revision
+  number, and a default that moves is applied once to any file still holding the previous one.
+  A value you changed yourself is left exactly as it is, and the log names anything it moved.
+
+### Documentation
+
+- The README's cost table had the numbers from before the pieces were balanced: the rail, the
+  perch and the jib all listed less fine wood than they cost, and the perch's silver and the
+  jib's chain were missing entirely. The stowing post's line still said iron nails.
+
 ## [1.6.0] - 2026-09-20
 
 Three pieces you build beside a stowing post, and the one of them that changes how crafting

@@ -312,6 +312,10 @@ namespace Stow
             // the previous world's item.
             PostUpgrades.Invalidate();
             PostUpgrade.ForgetConnectionPrefab();
+
+            // The post's own recipe, for the same reason and with the same consequence if
+            // it is skipped: resolved ItemDrops out of a database this world has replaced.
+            StowPost.Invalidate();
         }
     }
 }

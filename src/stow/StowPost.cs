@@ -27,6 +27,24 @@ namespace Stow
 
         private static readonly List<StowPost> All = new List<StowPost>();
 
+        /// <summary>
+        /// Whether the post's recipe has been written out of items that all resolved, and
+        /// how many passes against a loaded item database have failed to do it.
+        ///
+        /// The post is built once, and on a client joining a server that happens while
+        /// ObjectDB is still the stub with no items in it - so every name in PostCost fails
+        /// to resolve and the recipe comes out empty. The upgrades had the same hole and it
+        /// put three free pieces in the hammer in 1.6.0; the post's version of it was
+        /// quieter, because StowCoupling then merged the heartwood into the empty array and
+        /// left a post that cost one heartwood and nothing else.
+        /// </summary>
+        private static bool _priced;
+
+        private static int _priceTries;
+
+        /// <summary>Passes against a loaded database before a name is called a typo.</summary>
+        private const int PricingAttempts = 5;
+
         private Piece _piece;
         private Container _container;
         private CarryRun _run;
@@ -530,7 +548,9 @@ namespace Stow
                 piece.m_name = StowConfig.PostName.Value;
                 piece.m_description = "Drop things in and close it. They go to the chests "
                                       + "that asked for them.";
-                piece.m_resources = Requirements(StowConfig.PostCost.Value);
+                bool shortOfNames;
+                var cost = Requirements(StowConfig.PostCost.Value, out shortOfNames);
+                if (!shortOfNames) { piece.m_resources = cost; _priced = true; }
                 piece.m_category = Piece.PieceCategory.Furniture;
 
                 // The clone arrives wearing piece_chest_wood's icon, so the Furniture tab
@@ -558,9 +578,81 @@ namespace Stow
             return clone;
         }
 
-        private static Piece.Requirement[] Requirements(string spec)
+        /// <summary>
+        /// Writes the post's recipe once the item database is real, and again for every
+        /// world that loads.
+        ///
+        /// Called from Update, ahead of StowCoupling, which merges the heartwood into
+        /// whatever array this leaves behind. Rewriting here therefore invalidates the
+        /// coupling: the array it merged into has just been replaced, and without that the
+        /// post would lose its heartwood the moment the rest of the cost arrived.
+        /// </summary>
+        internal static void Reprice()
+        {
+            if (_priced) return;
+
+            // The first ObjectDB.Awake of a session fires against a stub holding no items,
+            // and a lookup in it fails for everything including plain fine wood. An empty
+            // item list is the tell.
+            var db = ObjectDB.instance;
+            if (db == null || db.m_items == null || db.m_items.Count == 0) return;
+
+            var scene = ZNetScene.instance;
+            if (scene == null) return;
+
+            var prefab = scene.GetPrefab(Name);
+            if (prefab == null) return;
+
+            var piece = prefab.GetComponent<Piece>();
+            if (piece == null) { _priced = true; return; }
+
+            bool missing;
+            var cost = Requirements(StowConfig.PostCost.Value, out missing);
+
+            if (!missing)
+            {
+                piece.m_resources = cost;
+                _priced = true;
+                StowCoupling.Invalidate();
+                return;
+            }
+
+            _priceTries++;
+            if (_priceTries < PricingAttempts) return;
+
+            _priced = true;
+
+            // Nothing resolved at all, so there is nothing to write. The post keeps the cost
+            // it has rather than becoming free.
+            if (cost.Length == 0)
+            {
+                GrovePlugin.LogOnce("PostCost names nothing this game has. The post keeps "
+                    + "the cost it already had; check that line in the config.");
+                return;
+            }
+
+            piece.m_resources = cost;
+            StowCoupling.Invalidate();
+
+            GrovePlugin.LogOnce("PostCost still names something this game does not have. "
+                + "The post is built out of what resolved, which is cheaper than it should "
+                + "be, and this is not asked again in this world.");
+        }
+
+        /// <summary>
+        /// Forgets the recipe for a new world. The ItemDrops in it belong to whichever item
+        /// database was loaded when they were resolved.
+        /// </summary>
+        internal static void Invalidate()
+        {
+            _priced = false;
+            _priceTries = 0;
+        }
+
+        private static Piece.Requirement[] Requirements(string spec, out bool missing)
         {
             var list = new List<Piece.Requirement>();
+            missing = false;
 
             foreach (var entry in (spec ?? "").Split(','))
             {
@@ -577,7 +669,12 @@ namespace Stow
                 var drop = prefab != null ? prefab.GetComponent<ItemDrop>() : null;
                 if (drop == null)
                 {
-                    StowRuntime.Log.LogWarning("Post cost mentions unknown item '" + itemName + "'.");
+                    // Said once rather than once a frame: Reprice retries this from Update
+                    // until it resolves, and the case that never clears is a typo.
+                    GrovePlugin.LogOnce("Post cost mentions unknown item '" + itemName
+                        + "'. If it is the heartwood it resolves in a moment; if it is a "
+                        + "typo the post keeps the cost it already had.");
+                    missing = true;
                     continue;
                 }
 

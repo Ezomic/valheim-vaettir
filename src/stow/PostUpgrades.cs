@@ -83,8 +83,6 @@ namespace Stow
         public ConfigEntry<string> Cost;
         public ConfigEntry<string> Model;
 
-        public GameObject Prefab;
-
         /// <summary>
         /// Whether this piece's recipe has been written out of items that all resolved.
         /// False until it has, and rechecked on every world - see Reprice.
@@ -561,11 +559,27 @@ namespace Stow
             // against, and an empty item list is the tell.
             if (db == null || db.m_items == null || db.m_items.Count == 0) return;
 
+            // Asked of the scene on every pass rather than held in a field, which is the
+            // rule everything else here follows: Prefabs.Tick re-registers into each world
+            // and a field can point at an object the last world took with it.
+            //
+            // It is also the bug this replaces. UpgradeDef carried a Prefab field that
+            // nothing ever assigned, so this loop found null for all three pieces on every
+            // frame and skipped them - leaving each recipe exactly as the one pricing pass
+            // at build time had written it. That pass runs while ObjectDB is still the stub
+            // with no items in it, so nothing resolved, and all three stood in the hammer
+            // costing nothing at all. Shipped in 1.6.0 and found by playing it.
+            var scene = ZNetScene.instance;
+            if (scene == null) return;
+
             foreach (var def in All)
             {
-                if (def.Priced || def.Prefab == null) continue;
+                if (def.Priced) continue;
 
-                var piece = def.Prefab.GetComponent<Piece>();
+                var prefab = scene.GetPrefab(def.PrefabName);
+                if (prefab == null) continue;
+
+                var piece = prefab.GetComponent<Piece>();
                 if (piece == null) { def.Priced = true; continue; }
 
                 ApplyCost(def, piece);
@@ -645,10 +659,14 @@ namespace Stow
                 });
             }
 
-            piece.m_resources = list.ToArray();
-
+            // Written only when every name in it resolved. A half-resolved recipe is a
+            // discount and an empty one is a free piece, and both of those are worse than a
+            // piece that keeps yesterday's price for another frame while the item database
+            // finishes arriving. 1.6.0 wrote the list whatever happened, which is how three
+            // pieces reached the hammer at no cost.
             if (!missing)
             {
+                piece.m_resources = list.ToArray();
                 def.Priced = true;
                 return;
             }
@@ -661,14 +679,28 @@ namespace Stow
             // in a config file has a letter wrong.
             def.Attempts++;
 
-            if (def.Attempts >= PricingAttempts)
-            {
-                def.Priced = true;
+            if (def.Attempts < PricingAttempts) return;
 
-                GrovePlugin.LogOnce(def.PrefabName + "'s cost still names something this "
-                    + "game does not have after " + PricingAttempts + " tries. Leaving it at "
-                    + "what did resolve and not asking again this world.");
+            def.Priced = true;
+
+            // Nothing at all resolved, so there is no recipe to write. The piece keeps the
+            // cost it was cloned with rather than becoming free: a wrong price is a bug
+            // somebody reports, and a free buildable is one they quietly enjoy.
+            if (list.Count == 0)
+            {
+                GrovePlugin.LogOnce(def.PrefabName + "'s cost names nothing this game has, "
+                    + "after " + PricingAttempts + " tries against a loaded item database. "
+                    + "It keeps the cost of the piece it was cloned from. Check that line in "
+                    + "the config for a misspelled item.");
+                return;
             }
+
+            piece.m_resources = list.ToArray();
+
+            GrovePlugin.LogOnce(def.PrefabName + "'s cost still names something this "
+                + "game does not have after " + PricingAttempts + " tries. Built out of "
+                + "what did resolve, which is cheaper than it should be, and not asked "
+                + "again this world.");
         }
     }
 

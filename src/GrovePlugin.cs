@@ -31,7 +31,7 @@ namespace Grove
     {
         public const string PluginGuid = "ezomic.valheim.vaettir";
         public const string PluginName = "Vaettir";
-        public const string PluginVersion = "1.6.0";
+        public const string PluginVersion = "1.6.1";
         public const string PluginAuthor = "Robbin Thijssen";
 
         /// <summary>Core's plugin GUID. Optional - see TryRegisterWithCore.</summary>
@@ -270,6 +270,23 @@ namespace Grove
             // before today it took the prefab declarations too. The version gate is the one
             // thing in this file whose absence is safe: without Core the mod already runs
             // without it, which is the standalone case and a supported one.
+            // Before Core, and that order is load-bearing: registering hands Core the whole
+            // config file, so a value moved after it would be the old one on every client
+            // the host has. After every Bind above, because a move names an entry.
+            //
+            // Wrapped for the same reason as the registration below it. Nothing here is
+            // worth the rest of Awake, and a config file that cannot be written is a
+            // read-only install, not a reason to lose the mod.
+            try
+            {
+                ConfigRevision.Run(Config);
+            }
+            catch (Exception e)
+            {
+                Log.LogWarning("Could not move the settings whose defaults changed: "
+                    + e.Message + ". Everything runs on the values your file already has.");
+            }
+
             try
             {
                 TryRegisterWithCore();
@@ -489,6 +506,11 @@ namespace Grove
             Suite.Local(Hod.HodConfig.ShowChestTotals, Hod.HodConfig.ChestTotalFormat,
                         Hod.HodConfig.ShortMessage, Hod.HodConfig.ShowFlight);
 
+            // Bookkeeping about this machine's own config file, not a rule about the world.
+            // A host imposing its revision number would tell a client its file had had
+            // moves it has never had, and that client would then never make them.
+            Suite.Local(ConfigRevision.Revision);
+
             // The carried plant's look in your arms, and Thicket's own chatter.
             Suite.Local(Thicket.ThicketConfig.Scale,
                         Thicket.ThicketConfig.SayTheLevel,
@@ -525,6 +547,12 @@ namespace Grove
             // Not a registration, and so not part of the above. The post can appear at any
             // moment - it is a piece somebody builds - and this reprices its recipe when it
             // does, so it is never "done" and simply keeps being called.
+            // Before the coupling, always: this writes the post's recipe out of PostCost
+            // once the item database is real, and the coupling merges the heartwood into
+            // the array it leaves. The other order loses the heartwood on the frame the
+            // rest of the cost finally resolves.
+            Stow.StowPost.Reprice();
+
             StowCoupling.Apply();
 
             // The same idea for the upgrades, and it is not the same call because the
