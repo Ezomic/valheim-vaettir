@@ -97,13 +97,33 @@ namespace Stow
         // entry here is orphaned the moment a Container rebuilds its inventory from the ZDO,
         // exactly as the trip's own item reference was before 1.5.1 re-found it on arrival.
         //
-        // Left as it is deliberately. Since 1.5.1 takes its share out through
-        // Inventory.RemoveItem, an orphaned reservation costs a redundant trip and nothing
-        // else - the second spirit lands, re-finds whatever is actually left, and moves that
-        // or nothing. It cannot double-spend a stack any more. And Couriers defaults to 1, so
-        // there is no second planner today at all; this only becomes visible if that is
-        // raised. Fixing it means matching by identity the way Refind does, and that is a
-        // change worth making on its own rather than beside three bug fixes.
+        // The old note here ended "Couriers defaults to 1, so there is no second planner
+        // today at all; this only becomes visible if that is raised." The spirit perch
+        // raises it, so the question was settled rather than deferred. It holds for two, and
+        // for two independent reasons:
+        //
+        // 1. On the client doing the planning, the reservations do not go stale in the first
+        //    place. Everything in this class runs on the owner of the post and gives up the
+        //    frame that stops being true, so there is exactly one planner. The post's item
+        //    objects are replaced only by Container.Load, and Load's first line is
+        //    `if (DataRevision == m_lastRevision) return false` - where m_lastRevision is set
+        //    by the owner's own Save. The owner is the only thing writing this post, so it
+        //    never sees a revision it did not write, and the ItemData objects the two
+        //    couriers are holding stay the same objects for the whole run.
+        //
+        // 2. If that is ever wrong - a foreign write, an ownership handover mid-flight - the
+        //    worst case is still a wasted trip rather than a lost or duplicated stack.
+        //    Both couriers re-find their stack by identity on arrival (Refind), and the take
+        //    itself is bounded by the live stack and executed through Inventory.RemoveItem
+        //    inside Depositor.Deposit: `Mathf.Min(cap, item.m_stack)` of whatever is actually
+        //    there now. Two spirits landing on one stack therefore move it between them and
+        //    stop, and the second may find nothing left and move nothing.
+        //
+        // What two couriers do make visible is the cosmetic half: with the reservations
+        // stale, both may Refind their way onto the same stack and one of them flies for
+        // nothing while another stack waits a scan. That is a trip, not a bug, and matching
+        // reservations by identity the way Refind does is still a change worth making on its
+        // own rather than beside this one.
         private readonly List<ItemDrop.ItemData> _reserved = new List<ItemDrop.ItemData>();
         private readonly List<Container> _touched = new List<Container>();
 
@@ -169,6 +189,13 @@ namespace Stow
 
             var now = SpiritTrips.Now;
 
+            // Asked once a frame rather than once per courier, and asked at all rather than
+            // read from config, because a spirit perch can be built or torn down while a run
+            // is in the air. Walking backwards through the list below means the surplus
+            // retired when it falls is whichever spirit is furthest down the list, which is
+            // the most recently recruited one.
+            var allowed = Mathf.Clamp(_post.Couriers, 1, 8);
+
             for (var i = _couriers.Count - 1; i >= 0; i--)
             {
                 var courier = _couriers[i];
@@ -181,10 +208,18 @@ namespace Stow
                 }
 
                 Arrive(courier, nview);
-                if (!Dispatch(courier, inventory, now)) Retire(courier, i);
+
+                // A perch torn down mid-run. Retiring the extra spirit here is the only
+                // moment that costs nothing: it is home, empty-handed and between errands,
+                // so there is no cargo to put back and no half-flight to abandon. Letting
+                // it run on until there happened to be no work would mean the perch kept
+                // paying out after it was gone, which is the one thing every effect in this
+                // feature is written to avoid.
+                if (_couriers.Count > allowed || !Dispatch(courier, inventory, now))
+                    Retire(courier, i);
             }
 
-            Recruit(inventory, now);
+            Recruit(inventory, now, allowed);
             Publish();
 
             // A resting spirit is still a courier, so "nothing out" is not the same as
@@ -417,7 +452,7 @@ namespace Stow
             cargo = ItemGroups.PrefabNameOf(item);
 
             bool emptied;
-            var went = Depositor.Deposit(from, into, item, out emptied);
+            var went = Depositor.Deposit(from, into, item, _post.ItemsPerTrip, out emptied);
 
             if (went <= 0)
             {
@@ -536,10 +571,17 @@ namespace Stow
                                        + item.m_shared.m_name);
         }
 
-        /// <summary>Adds spirits up to the configured count, but only if there is work.</summary>
-        private void Recruit(Inventory inventory, double now)
+        /// <summary>
+        /// Adds spirits up to this post's own count, but only if there is work.
+        ///
+        /// The count comes in from Tick rather than out of config: it is two while a spirit
+        /// perch stands beside this post and one while it does not, and the answer is the
+        /// post's rather than the mod's. One spirit per call, so a perch built beside a busy
+        /// post grows its second spirit at the next scan rather than in the same frame -
+        /// which reads as the perch waking something up and is the better of the two.
+        /// </summary>
+        private void Recruit(Inventory inventory, double now, int wanted)
         {
-            var wanted = Mathf.Clamp(StowConfig.Couriers.Value, 1, 8);
             if (_couriers.Count >= wanted) return;
 
             // Cheap checks before the timer, not after. An idle post is the resting state

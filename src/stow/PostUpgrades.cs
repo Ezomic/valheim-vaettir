@@ -168,6 +168,21 @@ namespace Stow
         public static ConfigEntry<float> Scale;
         public static ConfigEntry<bool> ShowLink;
 
+        /// <summary>
+        /// What the rail and the perch are actually worth, in the units the thing they
+        /// change is measured in.
+        ///
+        /// Here rather than in the Carrier and Post sections next to the numbers they
+        /// raise, and that is a deliberate reversal of where you would first reach for
+        /// them. The base numbers describe a post; these describe an upgrade, and a player
+        /// deciding whether to spend a heartwood on a perch is reading this section rather
+        /// than hunting through three others for the one line that says what they get.
+        /// </summary>
+        public static ConfigEntry<int> RailWidth;
+        public static ConfigEntry<int> RailHeight;
+        public static ConfigEntry<int> RailItemsPerTrip;
+        public static ConfigEntry<int> PerchCouriers;
+
         public static void Bind(ConfigFile config)
         {
             Enabled = config.Bind("Upgrades", "UpgradesEnabled", true,
@@ -217,6 +232,41 @@ namespace Stow
             Rail.Model = config.Bind("Upgrades", "RailModel", "stow_rail.obj",
                 "The hand-built mesh the creel rail wears, beside the dll. Its .col sidecar "
                 + "and its _icon.png are picked up from the same stem automatically.");
+
+            RailWidth = config.Bind("Upgrades", "RailWidth", 8,
+                "Slots across a post that has a creel rail beside it, instead of PostWidth. "
+                + "Eight is the width of your own pack, which is the widest grid the "
+                + "container window is built to draw.\n"
+                + "LOWERING THIS TAKES SLOTS AWAY from every railed post in the world. "
+                + "Nothing in them is lost - whatever is in a slot that stops existing is "
+                + "moved to a free one if there is a free one, and dropped at the post's "
+                + "feet if there is not, the same way a chest spills when you break it - but "
+                + "it does happen the moment the world loads and it does happen quietly, so "
+                + "empty your posts before editing this downwards.");
+
+            RailHeight = config.Bind("Upgrades", "RailHeight", 3,
+                "Slots down a post that has a creel rail, instead of PostHeight. The same "
+                + "warning as RailWidth applies to lowering it.\n"
+                + "Three rather than four because the post is meant to stay a table you "
+                + "pass things over rather than become the storage it is there to fill - a "
+                + "post that holds as much as a chest is a chest.");
+
+            RailItemsPerTrip = config.Bind("Upgrades", "RailItemsPerTrip", 20,
+                "How many items the spirit of a railed post carries in one trip, instead of "
+                + "ItemsPerTrip. Double, which is the point of the creel: the same stack "
+                + "leaves in half the trips and a post that serves a wall of chests stops "
+                + "being something you stand and wait for.\n"
+                + "Taken as the larger of this and ItemsPerTrip, so an upgrade can never "
+                + "make a post slower. 0 means the whole stack in one go, and a base "
+                + "ItemsPerTrip of 0 is already that, so a rail adds nothing there.");
+
+            PerchCouriers = config.Bind("Upgrades", "PerchCouriers", 2,
+                "How many spirits a post with a spirit perch flies at once, instead of "
+                + "Couriers. Two, because that is what the piece is: one more heartwood, "
+                + "housed and lit, and one more spirit living in it.\n"
+                + "Taken as the larger of this and Couriers. Raising it past two works and "
+                + "is a config change rather than a second perch - the piece is once-only, "
+                + "so a second one beside the same post does nothing.");
 
             Perch.Name = config.Bind("Upgrades", "PerchName", "Spirit perch",
                 "What the spirit perch is called.");

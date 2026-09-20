@@ -32,6 +32,12 @@ namespace Stow
         private CarryRun _run;
         private SpiritView _view;
 
+        /// <summary>
+        /// When this post came into the world, for PostSize. A shrink has to wait for the
+        /// zone around it to finish loading, and there is no event for that.
+        /// </summary>
+        private float _awoke;
+
         public Container Container { get { return _container; } }
 
         private void Awake()
@@ -40,6 +46,17 @@ namespace Stow
             _container = GetComponent<Container>();
             _run = new CarryRun(this);
             _view = new SpiritView(this);
+            _awoke = Time.time;
+
+            // Before anything else touches the inventory. Container.Awake has just built it
+            // at the prefab's own size and its first load of the saved items is already
+            // scheduled, so this is the last moment at which the grid can be widened
+            // without an item being thrown away for being in a column that does not exist
+            // yet. Whether there is actually a rail outside is not knowable this early and
+            // does not need to be - Update settles it down within a few seconds, with the
+            // items present and a spill path for anything in the way.
+            PostSize.Open(_container);
+
             All.Add(this);
         }
 
@@ -71,6 +88,13 @@ namespace Stow
         private void Update()
         {
             if (_container == null) return;
+
+            // Before the carrier, and outside the CarrierEnabled gate below: the size of
+            // the post is a fact about the piece rather than about the ferrying, and a
+            // player who has turned the spirits off still built a creel rail and still
+            // expects the slots it paid for.
+            Neighbours();
+            PostSize.Apply(this, _container, _railed, _awoke);
 
             // Turned off while spirits are out. The owner stops publishing and every
             // client drops what it was drawing, so nothing is left hanging in the air.
@@ -151,6 +175,81 @@ namespace Stow
         public bool Has(UpgradeKind kind)
         {
             return PostUpgrades.Has(this, kind);
+        }
+
+        /// <summary>Seconds between asking the world what is standing beside this post.</summary>
+        private const float NeighbourInterval = 0.5f;
+
+        private bool _railed;
+        private bool _perched;
+        private float _nextNeighbours;
+
+        /// <summary>
+        /// Re-asks which upgrades are beside this post, twice a second.
+        ///
+        /// A sample of a live answer, which is a different thing from a remembered one and
+        /// the distinction is the whole reason this is safe. Nothing writes it down: it is
+        /// not on the ZDO, it does not survive the component, and a post loaded into a new
+        /// world starts with both of these false and works them out again from the pieces
+        /// that are actually there. The most a torn-down rail can buy anybody is half a
+        /// second of a post that has not noticed yet.
+        ///
+        /// Asked on a timer rather than every frame because three effects want the answer
+        /// and two of them - the inventory size and the courier count - are checked from an
+        /// Update. Each call walks the placed upgrades in the loaded zones; that is a
+        /// handful of pieces and it is cheap, but it is not free, and nothing here changes
+        /// at sixty hertz.
+        /// </summary>
+        private void Neighbours()
+        {
+            if (Time.time < _nextNeighbours) return;
+            _nextNeighbours = Time.time + NeighbourInterval;
+
+            _railed = Has(UpgradeKind.Rail);
+            _perched = Has(UpgradeKind.Perch);
+        }
+
+        /// <summary>
+        /// How many items this post's spirit carries in one trip.
+        ///
+        /// Per post rather than per world since the creel rail: the number used to be read
+        /// straight out of config wherever it was needed, which is exactly the shape that
+        /// cannot express "this post, the one with the rail beside it".
+        ///
+        /// Taken as the larger of the two so a rail can only ever help. Zero is the special
+        /// case and it means "the whole stack, however large" - so a post already set to
+        /// carry everything cannot be improved on, and a rail configured to zero beats any
+        /// finite base.
+        /// </summary>
+        public int ItemsPerTrip
+        {
+            get
+            {
+                var basic = StowConfig.ItemsPerTrip.Value;
+                if (!_railed) return basic;
+
+                if (basic <= 0) return basic;
+
+                var railed = PostUpgrades.RailItemsPerTrip.Value;
+                return railed <= 0 ? railed : Mathf.Max(basic, railed);
+            }
+        }
+
+        /// <summary>
+        /// How many spirits this post flies at once - two with a perch, one without.
+        ///
+        /// The clamp stays where it was, in CarryRun, because it is a fact about the
+        /// ferrying rather than about the piece.
+        /// </summary>
+        public int Couriers
+        {
+            get
+            {
+                var basic = StowConfig.Couriers.Value;
+                if (!_perched) return basic;
+
+                return Mathf.Max(basic, PostUpgrades.PerchCouriers.Value);
+            }
         }
 
         // ------------------------------------------------------------------ hover
@@ -287,8 +386,16 @@ namespace Stow
             if (container != null)
             {
                 container.m_name = StowConfig.PostName.Value;
-                container.m_width = Mathf.Clamp(StowConfig.PostWidth.Value, 1, 8);
-                container.m_height = Mathf.Clamp(StowConfig.PostHeight.Value, 1, 4);
+
+                // The prefab's baseline only. Container.Awake reads these two fields once,
+                // to build the inventory, and never again - so since the creel rail made
+                // the size a property of one post rather than of the mod, what is written
+                // here is just where a placed copy starts before PostSize sizes it from
+                // what is standing beside it. Left in step with PostSize.Plain all the same:
+                // a prefab claiming a different size from every instance of it is a lie
+                // waiting to be read by the next person.
+                container.m_width = PostSize.Plain.x;
+                container.m_height = PostSize.Plain.y;
 
                 // An empty post is the normal resting state - it has just done its job.
                 // Inheriting a donor that tidies itself away would delete the piece every

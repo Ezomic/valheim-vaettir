@@ -60,10 +60,12 @@ namespace Stow
 
             PostWidth = config.Bind("Post", "PostWidth", 6,
                 "Slots across. Wide and shallow on purpose: the post is a table you pass "
-                + "things over, not somewhere to keep them.");
+                + "things over, not somewhere to keep them.\n"
+                + "A post with a creel rail beside it uses RailWidth instead - see the "
+                + "Upgrades section. This is the size of a post with nothing next to it.");
 
             PostHeight = config.Bind("Post", "PostHeight", 2,
-                "Slots down.");
+                "Slots down. RailHeight replaces this on a post that has a creel rail.");
 
             // ---------------------------------------------------------- its look
 
@@ -123,7 +125,10 @@ namespace Stow
                 "How many spirits a post flies at once. One is the deliberate default: "
                 + "the point is watching a thing carry a thing, and three of them make "
                 + "it a conveyor belt. Raise it if a post that serves twenty chests "
-                + "takes longer to clear than you want to stand there.");
+                + "takes longer to clear than you want to stand there.\n"
+                + "A spirit perch beside a post raises it to PerchCouriers for that post "
+                + "alone, which is the way to buy a second spirit in the world rather than "
+                + "in a file.");
 
             CarrierSpeed = config.Bind("Carrier", "CarrierSpeed", 2.6f,
                 "Metres per second in the air. A brisk walk. Faster than a run and the "
@@ -138,7 +143,8 @@ namespace Stow
                 + "leaves the post ten at a time and takes five trips, so a big load "
                 + "looks like a big load rather than crossing the room in one go. "
                 + "0 carries the whole stack however large, which is what this did "
-                + "before. This is the number the post upgrades are meant to raise.");
+                + "before. A creel rail raises it to RailItemsPerTrip for the post it "
+                + "stands beside.");
 
             CarrierCruise = config.Bind("Carrier", "CarrierCruise", 1.1f,
                 "How high above the higher end it arcs. This is what carries it over "
