@@ -303,12 +303,12 @@ namespace Stow
                 + "Nothing gates a second spirit once it is standing - no boss, no key, it "
                 + "simply doubles what the post moves for the rest of the world's life - so "
                 + "it is the one of the three that has to be earned rather than afforded. "
-                + "Silver rather than crystal, which was the first draft: crystal is what a "
-                + "mountain gives up to anyone who breaks a golem, where silver has to be "
-                + "found with a wishbone first. The piece that houses a spirit should cost "
-                + "the part of the mountain you went looking for. An item name that does "
-                + "not resolve is logged and skipped, which makes the piece cheaper rather "
-                + "than unbuildable - read the log after editing this.");
+                + "Silver is simply the ingredient that puts it on the mountain. Crystal was "
+                + "the first draft and Robbin changed it to silver; that is a preference, "
+                + "not an argument, and it is recorded here so nobody invents a reason for "
+                + "it later. An item name that does not resolve is logged and skipped, "
+                + "which makes the piece cheaper rather than unbuildable - read the log "
+                + "after editing this.");
 
             Perch.Model = config.Bind("Upgrades", "PerchModel", "stow_perch.obj",
                 "The hand-built mesh the spirit perch wears.");
