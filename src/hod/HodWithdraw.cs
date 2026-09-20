@@ -536,6 +536,21 @@ namespace Hod
                     return;
                 }
 
+                // **This machine's own answer to "am I in this at all".** It was missing, and
+                // HodWorld's comment above the RPC registration confidently said the owner
+                // side refused on its own terms - it did not. A player who had set
+                // HodEnabled false (only reachable with EnforceConfig off, since the entry
+                // is host-synced otherwise) still had material removed from the chests they
+                // owned and shipped to whoever asked, while their own copy of the feature
+                // was switched off. Answering rather than falling silent is the rule
+                // everywhere in this method: the requester declines in one round trip
+                // instead of sitting on its timeout.
+                if (!HodConfig.Enabled.Value || HodRuntime.Shut)
+                {
+                    Answer(sender, containerId, id, null, null);
+                    return;
+                }
+
                 var playerID = package.ReadLong();
                 var name = package.ReadString();
                 var quality = package.ReadInt();
@@ -549,7 +564,24 @@ namespace Hod
                 // re-check is not paranoia: ZDOMan.ReleaseZDOS moves ownership every two
                 // seconds, so a request can genuinely arrive at a machine that owned the chest
                 // when it was sent and does not now.
-                if (container == null || !HodChests.OwnerMayServe(container, playerID, sender))
+                // The character id the sender claims is checked against the character that
+                // peer is actually playing, WHERE THAT CAN BE KNOWN. It is handed straight
+                // to Container.CheckAccess, and therefore to Skra's lock, so a client that
+                // wrote the chest owner's id into the packet would be served out of a chest
+                // Skra had locked against it - and unlike vanilla's RPC_RequestOpen, which
+                // has exactly the same shape and exactly the same hole, this one hands over
+                // the material rather than opening a window.
+                //
+                // Be honest about the limit: ZNet.m_peers on a client holds the server and
+                // nothing else, so a client that owns a chest usually cannot resolve another
+                // client's peer at all. Where the peer or its character ZDO cannot be
+                // reached, or the ZDO has not had its playerID written yet, the packet value
+                // stands - the point is to close the cheap forgery on the machine that has
+                // the peer list, not to invent an attestation the transport does not
+                // provide. Nothing legitimate is ever refused by it.
+                var actor = VerifiedPlayerID(sender, playerID);
+
+                if (container == null || !HodChests.OwnerMayServe(container, actor, sender))
                 {
                     Answer(sender, containerId, id, null, null);
                     return;
@@ -603,6 +635,68 @@ namespace Hod
 
                 try { Answer(sender, containerId, id, null, null); }
                 catch (Exception) { }
+            }
+        }
+
+        /// <summary>
+        /// The character id to judge a request by: the one the sending peer is actually
+        /// playing when that can be established, and the one it claimed when it cannot.
+        ///
+        /// Substituting rather than refusing, and that is the whole design. A legitimate
+        /// request carries its own id and is unaffected; a forged one is judged against the
+        /// character the forger really controls, which is exactly the access they should
+        /// have. Refusing on a mismatch would have been a second outcome to reason about and
+        /// would have made a stale or half-loaded character ZDO into a craft that failed for
+        /// no visible reason.
+        ///
+        /// Three ways this declines to have an opinion, and each one falls back to the
+        /// claim:
+        ///
+        ///   no ZNet             nothing to ask.
+        ///   no peer for sender  the usual case on a client. ZNet.m_peers holds the server
+        ///                       and nothing else there, so another client routed through
+        ///                       the server is simply not in the list.
+        ///   no character, or a  Player.SetLocalPlayer writes ZDOVars.s_playerID on the
+        ///   playerID of 0       character ZDO, so a character that has not finished waking
+        ///                       up reads 0 - which is "not yet", not "somebody else".
+        /// </summary>
+        private static long VerifiedPlayerID(long sender, long claimed)
+        {
+            try
+            {
+                var net = ZNet.instance;
+                if (net == null) return claimed;
+
+                var peer = net.GetPeer(sender);
+                if (peer == null || peer.m_characterID.IsNone()) return claimed;
+
+                var man = ZDOMan.instance;
+                if (man == null) return claimed;
+
+                var character = man.GetZDO(peer.m_characterID);
+                if (character == null) return claimed;
+
+                var real = character.GetLong(ZDOVars.s_playerID, 0L);
+                if (real == 0L || real == claimed) return claimed;
+
+                // Worth a line, because there is no honest innocent explanation for it: the
+                // requester wrote a character id into the packet that is not the character
+                // its peer is playing. Named once rather than per request - a client doing
+                // this does it on every craft.
+                GrovePlugin.LogOnce(
+                    "A hod withdrawal request claimed to be character " + claimed
+                    + " while the peer that sent it is playing " + real
+                    + ". Serving it as " + real + " instead. Somebody in this session is "
+                    + "running a modified client.");
+
+                return real;
+            }
+            catch (Exception)
+            {
+                // A check that throws must not be a request that fails. The claim is what
+                // every build before this one used, so falling back to it is the behaviour
+                // this method was added on top of rather than a new risk.
+                return claimed;
             }
         }
 
@@ -910,9 +1004,20 @@ namespace Hod
 
                 if (wire != Wire)
                 {
+                    // Deliberately NOT worded as a loss, and the distinction cost a wrong
+                    // conclusion. The commonest way to get here is the owner's own refusal:
+                    // OnRequest answers a mismatched wire version before it touches the
+                    // chest, and Answer always writes the LOCAL Wire number - so a build
+                    // that refused to move anything sends a reply this branch then
+                    // reported as material destroyed. An operator reading the log went
+                    // looking for a duplication bug that was not there. What is true of
+                    // both cases is the first sentence.
                     GrovePlugin.LogOnce(
                         "A hod withdrawal reply arrived on wire version " + wire + "; this build "
-                        + "speaks " + Wire + ". Anything it was carrying is lost.");
+                        + "speaks " + Wire + ". Somebody in this session is running a different "
+                        + "build of Vaettir. If that build refused the request - which is what it "
+                        + "does with a version it does not know - nothing was taken and nothing "
+                        + "is lost; if it served one, whatever it sent cannot be read here.");
                     return;
                 }
 

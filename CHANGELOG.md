@@ -3,6 +3,116 @@
 Notable changes to Vaettir. Format follows [Keep a Changelog](https://keepachangelog.com),
 and the mod uses [semantic versioning](https://semver.org).
 
+## [Unreleased]
+
+Three pieces you build beside a stowing post, and the one of them that changes how crafting
+works. Version left unset deliberately - nothing here has been run in a game yet.
+
+### Added
+
+- **Creel rail.** 10 fine wood, 10 iron nails, 8 leather scraps, on the hammer's Furniture tab.
+  Built within 5m of a stowing post it takes that post from 6x2 to 8x3 and from 10 items a trip
+  to 20. No heartwood: this is joinery, and it is the one upgrade that should be buildable the
+  same evening as the post. Leather scraps are the woven part because that is this game's
+  cordage - it is what the cart and the leather armour are strapped with, it is in the chest by
+  the time anybody has iron nails, and it does not drag a storage-room accessory out to the
+  Plains the way linen thread would.
+
+- **Spirit perch.** 1 heartwood, 10 fine wood, 6 iron nails. Two spirits fly from the post
+  instead of one. The heartwood is the whole price and the rest is the stand it sits on: a
+  second courier is a second spirit, and a spirit needs somewhere to live. You can see it in
+  the piece, lit, which is why it is not simply an expensive plank.
+
+- **Hod jib.** 1 heartwood, 15 fine wood, 10 iron nails. While a crafting station is within 20m
+  of the post, the crafting panel counts the material in the chests around **that post** and
+  crafting spends out of them. A spirit then flies from the chest to the bench purely for show -
+  it carries nothing and the item is already made.
+
+  A material is only served if its biome's boss is dead: Eikthyr opens the Meadows, the Elder
+  the Black Forest, Bonemass the Swamp and the Ocean, and so on to Fader and the Ashlands. A
+  chest full of black metal is not a shortcut past the Plains. Which biome an item belongs to
+  is derived from the world - where it grows, what drops it, what recipes it feeds - rather than
+  from a list, so a mod that adds an ore lands somewhere sensible for free.
+
+  Benches only. Not the hammer, not smelter or kiln fuel.
+
+  The engine is the Hirsla prototype, folded in rather than shipped beside: one DLL, one plugin,
+  one config file, one version number. If Hirsla is installed the jib switches itself off and
+  says so, so the two cannot count the same chest twice.
+
+- All three find the **nearest** post within 5m, serve exactly that one, and draw the game's own
+  station-extension motes to its heartwood so you can see which. A second piece of the same kind
+  beside the same post says "that post already has one" rather than silently doing nothing.
+
+### Changed
+
+- **Range for the bench service is measured from the post, not from the player.** The prototype
+  searched around whoever was standing there. The post does not move, so the set of chests being
+  counted is the same at the start of a craft and at the end of it whatever you do with WASD in
+  between, and a bench that worked a moment ago cannot stop working because somebody took half a
+  step. With no crafting station selected the whole thing is shut, and there is no fallback to a
+  player-centred search - a feature that quietly widens when its own piece is out of reach is one
+  nobody can predict.
+
+- **A post remembers how big it is.** The size is worked out from the pieces standing beside it,
+  as it always was, but the result is now left on the post's own saved object - so it opens at
+  the size it really is rather than opening at the widest a post can ever be and settling down
+  five seconds later. That guess was safe in the direction it was wrong in and still had three
+  costs, all of which are gone: an unupgraded post showed two extra columns and a row on every
+  zone load, a client that never owned a post held it at the maximum for as long as it stayed
+  loaded and then shrank it under an open window, and turning `UpgradesEnabled` off did not stop
+  any of it.
+
+- **A resize never puts an item on the ground.** Anything in a slot that is going away is moved
+  to a slot that is not; if there is no room for all of it the post keeps the slots until there
+  is, and says `too full to shrink` when you look at it. Take a few stacks out and it settles by
+  itself.
+
+- **A rail never takes slots away.** Lowering `RailWidth` or `RailHeight` does not narrow a post
+  that still has a rail standing beside it - break the rail and build it again to apply the new
+  number. Without that floor a player carrying their own copy of the file and connecting to a
+  host with `EnforceConfig` off could be handed ownership of a railed post and narrow it for
+  everybody, with the rail still standing and nothing anywhere saying why.
+
+- A post is only narrowed when the ground an upgrade could be standing on is **actually loaded**.
+  ZNetScene creates and destroys by sector and a zone is 64m across, so a post and its rail
+  either side of a zone line have a whole range of player positions at which the post exists and
+  the rail does not. That looks exactly like a rail that has been taken down and no length of
+  wait fixes it, because the rail is not late, it is absent.
+
+- A post is not narrowed while somebody has its window open, and not by a client that does not
+  own it.
+
+### Fixed
+
+- A machine with `HodEnabled` off still served material out of the chests it owned to anybody
+  who asked. The owner side never checked whether the feature was on - and the comment above the
+  network registration said it did.
+
+- A withdrawal request carried the asking character's id with nothing checking it against the
+  peer that sent it, so a modified client could be served out of a chest locked against it. The
+  id is now cross-checked against the character that peer is actually playing wherever that can
+  be established, and the request is judged as the real character rather than refused.
+
+- A reply from a build speaking a different wire version was logged as "anything it was carrying
+  is lost" - including the reply a mismatched build sends when it **refuses** a request before
+  touching the chest, which carries nothing by construction. It read as the version skew
+  destroying items.
+
+- A placed upgrade decided once, in `Awake`, whether it was a real piece or a placement ghost,
+  and that answer decided for its whole life whether it counted at all. Anything that left the
+  saved object unset for that one frame made the piece register never: standing in the world,
+  reading "no stowing post within 5m", with no log line and no way to tell it from a piece built
+  out of range. Asked of the object every time now, which is the rule the post itself already
+  followed.
+
+- A misspelled item in `RailCost`, `PerchCost` or `JibCost` left the recipe being rewritten -
+  two string splits, a list and a fresh array over the live prefab - sixty times a second for
+  the rest of the session. The warning was already logged once; now the work stops too.
+
+- A post giving up slots saved itself once per stack moved, which is a whole-inventory
+  serialisation and a network write each. One write now.
+
 ## [1.5.5] - 2026-09-16
 
 ### Fixed

@@ -115,7 +115,12 @@ namespace Hod
         /// Registration costs two dictionary entries and buys the ability to ANSWER: a player
         /// with the jib switched off is still somebody else's chest owner, and a peer who
         /// gets no reply waits out a five-second timeout instead of being refused at once.
-        /// The owner side refuses on its own terms anyway - see HodChests.OwnerMayServe.
+        /// <b>Answer, not serve.</b> This sentence used to point at HodChests.OwnerMayServe
+        /// and say the owner side refused on its own terms, which was simply untrue - nothing
+        /// on that path ever asked whether the feature was on, so a machine with HodEnabled
+        /// false still emptied its own chests into somebody else's craft. The refusal is in
+        /// HodWithdraw.OnRequest now, at the top, and it answers with nothing so the
+        /// requester declines in one round trip.
         /// </summary>
         [HarmonyPrefix]
         [HarmonyPatch(typeof(Game), "Start")]

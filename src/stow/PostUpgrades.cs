@@ -90,6 +90,21 @@ namespace Stow
         /// False until it has, and rechecked on every world - see Reprice.
         /// </summary>
         public bool Priced;
+
+        /// <summary>
+        /// How many times the recipe has been rewritten against a real item database
+        /// without every name in it resolving.
+        ///
+        /// Reprice runs from Update and retried forever, which is right for the case it
+        /// exists for - GroveHeartwood is registered a frame or two after the piece is
+        /// built, so the first pass or two genuinely does fail - and wrong for the case that
+        /// never clears. A typo in the cfg, or an item from a mod that is not installed,
+        /// left it splitting two strings, allocating a List and writing a fresh array over
+        /// the live prefab's m_resources sixty times a second for the rest of the session.
+        /// The log line was already LogOnce, so the only tell was the work. Reset per world
+        /// by Invalidate, because a second world is a second chance for the name to exist.
+        /// </summary>
+        public int Attempts;
     }
 
     /// <summary>
@@ -244,16 +259,17 @@ namespace Stow
                 "Slots across a post that has a creel rail beside it, instead of PostWidth. "
                 + "Eight is the width of your own pack, which is the widest grid the "
                 + "container window is built to draw.\n"
-                + "LOWERING THIS TAKES SLOTS AWAY from every railed post in the world. "
-                + "Nothing in them is lost - whatever is in a slot that stops existing is "
-                + "moved to a free one if there is a free one, and dropped at the post's "
-                + "feet if there is not, the same way a chest spills when you break it - but "
-                + "it does happen the moment the world loads and it does happen quietly, so "
-                + "empty your posts before editing this downwards.");
+                + "LOWERING THIS does not narrow a post that already has a rail standing "
+                + "beside it - a rail never takes slots away, which is what stops one "
+                + "player's copy of this file emptying everybody's posts on a server. Take "
+                + "the rail down and build it again and the post comes back at the new "
+                + "number. Nothing is ever dropped on the ground by a resize: a post that "
+                + "cannot find a home inside itself for everything in the slots it is losing "
+                + "simply keeps them, and says \"too full to shrink\" when you look at it.");
 
             RailHeight = config.Bind("Upgrades", "RailHeight", 3,
                 "Slots down a post that has a creel rail, instead of PostHeight. The same "
-                + "warning as RailWidth applies to lowering it.\n"
+                + "note as RailWidth applies to lowering it.\n"
                 + "Three rather than four because the post is meant to stay a table you "
                 + "pass things over rather than become the storage it is there to fill - a "
                 + "post that holds as much as a chest is a chest.");
@@ -519,8 +535,23 @@ namespace Stow
         /// </summary>
         public static void Invalidate()
         {
-            foreach (var def in All) def.Priced = false;
+            foreach (var def in All)
+            {
+                def.Priced = false;
+                def.Attempts = 0;
+            }
         }
+
+        /// <summary>
+        /// How many passes against a populated ObjectDB a recipe gets before Reprice stops
+        /// asking.
+        ///
+        /// Five, which is generous for what it is waiting on: the heartwood is registered by
+        /// Prefabs.Tick from the same Update, so the name resolves on the next pass or the
+        /// one after it. Past that the name is one nothing in this game has, the warning has
+        /// already been logged, and retrying it is work with no outcome.
+        /// </summary>
+        private const int PricingAttempts = 5;
 
         private static void ApplyCost(UpgradeDef def, Piece piece)
         {
@@ -570,7 +601,29 @@ namespace Stow
             }
 
             piece.m_resources = list.ToArray();
-            def.Priced = !missing;
+
+            if (!missing)
+            {
+                def.Priced = true;
+                return;
+            }
+
+            // Still short a name. Counted rather than simply left false, so a cfg typo costs
+            // five passes and then stops instead of a string split and an array write every
+            // frame forever. Giving up sets Priced anyway: the piece keeps the partial
+            // recipe it has - cheaper than intended, which the warning already said out loud
+            // - and the alternative is a piece that cannot be built at all because one line
+            // in a config file has a letter wrong.
+            def.Attempts++;
+
+            if (def.Attempts >= PricingAttempts)
+            {
+                def.Priced = true;
+
+                GrovePlugin.LogOnce(def.PrefabName + "'s cost still names something this "
+                    + "game does not have after " + PricingAttempts + " tries. Leaving it at "
+                    + "what did resolve and not asking again this world.");
+            }
         }
     }
 
@@ -599,8 +652,27 @@ namespace Stow
         /// the translucent copy following your cursor registers as a real upgrade, draws
         /// its own motes from wherever the cursor happens to be, and counts towards a post
         /// before you have built anything.
+        ///
+        /// Asked of the ZNetView every time rather than latched in Awake, which is the rule
+        /// StowPost.Placed already follows and writes down: a bool of ours is exactly the
+        /// kind of thing that outlives what made it true. A latched copy decided for the
+        /// object's whole life whether it was in <see cref="All"/> at all, so anything that
+        /// left the ZDO unset for the one frame Awake ran in - a component-order change from
+        /// a future donor swap, a ZNetScene path that assigns the ZDO after the components
+        /// wake - made the piece register never. It would stand in the world reading "no
+        /// stowing post within 5m", the post would gain nothing, and there would be no log
+        /// line and no way to tell it from a piece built out of range. Two components in one
+        /// feature answering the same question opposite ways is also how one of them ends up
+        /// being the one nobody re-reads.
         /// </summary>
-        private bool _placed;
+        private bool Placed
+        {
+            get
+            {
+                var nview = GetComponent<ZNetView>();
+                return nview != null && nview.GetZDO() != null;
+            }
+        }
 
         /// <summary>
         /// The post this piece serves, resolved from the world and re-resolved on a timer.
@@ -636,17 +708,17 @@ namespace Stow
         {
             _piece = GetComponent<Piece>();
 
-            var nview = GetComponent<ZNetView>();
-            _placed = nview != null && nview.GetZDO() != null;
-            if (!_placed) return;
-
+            // Added unconditionally, and filtered on the way out instead. Registering only
+            // the pieces that already had a ZDO at this instant is what the latched flag
+            // did, and a ghost costs nothing in the list as long as every reader skips it -
+            // which they all do, below, by asking the ZNetView rather than a field.
             All.Add(this);
         }
 
         private void OnDestroy()
         {
             StopConnectionEffect();
-            if (_placed) All.Remove(this);
+            All.Remove(this);
         }
 
         public UpgradeKind Kind { get { return (UpgradeKind)m_kind; } }
@@ -707,7 +779,8 @@ namespace Stow
             for (var i = 0; i < All.Count; i++)
             {
                 var upgrade = All[i];
-                if (upgrade == null || upgrade.m_kind != (int)kind) continue;
+                if (upgrade == null || !upgrade.Placed) continue;
+                if (upgrade.m_kind != (int)kind) continue;
                 if (upgrade.Post == post) return true;
             }
 
@@ -729,7 +802,8 @@ namespace Stow
             for (var i = 0; i < All.Count; i++)
             {
                 var upgrade = All[i];
-                if (upgrade == null || upgrade.m_kind != (int)kind) continue;
+                if (upgrade == null || !upgrade.Placed) continue;
+                if (upgrade.m_kind != (int)kind) continue;
 
                 var post = upgrade.Post;
                 if (post == null) continue;
@@ -760,7 +834,7 @@ namespace Stow
             for (var i = 0; i < All.Count; i++)
             {
                 var upgrade = All[i];
-                if (upgrade == null || upgrade == this) continue;
+                if (upgrade == null || upgrade == this || !upgrade.Placed) continue;
                 if (upgrade.m_kind != m_kind) continue;
                 if (upgrade.Post != post) continue;
 
@@ -800,7 +874,7 @@ namespace Stow
         /// </summary>
         private void PokeEffect(StowPost post, float timeout = 1f)
         {
-            if (!_placed || post == null || !PostUpgrades.ShowLink.Value) return;
+            if (!Placed || post == null || !PostUpgrades.ShowLink.Value) return;
 
             var from = transform.position + Vector3.up * LinkHeight();
             var to = _target != null ? _target.position : post.transform.position;

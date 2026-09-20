@@ -50,12 +50,13 @@ namespace Stow
 
             // Before anything else touches the inventory. Container.Awake has just built it
             // at the prefab's own size and its first load of the saved items is already
-            // scheduled, so this is the last moment at which the grid can be widened
-            // without an item being thrown away for being in a column that does not exist
-            // yet. Whether there is actually a rail outside is not knowable this early and
-            // does not need to be - Update settles it down within a few seconds, with the
-            // items present and a spill path for anything in the way.
-            PostSize.Open(_container);
+            // scheduled, so this is the last moment at which the grid can be set without an
+            // item being thrown away for being in a column that does not exist yet. Whether
+            // there is a rail outside is not knowable this early and does not need to be -
+            // the post's own ZDO remembers what size it was last settled at, which is an
+            // exact answer available right here. Only a post that has never recorded one
+            // falls back to opening at its widest.
+            PostSize.Open(this, _container);
 
             All.Add(this);
         }
@@ -209,6 +210,142 @@ namespace Stow
             _perched = Has(UpgradeKind.Perch);
         }
 
+        // ------------------------------------------------------------------ the ground
+
+        private bool _neighbourhoodLoaded;
+        private float _nextNeighbourhoodCheck;
+
+        /// <summary>
+        /// Whether the ground an upgrade could be standing on is actually in the world
+        /// right now.
+        ///
+        /// The question PostSize has to ask before it narrows a post, and it is a different
+        /// question from "is there a rail registered". <see cref="Nearest"/> and
+        /// PostUpgrade.Has both answer out of a list of components, and a component only
+        /// exists while ZNetScene has the object instantiated - which it decides **by
+        /// sector**, not by distance to this post. A zone is 64m across and an upgrade may
+        /// stand UpgradeRange (5m) away, so a post and its rail either side of a zone line
+        /// have a whole range of player positions at which the post is loaded and the rail
+        /// is not. To the post that looks exactly like a rail that has been taken down, and
+        /// it is not a timing problem: no length of wait fixes it, because the rail is not
+        /// late, it is absent. Shrinking on it would have emptied a storage post every time
+        /// its base was approached from one particular direction.
+        ///
+        /// Asked of the game rather than guessed, and of both halves of it:
+        ///
+        ///   ZNetScene.OutsideActiveArea  is vanilla's own test for "would an object here be
+        ///                                destroyed by the streaming pass" - the same
+        ///                                Chebyshev-to-the-reference-zone rule
+        ///                                CreateDestroyObjects uses.
+        ///   ZoneSystem.IsZoneLoaded      is "this zone is generated AND is not still
+        ///                                handing out its objects", which is precisely the
+        ///                                several-frames instantiation race the five-second
+        ///                                timer in PostSize used to stand in for.
+        ///
+        /// Both are cheap - no allocation, no sector walk - but they are asked of five
+        /// points, so they ride the same half-second cadence as <see cref="Neighbours"/>
+        /// rather than being paid per frame. A stale answer costs at most half a second of
+        /// a post that has not noticed yet, and it is only ever read on a frame where a
+        /// shrink is being contemplated, which is rare.
+        /// </summary>
+        internal bool NeighbourhoodLoaded()
+        {
+            if (Time.time < _nextNeighbourhoodCheck) return _neighbourhoodLoaded;
+            _nextNeighbourhoodCheck = Time.time + NeighbourInterval;
+
+            _neighbourhoodLoaded = AreaLoaded();
+            return _neighbourhoodLoaded;
+        }
+
+        private bool AreaLoaded()
+        {
+            var scene = ZNetScene.instance;
+            var zones = ZoneSystem.instance;
+
+            // No scene is not "nothing is standing there", it is "nobody can say", and the
+            // answer to that is always the one that changes nothing.
+            if (scene == null || zones == null || ZNet.instance == null) return false;
+
+            var here = transform.position;
+            if (!Loaded(scene, zones, here)) return false;
+
+            // The four corners of the box an upgrade could be standing in. Corners rather
+            // than the four axis points because the box is square and a corner is the
+            // farthest a rail can be - a rail exactly on the diagonal is the one the axis
+            // points would miss.
+            var reach = Mathf.Max(0f, PostUpgrades.Range.Value);
+
+            for (var sx = -1; sx <= 1; sx += 2)
+                for (var sz = -1; sz <= 1; sz += 2)
+                    if (!Loaded(scene, zones, here + new Vector3(sx * reach, 0f, sz * reach)))
+                        return false;
+
+            return true;
+        }
+
+        private static bool Loaded(ZNetScene scene, ZoneSystem zones, Vector3 point)
+        {
+            return !scene.OutsideActiveArea(point) && zones.IsZoneLoaded(point);
+        }
+
+        // ------------------------------------------------------------------ too full
+
+        private bool _shrinkBlocked;
+
+        /// <summary>
+        /// Told by PostSize when a post wants to give up slots and cannot, because what is
+        /// in them has nowhere to go inside what would be left.
+        ///
+        /// A post never throws its contents on the ground by itself, so a rail taken down
+        /// from a full post leaves the post at the size it already is until something is
+        /// taken out of it. That is the safe behaviour and it is also the confusing one -
+        /// the rail is visibly gone and the grid visibly has not changed - so the post says
+        /// so on its own hover line rather than leaving the player to conclude the mod is
+        /// broken. Said once in the log too, on the transition, because the hover line is
+        /// only read by somebody already standing there wondering.
+        /// </summary>
+        internal void ShrinkBlocked(bool blocked)
+        {
+            if (blocked == _shrinkBlocked) return;
+            _shrinkBlocked = blocked;
+
+            if (blocked)
+                StowRuntime.Log.LogInfo(
+                    "A stowing post has lost an upgrade and is too full to give up the "
+                    + "slots it bought. It keeps them until something is taken out of it - "
+                    + "nothing has been moved or dropped.");
+        }
+
+        private bool _faulted;
+
+        /// <summary>
+        /// Whether a resize on this post has already gone wrong once.
+        ///
+        /// Never cleared, on purpose. It is set by the one branch in PostSize that is not
+        /// supposed to be reachable at all - a stack that could not be taken out of the
+        /// inventory to be moved, which needs another mod forcing Inventory.RemoveItem to
+        /// false - and the resize is put back when it happens. Without a latch the post
+        /// would try the whole thing again on the very next frame and go on trying, so what
+        /// is meant to be one loud error becomes a stream of them and a piece of furniture
+        /// that resizes itself sixty times a second.
+        /// </summary>
+        internal bool Faulted { get { return _faulted; } }
+
+        internal void ShrinkFaulted()
+        {
+            _shrinkBlocked = true;
+
+            if (_faulted) return;
+            _faulted = true;
+
+            StowRuntime.Log.LogError(
+                "A stowing post could not move a stack out of a slot it was about to lose, "
+                + "so the slot has been given back and nothing was touched. The post keeps "
+                + "its current size for the rest of this session. This should not be "
+                + "possible unless another mod is refusing Inventory.RemoveItem - please "
+                + "report it with your mod list.");
+        }
+
         /// <summary>
         /// How many items this post's spirit carries in one trip.
         ///
@@ -272,6 +409,12 @@ namespace Stow
         /// </summary>
         public string StatusLine()
         {
+            // Ahead of everything else, because it is the only line here that explains why
+            // the post is not doing something the player just asked it to. A rail taken
+            // down from a full post leaves a grid that has visibly not changed, and silence
+            // there reads as the upgrade never having worked in the first place.
+            if (_shrinkBlocked) return "too full to shrink";
+
             var waiting = _container != null && _container.GetInventory() != null
                 ? _container.GetInventory().NrOfItems()
                 : 0;

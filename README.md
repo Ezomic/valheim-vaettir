@@ -19,6 +19,10 @@ plant transplanting and a bonemeal recipe are here too.
   and a spirit flies them to the chests that asked for them.
 - **Chest rules.** A `Holds…` button in every chest window. Chests hold groups (ore, fuel,
   seeds, building materials) or single items, and can refuse things.
+- **Post upgrades.** Three pieces you build on the ground beside a post, the way a chopping
+  block stands beside a workbench. A **creel rail** takes it to 8x3 and 20 items a trip, a
+  **spirit perch** flies a second spirit, and a **hod jib** lets a crafting station near the
+  post build out of the chests around it.
 - **Planting grid.** From Farming 10 the cultivator's ghost snaps to a lattice so hand-placed
   beds come out in rows. A ring shows whether a sapling will actually have room.
 - **Area harvest.** From Farming 15, Shift+E on a ripe crop picks its neighbours too, reaching
@@ -109,6 +113,77 @@ Ties go to the nearer chest, and a chest you have given a rule never falls into 
 
 The post skips chests that are out of range, warded against you, set to anything but Public,
 open by anyone, on a cart or a ship, and other stowing posts.
+
+## Post upgrades
+
+Three pieces, on the hammer's Furniture tab beside the post itself, each built **on the ground
+within 5m of a stowing post**. That is not a new idea to learn: a chopping block stands beside
+a workbench and this works the same way, down to the run of motes - the game's own
+station-extension effect, borrowed rather than imitated - that tells you which post a piece is
+feeding when you look at it. Each one serves the **nearest** post in range and exactly one
+post, and a second piece of the same kind beside the same post says so in its hover text rather
+than quietly doing nothing.
+
+| Piece | Cost | What it does |
+| --- | --- | --- |
+| **Creel rail** | 10 fine wood, 10 iron nails, 8 leather scraps | The post holds 8x3 instead of 6x2, and its spirit carries 20 items a trip instead of 10 |
+| **Spirit perch** | 1 heartwood, 10 fine wood, 6 iron nails | Two spirits fly from the post instead of one |
+| **Hod jib** | 1 heartwood, 15 fine wood, 10 iron nails | A crafting station within 20m of the post can build out of the chests around that post |
+
+The rail asks for no heartwood on purpose - it is joinery, and it is the one upgrade you should
+be able to build the same evening you build the post. The other two each house a heartwood and
+you can see it sitting in the piece, lit, from across the room. All three are recoverable:
+taking one down hands everything back, heartwood included.
+
+Nothing about the upgrades is written down anywhere. Build a rail and the post grows in the
+same second; break it and it shrinks again. There is no flag on the post saying "upgraded" that
+could outlive the piece that justified it, and a post loaded into a world works it out again
+from the pieces that are actually standing there.
+
+### The post never drops what it is holding
+
+Taking a rail down takes eight slots off a post that had things in them. What happens to those
+things is the one part of this worth stating plainly: **a resize never puts an item on the
+ground.** Anything in a slot that is going away is moved to a slot that is not, and if there is
+no room for all of it the post simply keeps the slots until there is. A post in that state says
+`too full to shrink` when you look at it. Take a few stacks out and it settles by itself.
+
+The same rule covers the config: lowering `RailWidth` does not narrow a post that still has a
+rail beside it. Break the rail and build it again to apply a new number.
+
+### The bench service
+
+The hod jib is the one that changes how crafting behaves, so it has the most to say about
+itself.
+
+While you are standing at a crafting station that is within `HodRange` (20m) of a post carrying
+a jib, the crafting panel counts the material in the chests around **that post** as well as
+what is in your pack, and crafting spends out of them. The requirement lines show the total.
+There is no keybind and no panel; it is the crafting window you already use.
+
+Three things are deliberate and you will notice all of them:
+
+- **Range is measured from the post, not from you.** The post does not move, so the set of
+  chests being counted is the same at the start of a craft and at the end of it whatever you do
+  with WASD in between, and a bench that worked a moment ago cannot stop working because you
+  took half a step. With no station selected the whole thing is shut.
+- **Crafting is instant.** The material leaves the chest at the moment you craft. The spirit
+  that then flies from the chest to the bench is **purely for show** - it is carrying nothing,
+  it cannot deliver anything, and the item was already made. Turn it off with `ShowFlight`.
+- **Benches only.** Not the hammer, not smelter or kiln fuel. Building from chests is a
+  different mod with a different answer; this one is the crafting panel.
+
+**The boss rule.** A material is only served out of a chest if the biome it comes from has had
+its boss killed: Eikthyr opens the Meadows, the Elder the Black Forest, Bonemass the Swamp and
+the Ocean, Moder the Mountains, Yagluth the Plains, the Queen the Mistlands, Fader the Ashlands.
+Before Eikthyr the jib does nothing at all; by Fader it does everything. This is what keeps the
+convenience from running ahead of the game - a chest full of black metal is not a shortcut past
+the Plains - and it is why the build-menu description names it. A jib that seems to be doing
+nothing is usually a biome you have not earned yet rather than a broken piece.
+
+Which biome an item belongs to is derived from the world rather than listed: where it grows,
+what drops it, and what recipes it feeds into. `AllowUnclassified` decides what happens to
+anything that lands in none of those, and `BiomeOverrides` is where you correct one by hand.
 
 ## Farming
 
@@ -269,6 +344,44 @@ the mod. Edit the cfg.
 | `CarrierScale` | 0.62 | Scale of the carrying spirit. 1 is a full-size one |
 | `FlareDonors` | `piece_dvergr_lantern,guard_stone,piece_walltorch,fire_pit` | Prefabs to lift the halo off, best first |
 
+### [Upgrades]
+
+| Key | Default | Effect |
+| --- | --- | --- |
+| `UpgradesEnabled` | true | Put the three upgrades in the hammer's menu. The prefabs are registered either way, so turning it off never deletes a piece already built |
+| `UpgradeRange` | 5 | How far an upgrade may stand from the post it serves. Vanilla's own figure for a chopping block beside a workbench |
+| `UpgradeScale` | 1 | Scale of all three pieces |
+| `ShowLink` | true | Draw the run of motes from a piece to its post while you look at it. Local to you |
+| `RailName` / `PerchName` / `JibName` | Creel rail / Spirit perch / Hod jib | Names of the pieces |
+| `RailCost` | `FineWood:10,IronNails:10,LeatherScraps:8` | Build cost of the creel rail |
+| `PerchCost` | `GroveHeartwood:1,FineWood:10,IronNails:6` | Build cost of the spirit perch |
+| `JibCost` | `GroveHeartwood:1,FineWood:15,IronNails:10` | Build cost of the hod jib |
+| `RailModel` / `PerchModel` / `JibModel` | `stow_rail.obj` / `stow_perch.obj` / `hod_jib.obj` | Meshes beside the DLL. Their `.col` and `_icon.png` are picked up automatically |
+| `RailWidth` / `RailHeight` | 8 / 3 | Slots across and down on a railed post, instead of `PostWidth` / `PostHeight` |
+| `RailItemsPerTrip` | 20 | Items a railed post's spirit carries per trip, instead of `ItemsPerTrip`. 0 carries the whole stack |
+| `PerchCouriers` | 2 | Spirits a perched post flies at once, instead of `Couriers` |
+
+Every one of the four numbers is taken as the larger of itself and the figure it replaces, so
+an upgrade can never make a post smaller or slower. Lowering `RailWidth` or `RailHeight` does
+not narrow a post that still has a rail beside it - break the rail and build it again.
+
+### [Hod]
+
+The bench service, which is the hod jib's effect.
+
+| Key | Default | Effect |
+| --- | --- | --- |
+| `HodEnabled` | true | Off leaves the crafting panel counting only what you are carrying. The pieces stay buildable and stay standing |
+| `HodRange` | 20 | How far the service reaches, measured **from the post** that carries the jib. Both which benches it serves and which chests it counts |
+| `BossBiomes` | `defeated_eikthyr:meadows, defeated_gdking:blackforest, defeated_bonemass:swamp, defeated_bonemass:ocean, …` | Which global key opens which biome. Ocean rides Bonemass |
+| `AllowUnclassified` | true | Whether an item the mod cannot place in any biome may still be drawn from a chest |
+| `BiomeOverrides` | (a list of roots) | Corrects the derived biome for an item by hand. Everything made from an overridden root follows it |
+| `ShowChestTotals` | true | Add what the chests hold to the amount beside each requirement. Local to you |
+| `ChestTotalFormat` | `{need} <color=#88CCFF>(+{chest})</color>` | How that total is written. Local to you |
+| `ShortMessage` | The chests could not supply it | Shown when a craft was allowed and the chests then could not supply it. Local to you |
+| `ShowFlight` | true | Send a spirit from the chest to the bench on a craft. Carries nothing; purely for show. Local to you |
+| `RequestTimeout` | 5 | How long to wait for the owner of a chest to answer a withdrawal, in seconds |
+
 ### [Furrow], [Harvest], [Sowing], [Crops], [Trees]
 
 | Key | Default | Effect |
@@ -387,6 +500,28 @@ is baked into a networked object's transform.
 Saplings, spirits and posts are each driven by whoever owns them. Map pins are local to you and
 saved in your own profile.
 
+**The post upgrades and the bench service.** `stow_rail`, `stow_perch` and `hod_jib` are three
+more registered prefabs, so the paragraph above applies to them in full: a client or a server
+without this version of Vaettir discards every one already built. `ShowLink`, `ShowFlight`,
+`ShowChestTotals`, `ChestTotalFormat` and `ShortMessage` are per-player and never imposed by
+the host. Everything else in `[Upgrades]` and `[Hod]` stays the host's decision, including
+`RequestTimeout`, which is half of a protocol rather than a preference, and the costs and
+ranges, which are facts about pieces standing in a shared world.
+
+A post's size is worked out from the pieces beside it and left on the post's own saved object,
+so every client opens it at the size it really is. A post is only ever narrowed by the machine
+that owns it, only when the ground an upgrade could be standing on is actually loaded, and
+never while somebody has its window open - a post at the edge of what your client has streamed
+in is not a post whose rail has been taken down, and treating those two as the same thing is
+how a storage post ends up on the floor.
+
+The bench service takes material out of chests this client may not own. Those go through a
+request to the machine that does own the chest, which does the removal itself against live
+stock and answers with what really came out - so two players crafting from one chest at the
+same moment get a short answer rather than a phantom one. That machine applies its own copy of
+the rules: the privacy setting, the ward, and the boss gate. A player who has `HodEnabled` off
+serves nobody out of their own chests.
+
 ## Compatibility
 
 - BepInEx 5 only.
@@ -398,6 +533,11 @@ saved in your own profile.
   plant selected. It is None by default, so removal is vanilla.
 - A patch group that fails to apply costs one feature and names it in the log. The prefabs are
   declared before any patching, so a failure there cannot destroy anything built.
+- **Only one craft-from-containers mod at a time.** Two of them count the same chest twice, so
+  a recipe looks twice as affordable as it is and the craft is then paid for with material that
+  is not there. Hirsla and Tether are detected and the bench service switches itself off with a
+  line in the log; anything else - AzuCraftyBoxes is the obvious one - is not, because there is
+  no honest thing to detect it by. Turn one of them off.
 
 ## Troubleshooting
 
