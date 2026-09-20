@@ -62,7 +62,7 @@ wait 4
 place piece_chest_wood 7 3
 wait 2
 
-# Open the chest and shut it again before putting anything in. A freshly placed chest can
+# Take ownership of the chest before putting anything in. A freshly placed chest can
 # have an OWNERLESS ZDO for a second or two, and Hod counts an ownerless chest for the
 # display while refusing to spend out of it - correctly, because nobody may write to an
 # ownerless ZDO and a removal that never reached it would come back on the next revision.
@@ -70,8 +70,7 @@ wait 2
 #
 # A player never meets that window. A scenario places, stocks and crafts inside it, and the
 # first run of this refused both crafts and read exactly like a bug in the mod.
-use piece_chest_wood
-close
+claim piece_chest_wood
 wait 2
 
 # Exactly two bows' worth, and nothing else in there.
