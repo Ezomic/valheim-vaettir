@@ -1,0 +1,75 @@
+# Vaettir, TWO CLIENTS - the genuinely simultaneous race.
+#
+# Run this on client B INSTEAD OF paired-vaettir-race-asker.txt, against the same
+# paired-vaettir-race-owner.txt on client A - that file works for either variant unchanged,
+# because its assertions never say which side won.
+#
+# This client owns nothing. Its craft fires a withdrawal request that is in flight while the
+# owner is spending out of the same chest locally, and the owner's clamp against live stock
+# is the single line that decides whether this run produces one bow or two.
+#
+# THE TWO PAYMENTS, AND WHY THIS FILE WAITS. The withdrawal is fired from a postfix on
+# OnCraftPressed, so this client's material leaves the owner's chest within a frame or two of
+# pressing the button. The owner's own spend happens in DoCrafting, when its craft timer
+# expires - about two seconds after ITS press. Pressing at the same moment therefore is not
+# simultaneous at all: this side pays two seconds earlier and wins every time, which is what
+# paired-vaettir-race-asker.txt demonstrated six runs running.
+#
+# Waiting for the owner's craft timer before pressing lines the two payments up instead. The
+# number is the craft duration - two seconds, less up to 60% for Crafting skill, so never
+# below 0.8 - and 1.8 puts this client's request into the frames around the owner's spend on
+# a character with no skill. On a well-levelled one, lower it.
+#
+# EITHER SIDE MAY WIN and both are correct. Only two bows is wrong, and the assertions say
+# nothing about who got it.
+#
+# Press Run on this whenever you like. It waits for the other client.
+
+clear
+give Hammer:1,Hoe:1
+god
+ghost
+sweep
+
+# Carried once so the material is known and the recipe appears in the panel, then thrown
+# away. A single plank here and the craft is partly self-funded, which would let both sides
+# succeed honestly and hide the thing being looked for.
+give Wood:1,LeatherScraps:1
+strip Wood,LeatherScraps
+wait 1
+
+waitfor rig_race_ready 300
+
+# Walk to the bench BEFORE the race starts. A teleport is slow and would make this client
+# late by seconds rather than by frames.
+goto piece_workbench
+wait 1
+use piece_workbench
+craftable Bow yes
+
+key rig_race_set
+
+# Held here until the owner fires. It pressed its own button as it set that key, so this is
+# the owner's craft timer spent standing still, and the press after it lands where the
+# owner's spend does.
+waitfor rig_race_go 120
+wait 1.8
+craft Bow
+
+wait 12
+
+# Nothing is a good outcome. It means the owner won, which is one of the two right answers.
+close
+drop Bow
+key rig_b_dropped
+
+waitfor rig_a_dropped 120
+wait 2
+
+# One bow's worth of material, one bow. Two here is the bug.
+dropped Bow 1
+
+# This client's replica of a chest it does not own. Not authoritative - the owner asserts
+# that - but a disagreement between the two is how a lost reply looks.
+holds piece_chest_wood Wood 0
+holds piece_chest_wood LeatherScraps 0

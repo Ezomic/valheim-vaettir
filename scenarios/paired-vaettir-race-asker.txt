@@ -8,6 +8,20 @@
 # owner is spending out of the same chest locally, and the owner's clamp against live stock
 # is the single line that decides whether this run produces one bow or two.
 #
+# THIS CLIENT WINS EVERY TIME, AND THAT IS NOT A FLAW - it is the design, seen from the
+# outside. Six runs, six wins, and it took six to notice the pattern was not luck. The
+# withdrawal is fired from a POSTFIX ON OnCraftPressed, so the material leaves the owner's
+# chest within a frame or two of the press; the owner's own spend happens in DoCrafting, when
+# the craft timer expires two seconds later. So the two payments are two seconds apart
+# however close together the buttons are pressed, and this side is always first.
+#
+# What that makes this pair: proof that an owner whose chest has been emptied under it
+# refuses its own craft rather than underpaying for one. Worth having, and not a race.
+#
+# The genuine simultaneous case - both payments in the same handful of frames - is
+# paired-vaettir-race-asker-late.txt, which is this file plus a wait that lines this client's
+# press up with the owner's DoCrafting instead of with its press.
+#
 # Press Run on this whenever you like. It waits for the other client.
 
 clear
