@@ -74,6 +74,13 @@ wait 4
 # The chest goes within 8m of you, because `strand` takes the nearest one within that.
 place piece_chest_wood 6 1
 wait 2
+
+# Claimed before stocking, so that what `strand` hands away afterwards is a real chest with
+# a real owner rather than one that was never owned. See vaettir-jib-takes-once for why a
+# freshly placed chest is not spendable for a second or two.
+use piece_chest_wood
+close
+wait 2
 stock piece_chest_wood Wood:20,LeatherScraps:16
 stacks piece_chest_wood 2
 
