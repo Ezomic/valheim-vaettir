@@ -14,7 +14,12 @@
 clear
 give Hammer:1,Hoe:1
 give FineWood:250,BronzeNails:40,IronNails:52,Chain:4,GroveHeartwood:6
-give Wood:100,Stone:40
+# LeatherScraps:1 is not a typo and is not spare material. A recipe only appears in the
+# crafting panel once the character has CARRIED every one of its materials at least once -
+# Player.m_knownMaterial, filled by picking things up - so a character that has never held
+# leather scraps cannot craft a bow however full the chest beside it is. It is stripped
+# again below with the wood, so nothing here is self-funded.
+give Wood:100,Stone:40,LeatherScraps:1
 god
 ghost
 sweep
