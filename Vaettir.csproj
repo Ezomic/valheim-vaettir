@@ -71,6 +71,14 @@
          dependency, and a mod that could not register its prefab would load and do nothing at
          all. Linking the file keeps one copy of the code without making Core mandatory. -->
     <Compile Include="..\core\shared\Prefabs.cs" Link="shared\Prefabs.cs" />
+    <!-- The same arrangement, for the same reason, for the hod jib's biome gate. BiomeIndex
+         works out which biome an item belongs to from the game's own vegetation, spawn,
+         conversion and recipe tables, and it is shared source so that Yoke and the bench
+         service give a player the SAME answer about the same item - a divergence between
+         them would be one player getting two different answers out of one set of tables.
+         It asks for its logger, its boss table and its overrides string as static seams
+         rather than holding references to them; HodRuntime.WireBiomeIndex fills them in. -->
+    <Compile Include="..\core\shared\BiomeIndex.cs" Link="shared\BiomeIndex.cs" />
   </ItemGroup>
 
   <Target Name="Deploy" AfterTargets="Build" Condition="Exists('$(ProfileDir)\BepInEx\plugins')">

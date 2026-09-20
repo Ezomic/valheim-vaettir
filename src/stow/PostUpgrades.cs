@@ -138,8 +138,15 @@ namespace Stow
             PrefabName = "hod_jib",
             Kind = UpgradeKind.Jib,
             Heartwood = true,
+            // The gate is named in the build menu on purpose, and it is the only one of the
+            // three blurbs that has to explain a limit. A player who spends a heartwood on
+            // this, stands at a bench and finds nothing served has no way to tell "the jib is
+            // broken" from "nothing in that chest comes from a biome you have earned" - and
+            // the first thing they would do is take it down again. One clause up front is
+            // cheaper than the bug report.
             Blurb = "Stowing post improvement. A heartwood on an arm, over the bench. A "
-                    + "crafting station near the post can count the chests around it.",
+                    + "crafting station near the post can count the chests around it - but "
+                    + "only for materials from a biome whose boss is dead.",
             Effect = "a bench near the post crafts from its chests",
         };
 
