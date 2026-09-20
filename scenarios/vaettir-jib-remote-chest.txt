@@ -101,7 +101,9 @@ goto piece_workbench
 wait 1
 use piece_workbench
 
-# Counting still works: reading a chest does not need to own it.
+# Counting still works: reading a chest does not need to own it. Hod DOES skip a chest
+# somebody has open, which is a different state and a different scenario - `strand` writes
+# ownership and nothing else for exactly that reason.
 craftable Bow yes
 
 craft Bow
