@@ -3,7 +3,7 @@
 Notable changes to Vaettir. Format follows [Keep a Changelog](https://keepachangelog.com),
 and the mod uses [semantic versioning](https://semver.org).
 
-## [Unreleased]
+## [1.6.2] - pending
 
 ### Fixed
 
