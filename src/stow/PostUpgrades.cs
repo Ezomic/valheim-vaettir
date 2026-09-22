@@ -614,8 +614,11 @@ namespace Stow
 
         private static void ApplyCost(UpgradeDef def, Piece piece)
         {
-            var missing = false;
             var list = new List<Piece.Requirement>();
+
+            // Names that did not resolve on THIS pass, carried to the give-up branch rather
+            // than logged here. See there.
+            var absent = new List<string>();
 
             foreach (var entry in (def.Cost.Value ?? "").Split(','))
             {
@@ -635,14 +638,21 @@ namespace Stow
                 var drop = prefab != null ? prefab.GetComponent<ItemDrop>() : null;
                 if (drop == null)
                 {
-                    // Once, not once a frame: this is retried from an Update until it
-                    // takes, and the case that never clears - a typo in the cfg - would
-                    // otherwise write this line sixty times a second forever.
-                    GrovePlugin.LogOnce(def.PrefabName + "'s cost mentions '" + itemName
-                        + "', which nothing can find. If this is the heartwood it will "
-                        + "resolve in a moment; if it is a typo the piece stays cheaper "
-                        + "than it should be.");
-                    missing = true;
+                    // Noted, not logged. A name missing on this pass is the ordinary case and
+                    // not a problem: pricing is retried from an Update, the heartwood is
+                    // registered by Prefabs.Tick from that same Update, and ObjectDB answers
+                    // GetItemPrefab through m_itemByHash, which is built once and is not
+                    // ready the instant m_items has something in it. So an early pass fails
+                    // to find Fine wood, of all things, and finds it a pass later.
+                    //
+                    // It used to warn here, and the warning was wrong twice over: it fired
+                    // eleven times on a healthy launch and it told you a piece "stays cheaper
+                    // than it should be" while the mod was in the middle of making sure it
+                    // did not. A log line that cries wolf on every start is worse than no
+                    // line, because the one launch where it means something reads the same as
+                    // the eleven where it did not - and the give-up branch below is already
+                    // the honest version of it.
+                    absent.Add(itemName);
                     continue;
                 }
 
@@ -664,7 +674,7 @@ namespace Stow
             // piece that keeps yesterday's price for another frame while the item database
             // finishes arriving. 1.6.0 wrote the list whatever happened, which is how three
             // pieces reached the hammer at no cost.
-            if (!missing)
+            if (absent.Count == 0)
             {
                 piece.m_resources = list.ToArray();
                 def.Priced = true;
@@ -686,20 +696,25 @@ namespace Stow
             // Nothing at all resolved, so there is no recipe to write. The piece keeps the
             // cost it was cloned with rather than becoming free: a wrong price is a bug
             // somebody reports, and a free buildable is one they quietly enjoy.
+            // Named, now that it is worth naming. This is the only place the missing items
+            // are reported, so the message carries them - it is the whole of what the eager
+            // warning above used to say, arriving at the point where it has become true.
+            var names = string.Join(", ", absent.ToArray());
+
             if (list.Count == 0)
             {
                 GrovePlugin.LogOnce(def.PrefabName + "'s cost names nothing this game has, "
-                    + "after " + PricingAttempts + " tries against a loaded item database. "
-                    + "It keeps the cost of the piece it was cloned from. Check that line in "
-                    + "the config for a misspelled item.");
+                    + "after " + PricingAttempts + " tries against a loaded item database: "
+                    + names + ". It keeps the cost of the piece it was cloned from. Check "
+                    + "that line in the config for a misspelled item.");
                 return;
             }
 
             piece.m_resources = list.ToArray();
 
-            GrovePlugin.LogOnce(def.PrefabName + "'s cost still names something this "
-                + "game does not have after " + PricingAttempts + " tries. Built out of "
-                + "what did resolve, which is cheaper than it should be, and not asked "
+            GrovePlugin.LogOnce(def.PrefabName + "'s cost still names " + names + ", which "
+                + "this game does not have, after " + PricingAttempts + " tries. Built out "
+                + "of what did resolve, which is cheaper than it should be, and not asked "
                 + "again this world.");
         }
     }

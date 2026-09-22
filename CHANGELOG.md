@@ -3,6 +3,28 @@
 Notable changes to Vaettir. Format follows [Keep a Changelog](https://keepachangelog.com),
 and the mod uses [semantic versioning](https://semver.org).
 
+## [Unreleased]
+
+### Fixed
+
+- **Eleven warnings on a healthy launch.** The rail, the perch, the jib and the post each
+  warned, per ingredient, that an item "nothing can find" was named in their cost - Fine wood,
+  Iron nails, Leather scraps, Silver - while the mod was in the middle of making sure the price
+  was right. Every one of them resolved a pass later, and the log proved it: eleven warnings and
+  not one of the give-up messages that would follow a real failure.
+
+  The cause is the same one 1.6.1 was about, seen from the other side. Pricing is retried from
+  an Update because `ObjectDB.GetItemPrefab` answers through `m_itemByHash`, which is built once
+  and is not ready the instant `m_items` has something in it - so an early pass fails to find
+  Fine wood, of all things, and finds it on the next. Warning at that point is crying wolf on
+  every start, and the launch where it means something then reads exactly like the ten where it
+  did not.
+
+  The missing names are carried to the give-up branch instead, which already existed and is the
+  honest version: it fires only after five passes against a loaded database, and it now names
+  the items rather than saying "something this game does not have". A cfg typo is still
+  reported, once, with the word that was wrong.
+
 ## [1.6.1] - 2026-09-20
 
 ### Fixed

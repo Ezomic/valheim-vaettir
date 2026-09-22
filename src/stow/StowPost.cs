@@ -548,9 +548,11 @@ namespace Stow
                 piece.m_name = StowConfig.PostName.Value;
                 piece.m_description = "Drop things in and close it. They go to the chests "
                                       + "that asked for them.";
-                bool shortOfNames;
-                var cost = Requirements(StowConfig.PostCost.Value, out shortOfNames);
-                if (!shortOfNames) { piece.m_resources = cost; _priced = true; }
+                // This first pass runs while the item database is still a stub, so it
+                // nearly always comes back short and Reprice does the real work from Update.
+                // It is here for the world where everything happens to resolve at once.
+                var cost = Requirements(StowConfig.PostCost.Value, out var shortOf);
+                if (shortOf.Count == 0) { piece.m_resources = cost; _priced = true; }
                 piece.m_category = Piece.PieceCategory.Furniture;
 
                 // The clone arrives wearing piece_chest_wood's icon, so the Furniture tab
@@ -606,10 +608,9 @@ namespace Stow
             var piece = prefab.GetComponent<Piece>();
             if (piece == null) { _priced = true; return; }
 
-            bool missing;
-            var cost = Requirements(StowConfig.PostCost.Value, out missing);
+            var cost = Requirements(StowConfig.PostCost.Value, out var absent);
 
-            if (!missing)
+            if (absent.Count == 0)
             {
                 piece.m_resources = cost;
                 _priced = true;
@@ -624,19 +625,23 @@ namespace Stow
 
             // Nothing resolved at all, so there is nothing to write. The post keeps the cost
             // it has rather than becoming free.
+            // Named here and nowhere else, now that it is worth naming.
+            var names = string.Join(", ", absent.ToArray());
+
             if (cost.Length == 0)
             {
-                GrovePlugin.LogOnce("PostCost names nothing this game has. The post keeps "
-                    + "the cost it already had; check that line in the config.");
+                GrovePlugin.LogOnce("PostCost names nothing this game has - " + names
+                    + ". The post keeps the cost it already had; check that line in the "
+                    + "config.");
                 return;
             }
 
             piece.m_resources = cost;
             StowCoupling.Invalidate();
 
-            GrovePlugin.LogOnce("PostCost still names something this game does not have. "
-                + "The post is built out of what resolved, which is cheaper than it should "
-                + "be, and this is not asked again in this world.");
+            GrovePlugin.LogOnce("PostCost still names " + names + ", which this game does "
+                + "not have. The post is built out of what resolved, which is cheaper than "
+                + "it should be, and this is not asked again in this world.");
         }
 
         /// <summary>
@@ -649,10 +654,10 @@ namespace Stow
             _priceTries = 0;
         }
 
-        private static Piece.Requirement[] Requirements(string spec, out bool missing)
+        private static Piece.Requirement[] Requirements(string spec, out List<string> absent)
         {
             var list = new List<Piece.Requirement>();
-            missing = false;
+            absent = new List<string>();
 
             foreach (var entry in (spec ?? "").Split(','))
             {
@@ -669,12 +674,15 @@ namespace Stow
                 var drop = prefab != null ? prefab.GetComponent<ItemDrop>() : null;
                 if (drop == null)
                 {
-                    // Said once rather than once a frame: Reprice retries this from Update
-                    // until it resolves, and the case that never clears is a typo.
-                    GrovePlugin.LogOnce("Post cost mentions unknown item '" + itemName
-                        + "'. If it is the heartwood it resolves in a moment; if it is a "
-                        + "typo the post keeps the cost it already had.");
-                    missing = true;
+                    // Noted, not logged - the same correction as PostUpgrades.ApplyCost, and
+                    // the same reason. A name missing on an early pass is ordinary: pricing
+                    // is retried from an Update, the heartwood is registered by Prefabs.Tick
+                    // from that same Update, and GetItemPrefab answers through m_itemByHash,
+                    // which is built once and is not ready the instant m_items has anything
+                    // in it. Warning here fires on a perfectly healthy launch and claims the
+                    // post "keeps the cost it already had" while the mod is busy making sure
+                    // it does not. The give-up branch below is the honest version.
+                    absent.Add(itemName);
                     continue;
                 }
 
