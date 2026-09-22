@@ -7,6 +7,26 @@ and the mod uses [semantic versioning](https://semver.org).
 
 ### Fixed
 
+- **You could see straight through the creel rail's baskets.** Reported from the game with a
+  screenshot: three baskets hanging off the rail, each showing the world behind it where its
+  far wall and its floor should have been.
+
+  The baskets were built as open shells - a surface with no thickness - because a basket is
+  open-mouthed and the shell was what made the mouth. Valheim draws one side of a surface and
+  throws the other away, so the near wall was there and the far wall, seen from behind, was
+  not. Every coil of every basket now has a wall, grown inward so the coil profile keeps the
+  exact outside line it was designed with, and the mouth is closed off rather than left as a
+  zero-thickness edge.
+
+  The same shape had the same hole in the chute post, one of the four plain posts that ship
+  beside the carved one, and it is fixed with it. Nothing else in the mod has an open surface
+  left anywhere.
+
+  Nothing in Blender could have caught this. It draws both sides of everything, so the piece
+  was correct in every render it was ever picked from, correct in the lineup, and wrong the
+  moment it stood in a world. The check that does catch it is counting edges that belong to
+  only one face, and it now runs over every model.
+
 - **Eleven warnings on a healthy launch.** The rail, the perch, the jib and the post each
   warned, per ingredient, that an item "nothing can find" was named in their cost - Fine wood,
   Iron nails, Leather scraps, Silver - while the mod was in the middle of making sure the price

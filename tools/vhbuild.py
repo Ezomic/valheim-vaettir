@@ -192,13 +192,38 @@ def ring(radius, thickness, location, mat, major=18, minor=7, rot_x=90.0, tilt=1
     return obj
 
 
-def shell(bottom, top, height, location, mat, sides=9, rot_x=0.0, rot_y=0.0):
+def shell(bottom, top, height, location, mat, sides=9, rot_x=0.0, rot_y=0.0,
+          thickness=0.0):
     """
     An open frustum: both caps deleted, so whatever is inside can be seen.
 
     Face select mode, and set before anything is selected. In vertex mode every vertex
     of a frustum belongs to one cap or the other, so selecting both caps selects the
     whole mesh and the shell vanishes.
+
+    <b>`thickness` is not decoration, and leaving it at zero has a cost worth knowing.</b>
+    With no thickness this is a single surface, and Valheim's shaders cull back faces -
+    so looking INTO one of these you see the far wall from behind, which is to say you do
+    not see it at all and the world shows through. That is invisible in Blender, which
+    draws both sides, and invisible in a render, and it shipped that way on the creel
+    rail: three baskets you could see straight through, reported from the game on
+    2026-09-22.
+
+    So: any shell whose inside a player can look into needs a thickness. A shell hidden
+    inside something else, or only ever seen from outside, does not and should not pay
+    for one - which is why this is an argument rather than the default. The old note
+    about a hoop being one thin cylinder still holds for a hoop, because the staves sit
+    inside it and its inner wall is never on screen. A basket has nothing inside it.
+
+    The wall grows INWARD from the surface you asked for, measured rather than assumed
+    (Blender's solidify offset -1 keeps the original as the outer skin). That matters
+    here: the coils of a basket are a ratchet profile where every step is deliberate, and
+    a wall that grew outward would quietly redraw the silhouette the design was picked
+    on.
+
+    It costs four times the faces, not two: an inner skin, and a rim closing the gap at
+    each open end. The rim is worth it - without it the mouth of the basket is a
+    zero-thickness edge, which is the same bug again on a smaller scale.
     """
     bpy.ops.mesh.primitive_cone_add(vertices=sides, radius1=bottom, radius2=top,
                                     depth=height, location=location)
@@ -221,6 +246,17 @@ def shell(bottom, top, height, location, mat, sides=9, rot_x=0.0, rot_y=0.0):
     bpy.ops.object.mode_set(mode="EDIT")
     bpy.ops.mesh.delete(type="FACE")
     bpy.ops.object.mode_set(mode="OBJECT")
+
+    # Applied here rather than left as a modifier, because everything downstream -
+    # bevel_all, finish, the triangle count and the export - reads mesh data and a
+    # modifier that has not been applied is not in it.
+    if thickness > 0.0:
+        wall = obj.modifiers.new(name="wall", type="SOLIDIFY")
+        wall.thickness = thickness
+        wall.offset = -1.0          # keep the asked-for surface as the OUTER one
+        wall.use_rim = True         # close the mouth, or the edge is the bug again
+        bpy.context.view_layer.objects.active = obj
+        bpy.ops.object.modifier_apply(modifier=wall.name)
 
     obj.data.materials.append(material(mat))
     return obj

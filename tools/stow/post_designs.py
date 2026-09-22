@@ -106,7 +106,7 @@ def frame(width, depth, z, thick, height, mat):
     box((thick, depth, height), (width / 2 - thick / 2, 0.0, z), mat)
 
 
-def funnel(bottom, top, height, z, mat, sides=4):
+def funnel(bottom, top, height, z, mat, sides=4, thickness=0.025):
     """
     A four-sided frustum with both caps deleted - a genuine open mouth.
 
@@ -115,6 +115,17 @@ def funnel(bottom, top, height, z, mat, sides=4):
     meet at the top cross each other at the bottom and the middle of the funnel comes
     out a jagged mess. A cone gets the taper exactly right; it only needs its lid and
     its floor taken off, which a box can never have in the first place.
+
+    <b>And then it needs a wall, which this did not have until 2026-09-22.</b> An open
+    frustum is one surface, and Valheim culls back faces: looking down into the mouth
+    you see the far boards from behind, which is to say you see through them. Blender
+    draws both sides, so neither the renders nor the lineup could show it - it was found
+    in game, on the creel rail, whose baskets are the same shape and had the same hole.
+    A funnel a player looks INTO is the one place this cannot be skipped.
+
+    The wall grows inward, so the flare that the design was picked on keeps its exact
+    outside line, and 25mm is a board. It costs four times the faces of a surface that
+    is 8 of them here, which is nothing.
     """
     bpy.ops.mesh.primitive_cone_add(vertices=sides, radius1=bottom, radius2=top,
                                     depth=height, location=(0.0, 0.0, z),
@@ -141,6 +152,16 @@ def funnel(bottom, top, height, z, mat, sides=4):
     bpy.ops.object.mode_set(mode="EDIT")
     bpy.ops.mesh.delete(type="FACE")
     bpy.ops.object.mode_set(mode="OBJECT")
+
+    # Applied rather than left hanging, because finish() joins these and a join reads
+    # mesh data - an unapplied modifier is simply not in what gets exported.
+    if thickness > 0.0:
+        wall = obj.modifiers.new(name="wall", type="SOLIDIFY")
+        wall.thickness = thickness
+        wall.offset = -1.0          # the asked-for taper stays the OUTER face
+        wall.use_rim = True         # close the mouth and the throat
+        bpy.context.view_layer.objects.active = obj
+        bpy.ops.object.modifier_apply(modifier=wall.name)
 
     obj.data.materials.append(material(mat))
     return obj

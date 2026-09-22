@@ -311,6 +311,20 @@ def strap(size, at, rot_z=0.0, tilt=1.0):
 
 # --------------------------------------------------------------------------- basketry
 
+# How thick the wall of a basket is. A constant and not a fraction of the radius,
+# because it is the withy that decides this and a basket maker does not use a fatter rod
+# for a wider basket - they use more of it. Eight millimetres against a 104mm basket and
+# a 152mm one reads right on both.
+#
+# It exists at all because these were zero-thickness shells until 2026-09-22, and a
+# zero-thickness shell is invisible from the inside: Valheim culls back faces, so looking
+# into a basket you saw the far wall from behind, which is to say the world behind it.
+# Blender draws both sides and so does every render, which is why three rounds of renders
+# and a shipped release all missed it and a player looking into one from the walkway did
+# not. See shell() in vhbuild for the whole of it.
+WALL = 0.008
+
+
 def _coil(r0, r1, height, at, mat, sides=9, tilt=2.2):
     """One coil of a basket: a frustum with both caps gone, spun to a random angle.
 
@@ -318,8 +332,12 @@ def _coil(r0, r1, height, at, mat, sides=9, tilt=2.2):
     register read as a turned cone with grooves cut in it; rotated against each other
     they read as something coiled by hand, which is the entire difference between a pot
     and a basket at this distance.
+
+    Walled, and inward: the radii asked for here are the OUTER ones, so the ratchet
+    profile that took three passes to get right is the silhouette it was picked on and
+    the thickness is spent on the cavity, which had nothing in it before.
     """
-    obj = shell(r0, r1, height, at, mat, sides=sides)
+    obj = shell(r0, r1, height, at, mat, sides=sides, thickness=WALL)
     obj.rotation_euler = (math.radians(random.uniform(-tilt, tilt)),
                           math.radians(random.uniform(-tilt, tilt)),
                           math.radians(random.uniform(0.0, 360.0)))
