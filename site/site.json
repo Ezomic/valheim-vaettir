@@ -1,0 +1,9 @@
+{
+    "roadmap": [
+        {
+            "key": "upgrade-art",
+            "title": "Better models and textures for the three post upgrades",
+            "body": "The creel rail, the spirit perch and the hod jib wear the models they were given while the pieces themselves were being built. They work, and they are the first pass.\n\nThey get a second one. Better shapes for all three, and the surfaces borrowed off vanilla timber, iron and stone the way the stowing post's already are, so the post and its three upgrades look like one set.\n\nNothing about what they do or what they cost changes, and anything you have built stays standing."
+        }
+    ]
+}
