@@ -3,6 +3,15 @@
 Notable changes to Vaettir. Format follows [Keep a Changelog](https://keepachangelog.com),
 and the mod uses [semantic versioning](https://semver.org).
 
+## [Unreleased]
+
+### Fixed
+
+- **Some Deep North materials counted as Meadows ones for crafting from containers**, so they
+  could be pulled from a chest once Eikthyr fell: the Elaking and Jotun drops and the Vanguard
+  chestpiece family. The Jotun invasion spawns in every biome, and the shared biome index read
+  that as the Meadows. Invasion spawns no longer decide where a creature belongs.
+
 ## [1.6.2] - 2026-09-22
 
 ### Fixed
