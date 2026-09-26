@@ -261,11 +261,20 @@ namespace Hod
         private sealed class Label
         {
             public bool AutoSizing;
-            public float Size;
             public float Min;
             public float Max;
             public TextWrappingModes Wrapping;
             public TextOverflowModes Overflow;
+
+            /// <summary>The size the label was drawing at when it was first fitted.</summary>
+            public float Size;
+
+            /// <summary>
+            /// The size TMP starts an auto-sized line from, which is not the same thing as
+            /// <see cref="Size"/> - that one is wherever the last line settled. Only read for a
+            /// label vanilla auto-sizes; for any other it is Size.
+            /// </summary>
+            public float Base;
 
             /// <summary>The size vanilla draws at, and so the largest this ever uses.</summary>
             public float Ceiling;
@@ -273,8 +282,12 @@ namespace Hod
             /// <summary>The floor, or the ceiling when vanilla is already smaller than it.</summary>
             public float Lowest;
 
-            /// <summary>The last text measured, so an unchanged line is not measured again.</summary>
+            /// <summary>
+            /// The text and the room it was last sized for, so an unchanged line in an
+            /// unchanged label is not measured again.
+            /// </summary>
             public string Measured;
+            public float Room = -1f;
         }
 
         /// <summary>
@@ -298,27 +311,40 @@ namespace Hod
         /// line three times that. Robbin's report had it cut at seven characters in both
         /// states of the panel - "8 (+169" and "40 (+16" - so the bracket was gone in one
         /// and a digit with it in the other, and a digit gone is a number that is simply
-        /// wrong. The fix rides TextMeshPro rather than moving anything:
+        /// wrong. The fix is three settings on the label and no layout:
         ///
         ///   one line       wrapping off, so a number and its bracket are never split across
         ///                  two lines of a slot that was laid out for one
-        ///   auto size      between vanilla's own size and <see cref="Floor"/>. TMP starts at
-        ///                  the ceiling and only shrinks when the line does not fit, so a line
-        ///                  that fits is drawn at exactly vanilla's size - the ordinary case
-        ///                  changes nothing at all
-        ///   overflow       for the last case only: a line still too wide at the floor draws
-        ///                  past its edge rather than losing characters. A number that runs a
-        ///                  few pixels long is ugly and true; a number with its last digit
-        ///                  hidden is neat and false, and false is what this was reported for
+        ///   one size       chosen here from the WIDTH of the line and nothing else, between
+        ///                  vanilla's own size and <see cref="Floor"/>. A line that fits across
+        ///                  is drawn at exactly vanilla's size - the ordinary case changes
+        ///                  nothing at all - and one that does not is shrunk by exactly the
+        ///                  ratio it is too wide by
+        ///   overflow       for the last case only: a line still too wide at the floor is not
+        ///                  cut by the label. A number that runs a few pixels long is ugly and
+        ///                  true; a number with its last digit hidden is neat and false, and
+        ///                  false is what this was reported for
+        ///
+        /// <b>TextMeshPro's own auto size was the first version of this, and it answers a
+        /// different question.</b> It shrinks for height as well as width -
+        /// TextMeshProUGUI.GenerateTextMesh compares the line's height against the label's
+        /// before it ever looks at the width, and steps the size down if the line is taller -
+        /// and before shrinking for width it squeezes the glyphs by whatever character-width
+        /// adjustment the label was built with. Neither is visible for a bare number drawn in
+        /// overflow mode, so a label a little shorter than its own font is an ordinary thing
+        /// for vanilla to have built. On a label like that, auto size would have put every blue
+        /// line at the floor, however short, while the plain numbers beside it stayed full
+        /// size - and the log, which compares widths, would have said everything fitted. The
+        /// only thing this needs to know is whether the line fits across, so that is the only
+        /// thing measured, and the size is set rather than negotiated.
         ///
         /// No widths are set and none are hardcoded. The label keeps the rect vanilla gave it,
         /// which is the thing that could not be read offline - it lives in an asset bundle -
-        /// and is measured and logged once instead, see <see cref="Measure"/>.
+        /// and is measured here, and logged once, instead.
         ///
         /// The settings are written once, when a label is first fitted, and put back by
         /// <see cref="Unfit"/> the moment its line goes back to vanilla's number. Leaving them
-        /// on would have been invisible - auto size capped at vanilla's own size draws a bare
-        /// number exactly as vanilla does - but "a recipe with nothing in the chests reads
+        /// on would have been nearly invisible, but "a recipe with nothing in the chests reads
         /// exactly like vanilla" is a promise in the config file, and it is cheaper to keep it
         /// literally than to argue that it is kept in effect.
         /// </summary>
@@ -327,38 +353,105 @@ namespace Hod
             Label label;
             if (!Fitted.TryGetValue(amount, out label))
             {
-                label = new Label
-                {
-                    AutoSizing = amount.enableAutoSizing,
-                    Size = amount.fontSize,
-                    Min = amount.fontSizeMin,
-                    Max = amount.fontSizeMax,
-                    Wrapping = amount.textWrappingMode,
-                    Overflow = amount.overflowMode
-                };
-
-                // With auto size already on, fontSize reads whatever TMP settled on last and
-                // fontSizeMax is the size vanilla actually asked for. With it off, fontSize is
-                // the asked-for size and the min and max are unused leftovers.
-                label.Ceiling = label.AutoSizing ? label.Max : label.Size;
-                label.Lowest = Mathf.Min(label.Ceiling, Floor);
-
+                label = Capture(amount);
                 Fitted[amount] = label;
 
                 amount.textWrappingMode = TextWrappingModes.NoWrap;
                 amount.overflowMode = TextOverflowModes.Overflow;
-                amount.fontSizeMax = label.Ceiling;
-                amount.fontSizeMin = label.Lowest;
-                amount.enableAutoSizing = true;
+                amount.enableAutoSizing = false;
+                amount.fontSize = label.Ceiling;
             }
 
-            // Measured when the text changes and not otherwise. The line is rewritten every
-            // frame, but "8 (+169)" on this frame is "8 (+169)" on the next, and a counted
-            // stack changes a few times a minute at most.
-            if (label.Measured == text) return;
-            label.Measured = text;
+            // Measured when the text or the room changes and not otherwise. The line is
+            // rewritten every frame, but "8 (+169)" on this frame is "8 (+169)" on the next,
+            // and a counted stack changes a few times a minute at most. The room is part of
+            // the key because a size chosen for one width is wrong for another: if the panel
+            // is laid out a frame late, the first measurement is taken against a rect that is
+            // about to change, and with the text alone as the key it would never be retaken.
+            var room = Room(amount);
+            if (label.Measured == text && Mathf.Abs(label.Room - room) < 0.01f) return;
 
-            Measure(elementRoot, amount, text, label);
+            label.Measured = text;
+            label.Room = room;
+
+            Measure(elementRoot, amount, text, label, room);
+        }
+
+        /// <summary>The width the label gives its text, the way TMP itself works it out.</summary>
+        private static float Room(TMP_Text amount)
+        {
+            // TextMeshProUGUI computes its line width as exactly this - the rect less both
+            // side margins, taken as they are, so a negative margin widens the line.
+            var margin = amount.margin;
+            return amount.rectTransform.rect.width - margin.x - margin.z;
+        }
+
+        private static Label Capture(TMP_Text amount)
+        {
+            var label = new Label
+            {
+                AutoSizing = amount.enableAutoSizing,
+                Size = amount.fontSize,
+                Min = amount.fontSizeMin,
+                Max = amount.fontSizeMax,
+                Wrapping = amount.textWrappingMode,
+                Overflow = amount.overflowMode
+            };
+
+            // With auto size off, the size it draws at is the size it asks for. With it on,
+            // TMP starts every line from the base size clamped between the min and the max
+            // (TextMeshProUGUI.OnPreRenderCanvas), so that clamp is the largest vanilla would
+            // draw this label at, and the base is what has to go back when it is restored.
+            label.Base = label.AutoSizing ? BaseSize(amount) : label.Size;
+            label.Ceiling = label.AutoSizing
+                ? Mathf.Clamp(label.Base, label.Min, label.Max)
+                : label.Size;
+            label.Lowest = Mathf.Min(label.Ceiling, Floor);
+
+            return label;
+        }
+
+        private static AccessTools.FieldRef<TMP_Text, float> _baseSize;
+        private static bool _baseSizeBound;
+
+        /// <summary>
+        /// TMP_Text.m_fontSizeBase, which has no public getter: fontSize reads the size the
+        /// last line settled on, and the base is only ever written.
+        ///
+        /// Bound lazily inside a try, and only for a label vanilla auto-sizes. A field ref in a
+        /// static initialiser that fails to bind throws at type-init, and every Harmony patch
+        /// this class carries would then throw with it - so a renamed field costs the exact
+        /// restore of an auto-sized label, and nothing else. The fallback is the settled size,
+        /// which puts the label back drawing what it drew a moment ago.
+        /// </summary>
+        private static float BaseSize(TMP_Text amount)
+        {
+            if (!_baseSizeBound)
+            {
+                _baseSizeBound = true;
+
+                try
+                {
+                    _baseSize = AccessTools.FieldRefAccess<TMP_Text, float>("m_fontSizeBase");
+                }
+                catch (Exception e)
+                {
+                    GrovePlugin.LogOnce("Could not read TextMeshPro's base font size ("
+                                        + e.Message + "). A requirement label the game "
+                                        + "auto-sizes is put back at the size it last drew.");
+                }
+            }
+
+            if (_baseSize == null) return amount.fontSize;
+
+            try
+            {
+                return _baseSize(amount);
+            }
+            catch (Exception)
+            {
+                return amount.fontSize;
+            }
         }
 
         /// <summary>
@@ -386,13 +479,23 @@ namespace Hod
 
         private static void Restore(TMP_Text amount, Label label)
         {
-            // Auto size off FIRST. TMP's fontSize setter only records the size as the base
-            // one while auto size is off, so setting the size before switching it off would
-            // leave the label drawn at whatever the last fitted line shrank to.
-            amount.enableAutoSizing = label.AutoSizing;
+            // The size is written back while auto size is still OFF, and for an auto-sized
+            // label that order is load-bearing. TMP's fontSize setter writes the size it draws
+            // at every time, and the base size auto size starts from only while auto size is
+            // off (TMP_Text.fontSize). Fitting wrote every size with it off, so the fitted
+            // size is sitting in both; written now, in the same state, vanilla's replaces
+            // both. Switch auto size back on first and the base would keep the fitted size,
+            // and vanilla's label would start every later line from it.
+            //
+            // For a label vanilla draws at a fixed size the order does not matter, but the
+            // write does: with auto size off nothing in TMP ever resets the drawn size, so
+            // without this line the label would stay at whatever the last chest total shrank
+            // it to.
+            amount.fontSize = label.AutoSizing ? label.Base : label.Size;
+
             amount.fontSizeMin = label.Min;
             amount.fontSizeMax = label.Max;
-            if (!label.AutoSizing) amount.fontSize = label.Size;
+            amount.enableAutoSizing = label.AutoSizing;
 
             amount.textWrappingMode = label.Wrapping;
             amount.overflowMode = label.Overflow;
@@ -415,40 +518,54 @@ namespace Hod
         }
 
         /// <summary>
-        /// Whether a line fits, and - once a session - everything about the label it has to
-        /// fit in.
+        /// Picks the size a line is drawn at, and - once a session - logs everything about
+        /// the label it has to fit in.
         ///
-        /// The label's rect, font size and overflow rules are asset data: they live in the
-        /// game's UI bundle and cannot be read offline, so the fix above was written without
-        /// them. This is how they get read. The first fitted line writes one line to the log
-        /// with the label's size and margins, the slot around it, vanilla's text settings, and
-        /// every mask between the label and the panel - the last because a mask on a parent
-        /// clips what the label draws however well the label itself fits, and a line that
-        /// still loses a character with a fitted label is that case and no other.
+        /// The line is measured at the ceiling and shrunk by the ratio it is too wide by.
+        /// TMP scales every advance and every spacing linearly with the size, so the ratio
+        /// is as good as measuring again at the new size; it is rounded DOWN to TMP's own
+        /// twentieth of a point, so a line sized to fit does fit rather than landing a hair
+        /// over.
         ///
-        /// And a warning, once, for a line that does not fit even at the floor, with the
-        /// numbers. It still shows in full - see Fit - but it runs past the label's edge, and
-        /// a format that does that at ordinary numbers is a format worth shortening.
+        /// <b>The width GetPreferredValues returns is not the text's width.</b> It adds the
+        /// label's positive side margins on at the end (TMP_Text.CalculatePreferredValues),
+        /// and the room they are compared with has already had the margins taken off. Left
+        /// in, the margins are counted twice, and scaled with the font besides, which they are
+        /// not - so they come off here, before anything is compared or scaled.
         ///
-        /// GetPreferredValues measures at fontSizeMax while auto size is on, which is the
-        /// ceiling. TMP scales every advance linearly with the size, so the width at the floor
-        /// is that times floor over ceiling; measuring twice would have meant turning auto
-        /// size off and on around a call that only needs a ratio.
-        ///
-        /// Caught whole. Nothing here decides anything - the line is already written and
-        /// fitted by the time this runs - so a TMP that has moved on costs the diagnostics and
-        /// never the panel.
+        /// Caught whole. If measuring throws, the label stays at vanilla's own size with
+        /// wrapping off and overflow on - one line, never cut by the label - and only the
+        /// shrinking and the diagnostics are lost.
         /// </summary>
         private static void Measure(Transform elementRoot, TMP_Text amount, string text,
-                                    Label label)
+                                    Label label, float room)
         {
             try
             {
-                var rect = amount.rectTransform.rect;
-                var margin = amount.margin;
-                var room = rect.width - margin.x - margin.z;
+                // GetPreferredValues measures at the current size when auto size is off, and
+                // the current size is whatever the previous line was shrunk to. Setting the
+                // ceiling first makes the number it returns mean one thing every time.
+                amount.fontSize = label.Ceiling;
 
-                var wide = amount.GetPreferredValues(text).x;
+                var margin = amount.margin;
+                var preferred = amount.GetPreferredValues(text);
+                var wide = preferred.x - Mathf.Max(margin.x, 0f) - Mathf.Max(margin.z, 0f);
+                var tall = preferred.y - Mathf.Max(margin.y, 0f) - Mathf.Max(margin.w, 0f);
+
+                var size = label.Ceiling;
+                if (room > 0f && wide > room)
+                {
+                    size = Mathf.Floor(label.Ceiling * room / wide * 20f) / 20f;
+                    size = Mathf.Max(size, label.Lowest);
+                }
+
+                amount.fontSize = size;
+
+                // A label with no width yet is one the panel has not laid out, and it is
+                // measured again the frame it gets one - see Fit. Describing it now would log
+                // a zero as the slot's size and warn that every line is too wide for it.
+                if (room <= 0f) return;
+
                 var atFloor = label.Ceiling > 0f ? wide * label.Lowest / label.Ceiling : wide;
 
                 if (!_described)
@@ -457,11 +574,12 @@ namespace Hod
 
                     if (GrovePlugin.Log != null)
                         GrovePlugin.Log.LogInfo(Describe(elementRoot, amount, text, label,
-                                                         rect, margin, room, wide, atFloor));
+                            margin, room, wide, tall, atFloor, size));
                 }
 
-                // Half a unit of slack, because TMP rounds sizes to a twentieth of a point
-                // and the ratio above is exact.
+                // Half a unit of slack. TMP rounds the width it measures up to the next
+                // hundredth, and a line within half a unit of its slot is one nobody can see
+                // run over.
                 if (atFloor > room + 0.5f && !_warnedTooWide)
                 {
                     _warnedTooWide = true;
@@ -469,47 +587,70 @@ namespace Hod
                     GrovePlugin.LogOnce(
                         "A requirement line on the crafting panel is too wide for its slot even "
                         + "at size " + N(label.Lowest) + ": \"" + text + "\" needs "
-                        + N(atFloor) + " and the slot has " + N(room) + ". It is drawn in full "
-                        + "and runs past the edge. A shorter Hod/ChestTotalFormat keeps it "
-                        + "inside.");
+                        + N(atFloor) + " and the slot has " + N(room) + ". It is left at "
+                        + N(label.Lowest) + " and runs long. A shorter Hod/ChestTotalFormat "
+                        + "keeps it inside.");
                 }
             }
             catch (Exception e)
             {
                 GrovePlugin.LogOnce("Could not measure a crafting requirement line ("
-                                    + e.Message + "). The line is still fitted; only the "
-                                    + "diagnostics are missing.");
+                                    + e.Message + "). It is drawn at the game's own size on "
+                                    + "one line and may run past its slot.");
             }
         }
 
+        /// <summary>
+        /// The one line that settles everything the offline fix had to assume.
+        ///
+        /// Positions are given in the LABEL's own space, left edge to right edge, for the
+        /// label itself, the slot around it and every mask above it. A width alone cannot say
+        /// whether a mask cuts the label - a mask wider than the label can still start inside
+        /// it - and a mask that does cut it clips what the label draws however well the label
+        /// itself fits. A line that still loses a character after this change is that case,
+        /// and the edges here are what would show it. The height is there for the same kind of
+        /// reason: a line taller than its label is drawn anyway in overflow mode, and it is the
+        /// fact that decided against TMP's own auto size.
+        /// </summary>
         private static string Describe(Transform elementRoot, TMP_Text amount, string text,
-            Label label, Rect rect, Vector4 margin, float room, float wide, float atFloor)
+            Label label, Vector4 margin, float room, float wide, float tall, float atFloor,
+            float size)
         {
+            var rect = amount.rectTransform.rect;
             var line = new StringBuilder();
 
             line.Append("Hod requirement line, measured once: res_amount is ")
                 .Append(N(rect.width)).Append(" x ").Append(N(rect.height))
+                .Append(", x ").Append(N(rect.xMin)).Append(" to ").Append(N(rect.xMax))
                 .Append(" (margins left ").Append(N(margin.x))
-                .Append(", right ").Append(N(margin.z)).Append(")");
+                .Append(", right ").Append(N(margin.z))
+                .Append(", top ").Append(N(margin.y))
+                .Append(", bottom ").Append(N(margin.w)).Append(")");
 
             var slot = elementRoot as RectTransform;
             if (slot != null)
-                line.Append(" in a slot ").Append(N(slot.rect.width)).Append(" wide");
+                line.Append(" in a slot ").Append(N(slot.rect.width)).Append(" wide at x ")
+                    .Append(Span(slot, amount.rectTransform));
 
             line.Append(". Vanilla draws it at ").Append(N(label.Size))
                 .Append(label.AutoSizing
                     ? " with auto size on, " + N(label.Min) + " to " + N(label.Max)
+                      + " from a base of " + N(label.Base)
                     : " with auto size off")
                 .Append(", wrapping ").Append(label.Wrapping)
                 .Append(", overflow ").Append(label.Overflow)
                 .Append(", aligned ").Append(amount.alignment)
-                .Append(". Masks above it: ").Append(Masks(amount.transform.parent))
-                .Append(". Now fitted between ").Append(N(label.Lowest))
-                .Append(" and ").Append(N(label.Ceiling))
+                .Append(". Masks above it: ")
+                .Append(Masks(amount.transform.parent, amount.rectTransform))
+                .Append(". Now sized from ").Append(N(label.Lowest))
+                .Append(" to ").Append(N(label.Ceiling))
                 .Append("; \"").Append(text).Append("\" is ").Append(N(wide))
-                .Append(" wide at ").Append(N(label.Ceiling)).Append(" and ")
-                .Append(N(atFloor)).Append(" at ").Append(N(label.Lowest))
-                .Append(", against ").Append(N(room)).Append(" of room.");
+                .Append(" wide and ").Append(N(tall)).Append(" tall at ")
+                .Append(N(label.Ceiling)).Append(", ").Append(N(atFloor))
+                .Append(" wide at ").Append(N(label.Lowest))
+                .Append(", against ").Append(N(room)).Append(" of room and ")
+                .Append(N(rect.height - margin.y - margin.w)).Append(" of height")
+                .Append(", so it is drawn at ").Append(N(size)).Append(".");
 
             return line.ToString();
         }
@@ -521,7 +662,7 @@ namespace Hod
         /// screen's root; the bound is only there so a strange hierarchy cannot make a
         /// diagnostic walk for long.
         /// </summary>
-        private static string Masks(Transform from)
+        private static string Masks(Transform from, RectTransform label)
         {
             var found = new StringBuilder();
             var t = from;
@@ -530,23 +671,54 @@ namespace Hod
             {
                 RectMask2D soft;
                 if (t.TryGetComponent(out soft) && soft.enabled)
-                    Name(found, "RectMask2D", t);
+                    Name(found, "RectMask2D", t, label);
 
                 Mask hard;
                 if (t.TryGetComponent(out hard) && hard.enabled)
-                    Name(found, "Mask", t);
+                    Name(found, "Mask", t, label);
             }
 
             return found.Length == 0 ? "none" : found.ToString();
         }
 
-        private static void Name(StringBuilder found, string kind, Transform t)
+        private static void Name(StringBuilder found, string kind, Transform t,
+                                 RectTransform label)
         {
             if (found.Length > 0) found.Append(", ");
             found.Append(kind).Append(" on ").Append(t.name);
 
             var rect = t as RectTransform;
-            if (rect != null) found.Append(" (").Append(N(rect.rect.width)).Append(" wide)");
+            if (rect != null)
+                found.Append(" (").Append(N(rect.rect.width)).Append(" wide, x ")
+                     .Append(Span(rect, label)).Append(")");
+        }
+
+        private static readonly Vector3[] Corners = new Vector3[4];
+
+        /// <summary>
+        /// Where a rect's left and right edges fall in another rect's local space.
+        ///
+        /// Through world space rather than by adding anchored positions, because the two sit
+        /// at different depths of the hierarchy and any parent between them may be scaled or
+        /// offset. Local x reads left to right on screen as long as the label is not rotated,
+        /// and nothing about a requirement slot suggests it is; if it were, the edges logged
+        /// would say so by coming out in an order that makes no sense.
+        /// </summary>
+        private static string Span(RectTransform of, RectTransform frame)
+        {
+            of.GetWorldCorners(Corners);
+
+            var left = float.PositiveInfinity;
+            var right = float.NegativeInfinity;
+
+            for (var i = 0; i < 4; i++)
+            {
+                var x = frame.InverseTransformPoint(Corners[i]).x;
+                left = Mathf.Min(left, x);
+                right = Mathf.Max(right, x);
+            }
+
+            return N(left) + " to " + N(right);
         }
 
         /// <summary>

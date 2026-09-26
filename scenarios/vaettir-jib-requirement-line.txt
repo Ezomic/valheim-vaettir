@@ -15,14 +15,17 @@
 #
 #   1. Click Crude bow in the recipe list.
 #      Expect the Wood slot to read 10 (+169) and the Leather scraps slot 8 (+60), each with
-#      its closing bracket, the part in brackets in blue.
+#      its closing bracket, the part in brackets in blue. Each line is sized on its own, so
+#      the longer Wood line may be drawn a little smaller than the Leather one beside it.
 #   2. Hold the multi-craft key, the one that makes the button read "Craft x 5".
 #      Expect 50 (+169) and 40 (+60), whole, and the text no smaller than you can read.
 #   3. Let go. Expect it back to step 1 exactly.
-#   4. Click Hammer. It costs wood and stone, and the stone is in your pack, not the chest,
-#      so its slot is one that held a bow line a moment ago and now holds a plain number.
-#      Expect the wood with (+169) after it, and the stone as a bare number at the game's
-#      own size, looking exactly as it does without the mod.
+#   4. Click Hammer. It costs wood and stone. The chest holds no stone, so the stone slot is
+#      one that held a bow line a moment ago and now holds a plain number. Your pack holds
+#      none either, because it was emptied when the scenario finished, so that number
+#      flashes red. That is the game saying you are short, the same as without the mod.
+#      Expect the wood with (+169) after it, and the stone as a bare number with no brackets,
+#      at the same size as a plain number anywhere else in the panel.
 #   5. Open LogOutput.log and search for "Hod requirement line, measured once".
 #      Expect one line. Send it to me: it is the label's real size, which could not be read
 #      without the game running, and it decides whether size 12 is ever reached.

@@ -11,8 +11,8 @@
 #   2. Hold the multi-craft key. Expect 50 (+769) and 40 (+60), whole, and readable.
 #      If the text had to shrink, this is where it is smallest.
 #   3. Search LogOutput.log for "too wide for its slot". Nothing means it fitted at size 12
-#      or larger. A line there means it ran past the slot edge instead of losing digits,
-#      and it names the widths; send it to me.
+#      or larger. A line there means it did not fit even at 12, and it names the widths;
+#      send it to me.
 #
 # Stand on flat ground with about ten metres clear, away from other posts and chests.
 

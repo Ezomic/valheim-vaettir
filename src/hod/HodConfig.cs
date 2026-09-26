@@ -244,9 +244,9 @@ namespace Hod
                 + "TextMeshPro rich text works here, which is what the colour tag is. Set it "
                 + "to {need} to keep vanilla's text and still get the un-greying.\n"
                 + "The slot was laid out for a bare number, so a longer line is shrunk to fit "
-                + "it, never below size 12. A format too long even for that runs past the edge "
-                + "of the slot rather than losing a digit, and the log says so once. Shorter "
-                + "is better here: a line that fits needs no shrinking at all.");
+                + "it, never below size 12. A format too long even for that is left at 12 and "
+                + "runs long, and the log says so once. Shorter is better here: a line that "
+                + "fits needs no shrinking at all.");
 
             // Deliberately NOT $msg_missingrequirement, which is what this used to be. That
             // is the string vanilla shows for "you simply do not have this", and showing it

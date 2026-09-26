@@ -17,10 +17,10 @@ and the mod uses [semantic versioning](https://semver.org).
   "40 (+16". Holding the key does not change the chest count. The longer line lost its last
   digit along with the bracket.
 
-  The line now shrinks to fit its slot when it has to, down to size 12. A line that fits is
-  drawn at the game's own size as before, and a slot showing a plain number is put back
-  exactly as the game built it. A line still too wide at size 12 runs past the edge instead
-  of losing a digit, and says so once in the log.
+  The line now shrinks to fit the space the game gives that number, down to size 12. A
+  line that fits is drawn at the game's own size as before, and a slot showing a plain
+  number is put back exactly as the game built it. If a line is still too wide at size 12,
+  it stays at 12 and the log says so once.
 
 ## [1.6.2] - 2026-09-22
 
