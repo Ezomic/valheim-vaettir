@@ -4,7 +4,7 @@
 # carrot bed found none and started a grid of its own where it was aimed. That is the other way
 # one field came out on two grids.
 #
-# The carrot bed is laid with `furrow free`, exactly where each is aimed and on no grid: a bed
+# The carrot bed is laid with `furrowtest free`, exactly where each is aimed and on no grid: a bed
 # from before this fix, or one planted by hand with Shift. It is square with itself, a metre
 # apart, and nowhere in particular against the shared grid. The turnips must follow the bed, not
 # the shared grid.
@@ -18,16 +18,16 @@
 wipe 20
 wait 1
 
-mod furrow forget
-mod furrow free sapling_carrot 2.37 2.21
-mod furrow free sapling_carrot 3.37 2.21
-mod furrow free sapling_carrot 2.37 3.21
-mod furrow free sapling_carrot 3.37 3.21
+mod furrowtest forget
+mod furrowtest free sapling_carrot 2.37 2.21
+mod furrowtest free sapling_carrot 3.37 2.21
+mod furrowtest free sapling_carrot 2.37 3.21
+mod furrowtest free sapling_carrot 3.37 3.21
 wait 1
 
-mod furrow plant sapling_turnip 4.3 2.3
+mod furrowtest plant sapling_turnip 4.3 2.3
 printed 4 plants in line yes
-mod furrow plant sapling_turnip 4.4 3.1
+mod furrowtest plant sapling_turnip 4.4 3.1
 printed plants already there yes
 wait 1
 

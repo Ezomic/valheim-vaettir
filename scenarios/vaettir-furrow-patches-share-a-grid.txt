@@ -21,20 +21,20 @@
 wipe 20
 wait 1
 
-mod furrow forget
-mod furrow plant sapling_carrot 2 2
+mod furrowtest forget
+mod furrowtest plant sapling_carrot 2 2
 printed shared grid yes
-mod furrow plant sapling_carrot 3 2
-mod furrow plant sapling_carrot 2 3
-mod furrow plant sapling_carrot 3 3
+mod furrowtest plant sapling_carrot 3 2
+mod furrowtest plant sapling_carrot 2 3
+mod furrowtest plant sapling_carrot 3 3
 wait 1
 
 # Seven metres off, and a different crop, after the grid has been made to forget.
-mod furrow forget
-mod furrow plant sapling_turnip 9.3 2.4
+mod furrowtest forget
+mod furrowtest plant sapling_turnip 9.3 2.4
 printed shared grid yes
-mod furrow plant sapling_turnip 10.3 2.4
-mod furrow plant sapling_turnip 9.3 3.4
+mod furrowtest plant sapling_turnip 10.3 2.4
+mod furrowtest plant sapling_turnip 9.3 3.4
 wait 1
 
 mod furrow check sapling_carrot,sapling_turnip 20

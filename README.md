@@ -204,9 +204,20 @@ down by hand cannot pull a bed out of line. On open ground a plant goes on one g
 the whole world, which is why two beds planted a week apart still line up. Turn `GridShared`
 off to have the first plant go exactly where you aim instead.
 
+A bed keeps its angle as well as its rows. Once two plants stand in line, turning the grid
+beside them changes nothing there, and the message says so. Your angle still applies on open
+ground and to a single plant, which the grid then turns around. To start rows at a new angle
+right next to a bed, pin the grid.
+
 A sapling that has already grown into a tree does not count, because the game cannot tell it
 from a wild one. A new sapling beside it still lines up if both were planted on open ground,
-since they were then on the shared grid.
+since they were then on the shared grid. Wild mushrooms, thistles and berry bushes do not count
+either, even the ones Thicket can grow from a transplant. Anything the world spawns by itself is
+left out.
+
+When the grid moves a plant, the game's own checks run again where it will land. A carrot that
+would snap off the tilled ground, or into someone's ward, turns the ghost red and is refused
+with the game's usual message, rather than being planted and lost at its first growth check.
 
 A ring at the plant's grow radius shows green when it would have room and red when it would
 not. The game itself does not check this at placement time. It checks ten seconds later, and a
@@ -590,9 +601,14 @@ not read `Player.m_knownRecipes`, learning anything new will bring it back.
 whatever grid their first plant happened to start. A new plant next to one of them follows
 that bed, so an old bed stays consistent with itself. Where two old beds on different grids
 meet, the plant follows the one with more plants near where you aim. Beds started on open
-ground now all share one grid. With devcommands on, `furrow check sapling_carrot` at the
-console counts how many grids the carrots within 20m are on. It takes a comma-separated list
-and a radius.
+ground now all share one grid, as long as your grid angle has not changed in between. The
+console command `furrow check sapling_carrot` counts how many grids the carrots within 20m are
+on. It takes a comma-separated list and a radius. It is not a cheat command and needs no
+devcommands, so it works on a server too.
+
+**The grid will not turn.** Next to a bed of two or more plants in line, the bed's rows win
+over your angle. The message when you scroll says which angle the bed is keeping. Pin the grid
+to turn it there.
 
 **A sapling needs only three greydwarfs.** `TestMode` is on. It warns on every startup.
 

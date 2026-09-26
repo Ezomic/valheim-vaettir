@@ -18,25 +18,29 @@ namespace Furrow
     /// World-aligned axes rather than anchor-rotated: rows running north-south are
     /// predictable from any approach angle, which is what a grid is for.
     ///
-    /// WHICH lattice - its origin, the phase every row runs from - is Lattice.cs's
-    /// business, and the reasons it is decided the way it is are written there. In
-    /// short: a plant beside plants already in the ground continues their rows, voted
-    /// on by the plants within a few cells so one stray cannot steer a bed; and on open
-    /// ground it lands on one grid shared by the whole world. That replaced a rule that
-    /// fell back on the cursor, and the cursor is what put two patches of one field on
-    /// two grids and walked an oak row off the grid of its first tree (LHM-29).
+    /// WHICH lattice - its origin, the phase every row runs from, and beside a bed its
+    /// angle too - is Lattice.cs's business, and the reasons it is decided the way it is
+    /// are written there. In short: a plant beside plants already in the ground continues
+    /// their rows, at their angle, voted on by the plants within a few cells so one stray
+    /// cannot steer a bed; and on open ground it lands on one grid shared by the whole
+    /// world. That replaced a rule that fell back on the cursor, and the cursor is what
+    /// put two patches of one field on two grids and walked an oak row off the grid of
+    /// its first tree (LHM-29).
     ///
-    /// This file is the part that runs every frame: the gates, the gestures, and
-    /// putting the ghost where the lattice says.
+    /// This file is the part that runs every frame: the gates, the gestures, putting the
+    /// ghost where the lattice says, and asking vanilla's placement questions again at
+    /// the spot the ghost was moved to.
     ///
     /// All three properties of a lattice are the player's, because "it does not line
     /// up with my build" is not answerable by any default. Its SPACING is GridCell,
     /// absolute metres, overriding the crop's own grow radius - which is per-crop and
     /// so can never match a floor. Its ANGLE is GridAngle, for a building that does not
-    /// sit square to the world. And its ORIGIN is GridPinKey: the shared grid and the
-    /// beds already planted are right for everything except lining a new bed up with a
-    /// floor, which is what the pin is for. A pin outranks everything else and survives
-    /// a change of crop, so one pinned bed takes carrots and turnips in the same rows.
+    /// sit square to the world; beside a bed laid at another angle the bed's rows win,
+    /// and the turn message says so. And its ORIGIN is GridPinKey: the shared grid and
+    /// the beds already planted are right for everything except lining a new bed up
+    /// with a floor, which is what the pin is for. A pin outranks everything else -
+    /// angle included - and survives a change of crop, so one pinned bed takes carrots
+    /// and turnips in the same rows.
     /// </summary>
     [HarmonyPatch]
     internal static class GridPlacement
@@ -69,6 +73,13 @@ namespace Furrow
         /// </summary>
         private static Vector3? _current;
 
+        /// <summary>
+        /// The angle of the grid in use, which is not always yours: beside a bed laid at
+        /// another angle the rows follow the bed (see Lattice's header). A turn writes the new
+        /// angle here too, so the grid in use turns with it wherever no bed says otherwise.
+        /// </summary>
+        private static float _currentAngle;
+
         internal enum Source
         {
             /// <summary>The pin key put it here.</summary>
@@ -95,8 +106,16 @@ namespace Furrow
         private static float _votedAngle;
         private static bool _votedShared;
         private static Vector3 _anchor;
+        private static float _anchorAngle;
         private static Source _source;
         private static int _support;
+
+        /// <summary>
+        /// Set by a turn, and read once the snap has been worked out, so the message can say
+        /// what the turn actually did to the rows under the cursor rather than only what it
+        /// wrote to the config.
+        /// </summary>
+        private static bool _turned;
 
         private const float RevoteDistance = 0.25f;
         private const float RevoteSeconds = 0.5f;
@@ -130,7 +149,7 @@ namespace Furrow
 
         [HarmonyPostfix]
         [HarmonyPatch(typeof(Player), "UpdatePlacementGhost")]
-        private static void Snap(Player __instance)
+        private static void Snap(Player __instance, bool flashGuardStone)
         {
             if (__instance != Player.m_localPlayer) return;
 
@@ -178,31 +197,178 @@ namespace Furrow
             Wheel(__instance);
 
             Vector3 anchor;
-            var snapped = Resolve(at, step, out anchor);
+            float angle;
+            var snapped = Resolve(at, step, out anchor, out angle);
             ghost.transform.position = snapped;
+
+            Recheck(__instance, ghost, at, snapped, flashGuardStone);
+
+            if (_turned)
+            {
+                _turned = false;
+                SayTurn(__instance, angle);
+            }
 
             // Drawn from the same anchor, step and angle the snap just used, so the
             // lines cannot disagree with where the plant will land. Re-rung too, since
             // the ghost has moved since the ring above was drawn.
-            GridPreview.Grid(anchor, step, FurrowConfig.GridAngle.Value, snapped, _pin.HasValue);
+            GridPreview.Grid(anchor, step, angle, snapped, _pin.HasValue);
             GridPreview.Ring(snapped, ghostPlant, Room.Free(snapped, ghostPlant));
 
             Hint(__instance);
         }
 
+        // ------------------------------------------------------------------ the checks
+
+        private static AccessTools.FieldRef<Player, Player.PlacementStatus> _status;
+        private static System.Func<Player, bool> _blockedByPlayer;
+        private static bool _checksBound;
+
+        /// <summary>
+        /// Ask vanilla's questions again at the spot the plant will actually land.
+        ///
+        /// Player.UpdatePlacementGhost checks tilled ground at the placement ray's hit point,
+        /// and wards, no-build locations, biome and standing players at the ghost's position -
+        /// all before this postfix moves the ghost onto the grid. TryPlacePiece then acts on
+        /// that verdict and plants wherever the ghost stands. So a carrot aimed at the edge
+        /// of a hoed patch passed on the hoed side, snapped half a row onto grass, was planted
+        /// there, and deleted itself at its first health check ten seconds later, seed and
+        /// all (carrots rip with m_destroyIfCantGrow on). An oak aimed just outside a
+        /// neighbour's ward could snap inside it the same way. That was true of every plant
+        /// after the first from the day the grid shipped; the shared grid made it true of the
+        /// first one too, which is when review caught it.
+        ///
+        /// Only ever turns a yes into a no, never the other way: a spot vanilla refused keeps
+        /// vanilla's refusal and vanilla's reason. The reasons are vanilla's own statuses, so
+        /// the press earns vanilla's own message ("$msg_needcultivated" and the rest) and the
+        /// ghost goes red the way it always does. Heightmap.FindHeightmap at the snapped spot
+        /// is what Plant.UpdateHealth itself uses for its tilled-ground test, so the answer is
+        /// the one the plant would have given ten seconds too late.
+        ///
+        /// Water and clipping are not rechecked. Water needs the ray's own water hit, and no
+        /// plant ripped so far sets m_noClipping; a half-row move changes neither in practice.
+        /// </summary>
+        private static void Recheck(Player player, GameObject ghost, Vector3 aimed, Vector3 snapped,
+                                    bool flash)
+        {
+            if (Lattice.FlatSqr(aimed, snapped) < 1e-6f) return;
+
+            BindChecks();
+            if (_status == null) return;
+            if (_status(player) != Player.PlacementStatus.Valid) return;
+
+            Piece piece;
+            if (!ghost.TryGetComponent(out piece)) return;
+
+            var refused = Refusal(player, piece, snapped, flash);
+            if (refused == Player.PlacementStatus.Valid) return;
+
+            _status(player) = refused;
+            piece.SetInvalidPlacementHeightlight(true);
+        }
+
+        /// <summary>
+        /// Vanilla's order and vanilla's tests, so where two apply the later one names the
+        /// reason, as it would have.
+        /// </summary>
+        private static Player.PlacementStatus Refusal(Player player, Piece piece, Vector3 at, bool flash)
+        {
+            var status = Player.PlacementStatus.Valid;
+            var heightmap = Heightmap.FindHeightmap(at);
+
+            if (piece.m_cultivatedGroundOnly && (heightmap == null || !heightmap.IsCultivated(at)))
+                status = Player.PlacementStatus.NeedCultivated;
+
+            if (piece.m_vegetationGroundOnly)
+            {
+                var bare = heightmap == null;
+                if (!bare)
+                {
+                    var mask = heightmap.GetVegetationMask(at);
+                    bare = heightmap.GetBiome(at) == Heightmap.Biome.AshLands ? mask > 0.1f : mask < 0.25f;
+                }
+                if (bare) status = Player.PlacementStatus.NeedDirt;
+            }
+
+            if (Location.IsInsideNoBuildLocation(at))
+                status = Player.PlacementStatus.NoBuildZone;
+
+            PrivateArea ward;
+            var hasWard = piece.TryGetComponent(out ward);
+            if (!PrivateArea.CheckAccess(at, hasWard ? ward.m_radius : 0f, flash, hasWard))
+                status = Player.PlacementStatus.PrivateZone;
+
+            // Reads the ghost where it now stands, which is why this runs after the move.
+            if (_blockedByPlayer != null && _blockedByPlayer(player))
+                status = Player.PlacementStatus.BlockedbyPlayer;
+
+            if (piece.m_onlyInBiome != 0 && (Heightmap.FindBiome(at) & piece.m_onlyInBiome) == 0)
+                status = Player.PlacementStatus.WrongBiome;
+
+            return status;
+        }
+
+        /// <summary>
+        /// Bound on first use inside a try/catch, never in a field initialiser: a throw from a
+        /// static initialiser would poison every patch this class carries, and the grid would
+        /// stop working rather than stop rechecking. A failed binding costs the recheck - the
+        /// grid then places the way it did before this existed - and says so once.
+        /// </summary>
+        private static void BindChecks()
+        {
+            if (_checksBound) return;
+            _checksBound = true;
+
+            try
+            {
+                _status = AccessTools.FieldRefAccess<Player, Player.PlacementStatus>("m_placementStatus");
+            }
+            catch (System.Exception e)
+            {
+                Grove.GrovePlugin.Log.LogWarning("Furrow grid: Player.m_placementStatus could not be "
+                    + "reached (" + e.Message + "), so a plant snapped onto grass or into a ward is "
+                    + "not refused before it is planted.");
+            }
+
+            try
+            {
+                _blockedByPlayer = AccessTools.MethodDelegate<System.Func<Player, bool>>(
+                    AccessTools.Method(typeof(Player), "CheckPlacementGhostVSPlayers"));
+            }
+            catch (System.Exception e)
+            {
+                Grove.GrovePlugin.Log.LogWarning("Furrow grid: Player.CheckPlacementGhostVSPlayers "
+                    + "could not be reached (" + e.Message + "), so a snap onto a player is not "
+                    + "refused. Everything else is still rechecked.");
+            }
+        }
+
         /// <summary>
         /// Where a plant with rows <paramref name="step"/> apart, aimed at
-        /// <paramref name="at"/>, lands - and the point its grid runs through.
+        /// <paramref name="at"/>, lands - and the point its grid runs through, and the angle
+        /// its rows run at.
         ///
         /// The one path from an aim to a planted spot. The ghost goes through it every
-        /// frame, and so does `furrow plant`, which is what lets a Devkit scenario test the
-        /// grid a player gets rather than a copy of it.
+        /// frame, and so does `furrowtest plant`, which is what lets a Devkit scenario test
+        /// the grid a player gets rather than a copy of it.
+        ///
+        /// The pin keeps your own angle; so does open ground. Beside a bed the angle is the
+        /// bed's - see Lattice's header for the accidental turn that made that necessary.
         /// </summary>
-        internal static Vector3 Resolve(Vector3 at, float step, out Vector3 anchor)
+        internal static Vector3 Resolve(Vector3 at, float step, out Vector3 anchor, out float angle)
         {
-            var angle = FurrowConfig.GridAngle.Value;
+            var preferred = FurrowConfig.GridAngle.Value;
 
-            anchor = _pin.HasValue ? _pin.Value : Choose(at, step, angle);
+            if (_pin.HasValue)
+            {
+                anchor = _pin.Value;
+                angle = preferred;
+            }
+            else
+            {
+                Choose(at, step, preferred, out anchor, out angle);
+            }
+
             return Lattice.Snap(anchor, step, angle, at);
         }
 
@@ -224,7 +390,8 @@ namespace Furrow
         /// Which grid, when there is no pin. The reasons for each branch are in Lattice.cs;
         /// this is the order they are asked in.
         /// </summary>
-        private static Vector3 Choose(Vector3 at, float step, float angle)
+        private static void Choose(Vector3 at, float step, float preferred,
+                                   out Vector3 anchor, out float angle)
         {
             var shared = FurrowConfig.GridShared.Value;
 
@@ -238,29 +405,38 @@ namespace Furrow
                 && Time.time - _votedTime < RevoteSeconds
                 && Lattice.FlatSqr(at, _votedAt) < revote * revote
                 && Lattice.SameStep(step, _votedStep)
-                && Mathf.Approximately(angle, _votedAngle)
+                && Mathf.Approximately(preferred, _votedAngle)
                 && shared == _votedShared)
-                return _anchor;
+            {
+                anchor = _anchor;
+                angle = _anchorAngle;
+                return;
+            }
 
             Lattice.Gather(at, step, _kin);
 
             Vector3 best;
+            float bestAngle;
             int support;
-            if (Lattice.Strongest(_kin, at, step, angle, _current, shared, out best, out support))
+            if (Lattice.Strongest(_kin, at, step, preferred, _current, _currentAngle, shared,
+                                  out best, out bestAngle, out support))
             {
                 _anchor = best;
+                _anchorAngle = bestAngle;
                 _source = Source.Bed;
                 _support = support;
             }
             else if (shared)
             {
                 _anchor = Vector3.zero;
+                _anchorAngle = preferred;
                 _source = Source.World;
                 _support = 0;
             }
             else if (_current.HasValue)
             {
                 _anchor = _current.Value;
+                _anchorAngle = _currentAngle;
                 _source = Source.Held;
                 _support = 0;
             }
@@ -271,11 +447,15 @@ namespace Furrow
                 // one. On this frame the ghost is exactly on a lattice point, so nothing
                 // jumps and the first plant lands where the drawn grid says it will.
                 _anchor = at;
+                _anchorAngle = preferred;
                 _source = Source.Here;
                 _support = 0;
             }
 
             _current = _anchor;
+            _currentAngle = _anchorAngle;
+            anchor = _anchor;
+            angle = _anchorAngle;
 
             _voted = true;
             _votedAt = at;
@@ -289,23 +469,28 @@ namespace Furrow
             // and every one of those is the grid working.
             if (FurrowConfig.Verbose.Value
                 && (!_logged || _loggedSource != _source
-                    || (_loggedAnchor - _anchor).sqrMagnitude > 1e-6f))
+                    || (_loggedAnchor - _anchor).sqrMagnitude > 1e-6f
+                    || Lattice.AngleGap(_loggedAngle, _anchorAngle) >= Lattice.SameAngle))
             {
                 _logged = true;
                 _loggedSource = _source;
                 _loggedAnchor = _anchor;
+                _loggedAngle = _anchorAngle;
 
                 Grove.GrovePlugin.Log.LogInfo("Furrow grid: " + Describe(_source, _support)
                                               + " (rows " + step.ToString("0.##") + "m apart, "
-                                              + angle.ToString("0.#") + " degrees).");
+                                              + _anchorAngle.ToString("0.#") + " degrees"
+                                              + (Lattice.AngleGap(_anchorAngle, preferred) >= Lattice.SameAngle
+                                                  ? ", yours is " + preferred.ToString("0.#")
+                                                  : "")
+                                              + ").");
             }
-
-            return _anchor;
         }
 
         private static bool _logged;
         private static Source _loggedSource;
         private static Vector3 _loggedAnchor;
+        private static float _loggedAngle;
 
         /// <summary>Where a grid came from, in words a player would use.</summary>
         internal static string Describe(Source source, int support)
@@ -460,14 +645,56 @@ namespace Furrow
         /// </summary>
         private static void Step(Player player, int direction)
         {
-            var step = FurrowConfig.GridTurnStep.Value;
-            if (step <= 0f) return;
+            if (TurnBy(direction)) _turned = true;
+        }
 
-            var angle = Mathf.Repeat(FurrowConfig.GridAngle.Value + step * direction, 90f);
+        /// <summary>
+        /// Turn your angle by whole notches of GridTurnStep, and the grid in use with it.
+        /// False when GridTurnStep is 0 and nothing turned. Shared by the wheel, the key and
+        /// `furrowtest turn`, so a scenario turns the grid the way a hand does.
+        ///
+        /// The grid in use takes the new angle too, which is what makes a turn do what it
+        /// says wherever the plants do not overrule it: on open ground, about a lone plant,
+        /// and on the grid this session was carrying with GridShared off. Beside two or more
+        /// plants in line the vote still finds their angle and keeps it - SayTurn tells you so.
+        /// </summary>
+        internal static bool TurnBy(int notches)
+        {
+            var step = FurrowConfig.GridTurnStep.Value;
+            if (step <= 0f || notches == 0) return false;
+
+            var angle = Mathf.Repeat(FurrowConfig.GridAngle.Value + step * notches, 90f);
             FurrowConfig.GridAngle.Value = angle;
 
+            _currentAngle = angle;
+            _voted = false;
+            return true;
+        }
+
+        /// <summary>
+        /// Say what a turn did to the rows under the cursor, after the vote has run on the new
+        /// angle.
+        ///
+        /// Usually that is "Grid at 22.5°" and the drawn lines turn. Beside a bed laid at
+        /// another angle they do not, because the bed keeps its rows (Lattice's header has
+        /// why), and a message claiming the grid turned while the lines on the ground sat
+        /// still would read as the turn being broken. So it names both angles, and the pin,
+        /// which is how you turn the rows beside a bed on purpose.
+        /// </summary>
+        private static void SayTurn(Player player, float used)
+        {
+            var yours = FurrowConfig.GridAngle.Value;
+
+            if (_pin.HasValue || Lattice.AngleGap(yours, used) < Lattice.SameAngle)
+            {
+                player.Message(MessageHud.MessageType.Center, "Grid at " + yours.ToString("0.#") + "°");
+                return;
+            }
+
             player.Message(MessageHud.MessageType.Center,
-                "Grid at " + angle.ToString("0.#") + "°");
+                "Grid at " + yours.ToString("0.#") + "°, but this bed keeps its rows at "
+                + used.ToString("0.#") + "°. " + KeyName(FurrowConfig.GridPinKey.Value)
+                + " pins yours here.");
         }
 
         /// <summary>

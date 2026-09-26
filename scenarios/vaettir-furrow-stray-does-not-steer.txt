@@ -11,7 +11,7 @@
 # grids largest first, so "5 + 1" is the bed with the new onion in it and the stray alone,
 # and "4 + 2" would be the new onion having followed the stray.
 #
-# The bed is laid with `furrow free` so its position against the stray is fixed and cannot
+# The bed is laid with `furrowtest free` so its position against the stray is fixed and cannot
 # depend on where the shared world grid happens to fall around you.
 #
 # The offsets assume onions are spaced one metre apart, which is what they ripped at before
@@ -20,18 +20,18 @@
 wipe 20
 wait 1
 
-mod furrow forget
-mod furrow free sapling_onion 2.37 2.21
-mod furrow free sapling_onion 3.37 2.21
-mod furrow free sapling_onion 4.37 2.21
-mod furrow free sapling_onion 2.37 3.21
+mod furrowtest forget
+mod furrowtest free sapling_onion 2.37 2.21
+mod furrowtest free sapling_onion 3.37 2.21
+mod furrowtest free sapling_onion 4.37 2.21
+mod furrowtest free sapling_onion 2.37 3.21
 
 # The stray, half a row off both ways.
-mod furrow free sapling_onion 3.82 3.66
+mod furrowtest free sapling_onion 3.82 3.66
 wait 1
 
-mod furrow forget
-mod furrow plant sapling_onion 4.1 3.5
+mod furrowtest forget
+mod furrowtest plant sapling_onion 4.1 3.5
 printed 4 plants in line yes
 wait 1
 

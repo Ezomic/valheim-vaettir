@@ -1,0 +1,32 @@
+# Vaettir: a wild mushroom beside a new bed does not decide its rows.
+#
+# LHM-29, found in review before it shipped. The grid reads the rows off plants already in the
+# ground, grown crops included. Thicket's seedlings grow into the wild prefabs themselves, so
+# Pickable_Mushroom counted as a grown crop, and a mushroom is spaced exactly like a carrot. A
+# lone wild mushroom within reach beat the shared grid one plant to none, and a bed started
+# next to it took that mushroom's rows. A second bed next to a different mushroom took its rows.
+# That is two patches of one field on two grids again.
+#
+# Now anything the world grows by itself is not counted. So: one mushroom stood on the ground
+# beside you, and a carrot aimed next to it. The carrot must go on the shared grid, as it would
+# on bare ground.
+#
+# This only proves something while a mushroom seedling and a carrot are spaced alike, which is
+# 1m for both with Thicket's SpacingScale at 1 and carrots as they ripped before 1.0. If they
+# differ the mushroom never counted and this passes for that reason instead. The carrot line in
+# the report says the carrot's spacing, and the log names Pickable_Mushroom among the plants
+# that grow wild.
+#
+# Leaves one mushroom standing, since `wipe` only takes down pieces. Pick it. Takes down every
+# piece within 20m first. Stand on open ground.
+
+wipe 20
+wait 1
+
+grow Pickable_Mushroom 1 3
+wait 1
+
+mod furrowtest forget
+mod furrowtest plant sapling_carrot 0.5 0.5
+printed shared grid yes
+printed in line no

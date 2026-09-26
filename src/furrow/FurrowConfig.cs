@@ -92,7 +92,9 @@ namespace Furrow
             GridAngle = config.Bind("Furrow", "GridAngle", 0f,
                 "Which way the rows run, in degrees. The lattice is world-aligned at 0, "
                 + "so rows run north-south whatever direction you approach from. Turn it "
-                + "to match a building that does not sit square to the world.");
+                + "to match a building that does not sit square to the world. It decides "
+                + "open ground, a lone plant and the pin; beside two or more plants already "
+                + "in line, their own angle wins, so a turn cannot knock a bed off its rows.");
 
             GridFreeKey = config.Bind("Keys", "GridFreeKey", KeyCode.None,
                 "Hold to plant free of the grid - the lattice and its preview stand "

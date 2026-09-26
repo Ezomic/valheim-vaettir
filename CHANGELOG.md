@@ -23,11 +23,27 @@ and the mod uses [semantic versioning](https://semver.org).
   planted apart still line up with each other. `GridShared` turns that last part off if you
   would rather the first plant of a bed went exactly where you aim.
 
-  A grown tree does not steer the grid, because the game cannot tell it from a wild one. The
-  first time each plant is lined up, the log says how far apart the game spaces it.
+  A bed also keeps its angle. Before, the grid only looked for rows at your own angle, so after
+  a turn the bed beside you counted as nothing and the next plant started turned rows around
+  one of its plants. That is easy to do by accident, since scrolling turns the grid. Now two or
+  more plants in line keep their angle, and the message when you turn says so. Your angle still
+  decides open ground and a lone plant. Pin the grid to start new rows at your angle next to a
+  bed.
 
-  With devcommands on, the console has a `furrow` command for testing this: `furrow check`
-  counts how many grids a field is on.
+  A grown tree does not steer the grid, because the game cannot tell it from a wild one. Wild
+  mushrooms, thistles and berry bushes do not steer it either, even though Thicket can grow them
+  from a transplant. The first time each plant is lined up, the log says how far apart the game
+  spaces it.
+
+  The console has a `furrow check` command: `furrow check sapling_carrot` counts how many grids
+  the carrots near you are on. It is not a cheat and needs no devcommands.
+
+- **A plant the grid moved could be planted where the game would have refused it.** The game
+  checks tilled ground, wards and no-build areas where you aim, and the grid then moves the
+  plant up to half a row. A carrot aimed at the edge of a tilled patch could land on grass, get
+  planted, and delete itself ten seconds later with the seed gone. The same checks now run
+  again at the spot the plant will actually land. If that spot fails, the ghost turns red and
+  you get the game's usual message.
 
 - **Some Deep North materials counted as Meadows ones for crafting from containers**, so they
   could be pulled from a chest once Eikthyr fell: the Elaking and Jotun drops and the Vanguard

@@ -1,0 +1,55 @@
+# Vaettir: turning the grid beside a bed does not turn the bed's rows.
+#
+# LHM-29, found in review. The grid used to line a new plant up at your own angle only, so a bed
+# planted before a turn and one planted after it sat side by side on two grids. The angle gets
+# turned by accident more than on purpose: the wheel turns it, and Vaettir 1.3.0 bound middle
+# click to turn it too, which is also the game's remove. Middle-clicking a misplaced oak to take
+# it back turned the grid instead, and every oak after it went down on rows turned about one oak
+# of the row. Robbin's own play profile still had that binding.
+#
+# Now two or more plants in line keep their own angle, and your angle only decides open ground
+# and the pin. So: a bed of four carrots, one notch of turn, and a carrot beside the bed. It
+# must land in the bed's rows. Then one on open ground, which takes the turned angle.
+#
+# The new carrot is aimed at your own feet on purpose. `furrowtest` offsets run along your grid
+# angle, and a turn past 90 wraps back to 0, so any other offset would point somewhere
+# different depending on the angle you started from. Your own spot is the one aim that does not
+# move. The bed is laid round it for that reason.
+#
+# The turn is written to your config the way a scroll writes it, and turned back before the
+# final check, so the file ends where it started. Assumes GridTurnStep is 22.5 or anything
+# else that is not 0 or 90. Carrots are taken to be one metre apart, as they ripped before 1.0.
+# Takes down every piece within 20m first. Stand on open ground.
+
+wipe 20
+wait 1
+
+mod furrowtest forget
+mod furrowtest plant sapling_carrot 1 -1
+printed shared grid yes
+mod furrowtest plant sapling_carrot 1 0
+mod furrowtest plant sapling_carrot 1 1
+mod furrowtest plant sapling_carrot 2 0
+wait 1
+
+# One notch, the way a scroll or a middle click turns it. Then forget, so the carrot beside
+# the bed has only the ground to go on and not the grid the bed was laid with.
+mod furrowtest turn 1
+printed grid at yes
+mod furrowtest forget
+
+mod furrowtest plant sapling_carrot 0 0
+printed 4 plants in line yes
+
+# Ten metres off, with nothing near it. This one does go on the turned grid.
+mod furrowtest plant sapling_carrot 10 0
+printed shared grid yes
+
+# Back to where it was, before the last assertion can fail.
+mod furrowtest turn -1
+printed grid at yes
+wait 1
+
+# The bed and the carrot beside it: one grid. The far one is outside 6m.
+mod furrow check sapling_carrot 6
+printed on one grid yes
