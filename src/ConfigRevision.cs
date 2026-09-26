@@ -31,16 +31,8 @@ namespace Grove
         /// 1 - Vaettir 1.6.1: the stowing post's cost went from 20 fine wood and 20 iron
         ///     nails to 40 fine wood and 20 bronze nails, so the post lands with the Black
         ///     Forest behind you rather than the swamp.
-        /// 2 - LHM-29: GridTurnKey from Mouse2 back to None. 1.3.0 shipped middle click as
-        ///     the grid's turn key, and 1.3.1 moved the turn to the wheel and the key to None
-        ///     the same day - but only for new files, so every player who ran 1.3.0 still has
-        ///     middle click turning the grid, and, because one click cannot do both, no
-        ///     middle-click Remove while a plant is selected. Middle-clicking a misplaced
-        ///     sapling to take it back turned the grid instead and left the sapling standing,
-        ///     which is one way an oak row came to "shift grids". Robbin's own client cfg
-        ///     still read Mouse2 when this was written.
         /// </summary>
-        internal const int Current = 2;
+        internal const int Current = 1;
 
         internal static ConfigEntry<int> Revision;
 
@@ -61,31 +53,7 @@ namespace Grove
                 Moved(Stow.StowConfig.PostCost, "FineWood:20,IronNails:20");
             }
 
-            if (Revision.Value < 2)
-            {
-                Moved(Furrow.FurrowConfig.GridTurnKey, UnityEngine.KeyCode.Mouse2);
-            }
-
             Revision.Value = Current;
-        }
-
-        /// <summary>
-        /// The same move for a key. KeyCode is an enum, so "still holds the old one" is plain
-        /// equality - there is no stray whitespace to forgive the way a hand-edited string has.
-        /// </summary>
-        private static void Moved(ConfigEntry<UnityEngine.KeyCode> entry, UnityEngine.KeyCode was)
-        {
-            if (entry == null) return;
-
-            var now = (UnityEngine.KeyCode)entry.DefaultValue;
-            if (now == was || entry.Value != was) return;
-
-            entry.Value = now;
-
-            GrovePlugin.Log.LogInfo(entry.Definition.Section + "/" + entry.Definition.Key
-                + " still held the default from before this version (" + was + ") and "
-                + "nothing had changed it, so it now reads " + now + ". Set it back in the "
-                + "config file if you want the old one; this runs once.");
         }
 
         /// <summary>
