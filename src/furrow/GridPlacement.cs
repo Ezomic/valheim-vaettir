@@ -232,8 +232,11 @@ namespace Furrow
         /// all before this postfix moves the ghost onto the grid. TryPlacePiece then acts on
         /// that verdict and plants wherever the ghost stands. So a carrot aimed at the edge
         /// of a hoed patch passed on the hoed side, snapped half a row onto grass, was planted
-        /// there, and deleted itself at its first health check ten seconds later, seed and
-        /// all (carrots rip with m_destroyIfCantGrow on). An oak aimed just outside a
+        /// there, wilted at its first health check ten seconds later, and was gone when it
+        /// should have ripened, seed and all: carrots rip with m_destroyIfCantGrow on, and
+        /// Plant.Grow destroys a plant that is not healthy instead of growing it. That is the
+        /// only place it is destroyed, so it stands there wilted for the whole grow time
+        /// first, where it cannot be removed either. An oak aimed just outside a
         /// neighbour's ward could snap inside it the same way. That was true of every plant
         /// after the first from the day the grid shipped; the shared grid made it true of the
         /// first one too, which is when review caught it.
@@ -353,7 +356,7 @@ namespace Furrow
         /// the grid a player gets rather than a copy of it.
         ///
         /// The pin keeps your own angle; so does open ground. Beside a bed the angle is the
-        /// bed's - see Lattice's header for the accidental turn that made that necessary.
+        /// bed's - see Lattice's header for why.
         /// </summary>
         internal static Vector3 Resolve(Vector3 at, float step, out Vector3 anchor, out float angle)
         {

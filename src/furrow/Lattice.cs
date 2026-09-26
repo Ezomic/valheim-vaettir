@@ -73,16 +73,15 @@ namespace Furrow
     ///
     /// <b>Plants in the ground decide the ANGLE as well as the offset.</b> The first version
     /// voted at the player's GridAngle only, and a bed laid at 0 degrees agrees with nothing
-    /// on a lattice turned 22.5 - every plant in it counted as a one-plant grid of its own.
-    /// That mattered more than it looks, because the angle is turned by accident: the wheel
-    /// turns it, and Vaettir 1.3.0 shipped middle click bound to turn it as well, which is
-    /// also vanilla's Remove. A player middle-clicking a misplaced oak to take it back turned
-    /// the grid instead, and every oak after that went down on rows turned about one oak of
-    /// the row - "shifts grids", word for word. Robbin's own play profile still holds that
-    /// binding and an angle of 67.5. So the vote now reads the angle off pairs of plants that
-    /// stand in line (<see cref="Angles"/>) and tries each; the player's angle wins only where
-    /// nothing stands in line, which is a lone plant. It still governs open ground and the
-    /// pin, which is where turning the grid means something.
+    /// on a lattice turned 22.5 - every plant in it counted as a one-plant grid of its own,
+    /// and the next plant started turned rows around one of them. The angle is easy to turn
+    /// without meaning to, because the wheel turns it whenever a plant is selected. That was
+    /// found in review and is NOT what Robbin reported: his two grids had the same angle and
+    /// different rows, which is the offset half above. Middle click as a turn key was
+    /// suspected for it and he ruled it out - it stays his turn key. So the vote now reads
+    /// the angle off pairs of plants that stand in line (<see cref="Angles"/>) and tries each;
+    /// the player's angle wins only where nothing stands in line, which is a lone plant. It
+    /// still governs open ground and the pin, which is where turning the grid means something.
     /// </summary>
     internal static class Lattice
     {

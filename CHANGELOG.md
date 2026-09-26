@@ -40,8 +40,9 @@ and the mod uses [semantic versioning](https://semver.org).
 
 - **A plant the grid moved could be planted where the game would have refused it.** The game
   checks tilled ground, wards and no-build areas where you aim, and the grid then moves the
-  plant up to half a row. A carrot aimed at the edge of a tilled patch could land on grass, get
-  planted, and delete itself ten seconds later with the seed gone. The same checks now run
+  plant up to half a row. A carrot aimed at the edge of a tilled patch could land on grass and
+  get planted. It wilted ten seconds later, and when it should have been ready it was gone, seed
+  and all. The same checks now run
   again at the spot the plant will actually land. If that spot fails, the ghost turns red and
   you get the game's usual message.
 
