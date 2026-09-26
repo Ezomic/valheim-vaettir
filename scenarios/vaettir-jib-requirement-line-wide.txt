@@ -1,0 +1,99 @@
+# Vaettir: the widest chest total a requirement line is likely to carry, shown whole (LHM-28).
+#
+# vaettir-jib-requirement-line reproduces the reported line, 169 in the chest. This is the
+# same bench with a reinforced chest beside it and 769 in the two together, so the bracket
+# holds three digits against a two-digit cost - "50 (+769)" with the multi-craft key held,
+# nine characters in a label vanilla laid out for two.
+#
+# AFTER IT FINISHES, with the panel still open:
+#
+#   1. Click Crude bow. Expect Wood 10 (+769) and Leather scraps 8 (+60), whole.
+#   2. Hold the multi-craft key. Expect 50 (+769) and 40 (+60), whole, and readable.
+#      If the text had to shrink, this is where it is smallest.
+#   3. Search LogOutput.log for "too wide for its slot". Nothing means it fitted at size 12
+#      or larger. A line there means it ran past the slot edge instead of losing digits,
+#      and it names the widths; send it to me.
+#
+# Stand on flat ground with about ten metres clear, away from other posts and chests.
+
+clear
+give Hammer:1,Hoe:1
+give FineWood:250,BronzeNails:40,IronNails:52,Chain:4,GroveHeartwood:6
+# LeatherScraps:1 so the character knows the material and the bow is in the panel at all.
+# A recipe is only listed once every one of its materials has been carried.
+give Wood:100,Stone:40,LeatherScraps:1
+god
+ghost
+sweep
+
+wipe 16
+wait 1
+
+# Wood and leather scraps are Meadows materials, so Eikthyr has to be down for the chest to
+# count at all.
+key defeated_eikthyr
+
+flatten
+wait 1
+
+# The shed, so the bench can be crafted at. Captured from one built by hand.
+place wood_beam 3.2 1.0 5 0.01
+place wood_beam 3.4 -1.0 -174 0.00
+place wood_floor 4.2 1.1 -174 0.02
+place wood_floor 4.4 -0.9 -174 0.03
+place wood_beam 4.1 2.1 -84 0.00
+place wood_beam 4.5 -1.9 -84 0.03
+place wood_beam 5.2 1.2 -174 0.00
+place wood_beam 5.4 -0.8 -174 0.06
+place piece_workbench 4.6 0.1 -174 0.10
+place wood_pole2 3.1 2.0 5 1.04
+place wood_pole2 3.5 -2.0 5 1.00
+place woodwall 4.1 2.1 96 1.00
+place woodwall 4.5 -1.9 -84 1.03
+place woodwall 5.2 1.2 5 1.00
+place woodwall 5.4 -0.8 5 1.06
+place wood_pole2 5.1 2.2 5 1.01
+place wood_pole2 5.5 -1.8 5 1.07
+place wood_roof_ocorner_45 4.2 1.1 5 2.02
+place wood_roof_ocorner_45 4.4 -0.9 -84 2.03
+place wood_beam 4.1 2.1 95 2.00
+place wood_beam 4.5 -1.9 -84 2.03
+place wood_beam 5.2 1.2 5 2.00
+place wood_beam 5.4 -0.8 5 2.06
+place wood_beam_45 3.2 1.0 -174 3.01
+place wood_beam_45 3.4 -1.0 6 3.00
+wait 2
+
+place stow_post 9 2
+wait 6
+place hod_jib 9 4
+wait 4
+place piece_chest_wood 7 3
+wait 2
+
+stock piece_chest_wood Wood:169,LeatherScraps:60
+holds piece_chest_wood Wood 169
+holds piece_chest_wood LeatherScraps 60
+
+# A second chest, a different prefab so `stock` cannot fill the first one twice. Twelve
+# stacks of fifty, well inside a reinforced chest's grid.
+place piece_chest 7 -3
+wait 2
+stock piece_chest Wood:600
+holds piece_chest Wood 600
+
+# Your own 24, so the pack is not empty and the line is not only chest stock.
+strip Wood,LeatherScraps
+give Wood:24
+carrying Wood 24
+carrying LeatherScraps 0
+
+goto piece_workbench
+wait 1
+use piece_workbench
+
+# The bow needs 8 leather scraps and every one of them is in the chest, so this is yes only
+# if the jib is counting the chest the line is about.
+craftable Bow yes
+
+# No `close`. The panel stays open for steps 1 to 3 above.

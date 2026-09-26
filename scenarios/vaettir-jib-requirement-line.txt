@@ -1,0 +1,114 @@
+# Vaettir: the chest total on a crafting requirement line is shown whole (LHM-28).
+#
+# Robbin's report: at a bench served by a hod jib, the Wood slot read "8 (+169" and, holding
+# the multi-craft key, "40 (+16". Both were cut at the slot's edge. The code never counts the
+# chests differently with the key held - the multiplier only scales what the recipe costs -
+# so the second picture was almost certainly "40 (+169)" with the 9 cut off as well as the
+# bracket. The line is now shrunk to fit its label, down to size 12 and no further.
+#
+# This builds that bench with 169 wood in the chest and hands the game back with the
+# crafting panel open. Nothing here can check the picture itself: `onscreen` reads the HUD
+# and the crafting panel is not part of it, and nothing in the vocabulary can hold the
+# multi-craft key. So the assertions pin the fixture and the rest is for your eyes.
+#
+# AFTER IT FINISHES, with the panel still open:
+#
+#   1. Click Crude bow in the recipe list.
+#      Expect the Wood slot to read 10 (+169) and the Leather scraps slot 8 (+60), each with
+#      its closing bracket, the part in brackets in blue.
+#   2. Hold the multi-craft key, the one that makes the button read "Craft x 5".
+#      Expect 50 (+169) and 40 (+60), whole, and the text no smaller than you can read.
+#   3. Let go. Expect it back to step 1 exactly.
+#   4. Click Hammer. It costs wood and stone, and the stone is in your pack, not the chest,
+#      so its slot is one that held a bow line a moment ago and now holds a plain number.
+#      Expect the wood with (+169) after it, and the stone as a bare number at the game's
+#      own size, looking exactly as it does without the mod.
+#   5. Open LogOutput.log and search for "Hod requirement line, measured once".
+#      Expect one line. Send it to me: it is the label's real size, which could not be read
+#      without the game running, and it decides whether size 12 is ever reached.
+#   6. Search the same log for "too wide for its slot". Expect nothing.
+#
+# Your pack is emptied and refilled with the Devkit kit when this finishes, so the 24 wood
+# given below is gone by the time you look. That changes nothing on screen with the default
+# format, which does not show what you carry.
+#
+# vaettir-jib-requirement-line-wide is the same bench with 769 in the chests.
+#
+# Stand on flat ground with about ten metres clear, away from other posts and chests.
+
+clear
+give Hammer:1,Hoe:1
+give FineWood:250,BronzeNails:40,IronNails:52,Chain:4,GroveHeartwood:6
+# LeatherScraps:1 so the character knows the material and the bow is in the panel at all.
+# A recipe is only listed once every one of its materials has been carried.
+give Wood:100,Stone:40,LeatherScraps:1
+god
+ghost
+sweep
+
+wipe 16
+wait 1
+
+# Wood and leather scraps are Meadows materials, so Eikthyr has to be down for the chest to
+# count at all.
+key defeated_eikthyr
+
+flatten
+wait 1
+
+# The shed, so the bench can be crafted at. Captured from one built by hand.
+place wood_beam 3.2 1.0 5 0.01
+place wood_beam 3.4 -1.0 -174 0.00
+place wood_floor 4.2 1.1 -174 0.02
+place wood_floor 4.4 -0.9 -174 0.03
+place wood_beam 4.1 2.1 -84 0.00
+place wood_beam 4.5 -1.9 -84 0.03
+place wood_beam 5.2 1.2 -174 0.00
+place wood_beam 5.4 -0.8 -174 0.06
+place piece_workbench 4.6 0.1 -174 0.10
+place wood_pole2 3.1 2.0 5 1.04
+place wood_pole2 3.5 -2.0 5 1.00
+place woodwall 4.1 2.1 96 1.00
+place woodwall 4.5 -1.9 -84 1.03
+place woodwall 5.2 1.2 5 1.00
+place woodwall 5.4 -0.8 5 1.06
+place wood_pole2 5.1 2.2 5 1.01
+place wood_pole2 5.5 -1.8 5 1.07
+place wood_roof_ocorner_45 4.2 1.1 5 2.02
+place wood_roof_ocorner_45 4.4 -0.9 -84 2.03
+place wood_beam 4.1 2.1 95 2.00
+place wood_beam 4.5 -1.9 -84 2.03
+place wood_beam 5.2 1.2 5 2.00
+place wood_beam 5.4 -0.8 5 2.06
+place wood_beam_45 3.2 1.0 -174 3.01
+place wood_beam_45 3.4 -1.0 6 3.00
+wait 2
+
+place stow_post 9 2
+wait 6
+place hod_jib 9 4
+wait 4
+place piece_chest_wood 7 3
+wait 2
+
+# The number from the screenshot. Three digits in the brackets is what pushed the line past
+# the slot, so the fixture keeps it.
+stock piece_chest_wood Wood:169,LeatherScraps:60
+holds piece_chest_wood Wood 169
+holds piece_chest_wood LeatherScraps 60
+
+# Your own 24, so the pack is not empty and the line is not only chest stock.
+strip Wood,LeatherScraps
+give Wood:24
+carrying Wood 24
+carrying LeatherScraps 0
+
+goto piece_workbench
+wait 1
+use piece_workbench
+
+# The bow needs 8 leather scraps and every one of them is in the chest, so this is yes only
+# if the jib is counting the chest the line is about.
+craftable Bow yes
+
+# No `close`. The panel stays open for steps 1 to 4 above.

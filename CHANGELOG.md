@@ -12,6 +12,16 @@ and the mod uses [semantic versioning](https://semver.org).
   chestpiece family. The Jotun invasion spawns in every biome, and the shared biome index read
   that as the Meadows. Invasion spawns no longer decide where a creature belongs.
 
+- **The chest total on a crafting requirement line was cut off at the edge of its slot.** At a
+  bench served by a hod jib the Wood slot read "8 (+169" and, with the multi-craft key held,
+  "40 (+16". Holding the key does not change the chest count. The longer line lost its last
+  digit along with the bracket.
+
+  The line now shrinks to fit its slot when it has to, down to size 12. A line that fits is
+  drawn at the game's own size as before, and a slot showing a plain number is put back
+  exactly as the game built it. A line still too wide at size 12 runs past the edge instead
+  of losing a digit, and says so once in the log.
+
 ## [1.6.2] - 2026-09-22
 
 ### Fixed

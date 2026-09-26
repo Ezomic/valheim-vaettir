@@ -265,6 +265,8 @@ namespace Hod
         ///   the flights     a spirit is a plain local GameObject with no ZNetView, so a world
         ///                   load does not clear one; it would hang in the air over ground
         ///                   that no longer exists
+        ///   the labels      the crafting panel's requirement labels this feature resized to
+        ///                   fit a chest total, keyed on objects the old scene owns
         /// </summary>
         public static void Forget()
         {
@@ -272,6 +274,7 @@ namespace Hod
             HodWithdraw.Forget();
             HodScope.Forget();
             HodShow.Clear();
+            HodRequirement.Forget();
 
             HodGate.Reset();
             HodGate.Dirty = true;
