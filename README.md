@@ -192,9 +192,21 @@ anything that lands in none of those, and `BiomeOverrides` is where you correct 
 **Grid.** With the cultivator out and a plant selected, from Farming 10, the ghost snaps to a
 lattice spaced by the plant's own grow radius. The lattice is drawn on the ground before you
 plant. The mouse wheel turns it in 22.5 degree steps, `GridPinKey` (numpad period) anchors it
-where you are standing instead of on the nearest plant of the same kind, and holding the game's
-AltPlace key (Shift unless you rebound it) plants free of the grid entirely. One seed per press
-throughout: the skill unlock is alignment, not quantity.
+where you are standing, and holding the game's AltPlace key (Shift unless you rebound it)
+plants free of the grid entirely. One seed per press throughout: the skill unlock is alignment,
+not quantity.
+
+Which grid a plant lands on is read off the ground. Next to plants that are already in, it
+continues their rows, whatever crop they are, as long as they are spaced the same. Carrots,
+turnips, onions, barley and flax have all measured at the same spacing, so a field of them is
+one grid. If the plants nearby disagree, the rows most of them sit on win, so one plant put
+down by hand cannot pull a bed out of line. On open ground a plant goes on one grid shared by
+the whole world, which is why two beds planted a week apart still line up. Turn `GridShared`
+off to have the first plant go exactly where you aim instead.
+
+A sapling that has already grown into a tree does not count, because the game cannot tell it
+from a wild one. A new sapling beside it still lines up if both were planted on open ground,
+since they were then on the shared grid.
 
 A ring at the plant's grow radius shows green when it would have room and red when it would
 not. The game itself does not check this at placement time. It checks ten seconds later, and a
@@ -389,6 +401,7 @@ The bench service, which is the hod jib's effect.
 | Key | Default | Effect |
 | --- | --- | --- |
 | `GridEnabled` | true | Snap the cultivator's ghost to a lattice |
+| `GridShared` | true | On open ground, plant on one grid shared by the whole world. Off, the first plant goes where you aim |
 | `GridLevel` | 10 | Farming level that unlocks the grid |
 | `GridCell` | 0 | Metres between plants. 0 uses each plant's own grow radius |
 | `GridAngle` | 0 | Which way the rows run, in degrees |
@@ -489,15 +502,16 @@ connects and the server rejects mismatches. Without Core nothing checks. In sing
 of this applies.
 
 Core also applies the host's config values on connected clients, in memory, without writing the
-client's own config file. Thirty-three entries are per-player and never imposed by the host: the
-grid and sowing gestures and the grid angle, your map pins, the biome and base refusal messages,
-the sorting summary, the spirit's and post's local rendering (`MoteCount`, `RingCount`,
-`ShowHoop`, `PartingEffect`, `CarrierScale`, `Thicket/Scale`, the post light and flare settings
-and their donor lists), `SayTheLevel`, `KeepHotbar`, `NeverStow`, and every verbose or
-diagnostic toggle. Costs, ranges, health, rosters, caps and shared prefab facts stay the host's
-decision, and so do three that look personal: `BeckonMessage` and the sapling's `Messages` are
-read on the machine that owns the sapling and decide what other players see, and `SpiritScale`
-is baked into a networked object's transform.
+client's own config file. Forty-two entries are per-player and never imposed by the host: the
+grid and sowing gestures, the grid angle and whether your grid is the shared one, your map pins,
+the biome and base refusal messages, the sorting summary, the spirit's and post's local
+rendering (`MoteCount`, `RingCount`, `ShowHoop`, `PartingEffect`, `CarrierScale`,
+`Thicket/Scale`, the post light and flare settings and their donor lists), `SayTheLevel`,
+`KeepHotbar`, `NeverStow`, and every verbose or diagnostic toggle. Costs, ranges, health,
+rosters, caps and shared prefab facts stay the host's decision, and so do three that look
+personal: `BeckonMessage` and the sapling's `Messages` are read on the machine that owns the
+sapling and decide what other players see, and `SpiritScale` is baked into a networked object's
+transform.
 
 Saplings, spirits and posts are each driven by whoever owns them. Map pins are local to you and
 saved in your own profile.
@@ -571,6 +585,14 @@ it sits inside a base. Kills still feed it either way.
 and that list is rebuilt when you learn a recipe or a station, so a piece registered seconds
 after you spawned can stay hidden. The mod nudges that update itself. If the log says it could
 not read `Player.m_knownRecipes`, learning anything new will bring it back.
+
+**Two beds in one field are on different grids.** Beds planted before this was fixed kept
+whatever grid their first plant happened to start. A new plant next to one of them follows
+that bed, so an old bed stays consistent with itself. Where two old beds on different grids
+meet, the plant follows the one with more plants near where you aim. Beds started on open
+ground now all share one grid. With devcommands on, `furrow check sapling_carrot` at the
+console counts how many grids the carrots within 20m are on. It takes a comma-separated list
+and a radius.
 
 **A sapling needs only three greydwarfs.** `TestMode` is on. It warns on every startup.
 

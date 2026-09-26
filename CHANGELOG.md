@@ -7,6 +7,28 @@ and the mod uses [semantic versioning](https://semver.org).
 
 ### Fixed
 
+- **The planting grid put patches of one field on different grids, and walked an oak row off
+  the grid of its first sapling.** The grid only ever knew about the bed through the plant it
+  had last found. It lost that whenever the ghost vanished, which happens every time you look
+  past reach for the next spot, and then it looked four metres around the cursor for a plant of
+  the same crop. An oak's rows are metres apart, so the spot for the next oak was often further
+  than that from the last one, and it found nothing and started a new grid where you were
+  aiming. A turnip beside carrots found no turnip and did the same.
+
+  The grid is now read off the ground each time. A plant next to plants already in continues
+  their rows, whatever crop they are, as long as they are spaced alike. The search reaches three
+  rows out, so it finds an oak's neighbour as surely as a carrot's. When the plants nearby
+  disagree, the rows most of them sit on win, so one plant put down by hand cannot pull a bed
+  out of line. On open ground a plant goes on one grid shared by the whole world, so beds
+  planted apart still line up with each other. `GridShared` turns that last part off if you
+  would rather the first plant of a bed went exactly where you aim.
+
+  A grown tree does not steer the grid, because the game cannot tell it from a wild one. The
+  first time each plant is lined up, the log says how far apart the game spaces it.
+
+  With devcommands on, the console has a `furrow` command for testing this: `furrow check`
+  counts how many grids a field is on.
+
 - **Some Deep North materials counted as Meadows ones for crafting from containers**, so they
   could be pulled from a chest once Eikthyr fell: the Elaking and Jotun drops and the Vanguard
   chestpiece family. The Jotun invasion spawns in every biome, and the shared biome index read

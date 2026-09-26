@@ -13,42 +13,30 @@ namespace Furrow
     /// it: "when planting carrot it plants 3. i just want a grid so i can place them
     /// myself in proper grid rows and columns." So sowing is one seed per press, as
     /// vanilla, and the skill unlock is alignment: from GridLevel up, the ghost pulls
-    /// onto a lattice anchored on a nearby plant of the same crop, spaced by the
-    /// plant's own grow radius. The first plant of a bed goes wherever you like and
-    /// becomes the anchor; every later one clicks into its rows. No nearby kin, no
-    /// snap - so the feature never fights you on a fresh patch.
+    /// onto a lattice spaced by the plant's own grow radius.
     ///
     /// World-aligned axes rather than anchor-rotated: rows running north-south are
     /// predictable from any approach angle, which is what a grid is for.
     ///
-    /// Two rules here are the fix for "rows drift out of line when planting", which
-    /// only ever showed on the live server. With world axes the lattice's PHASE is
-    /// the anchor's position mod the step, so every distinct free-placed plant seeds
-    /// a different phase - and the first version re-picked "nearest plant" every
-    /// frame, shifting the whole grid by the phase difference each time the anchor
-    /// flipped to an off-lattice plant. Worse, it matched the sapling prefab only:
-    /// on a server crops have time to GROW, and a grown carrot is a different prefab
-    /// carrying Pickable, not Plant - so replanting a half-harvested field found no
-    /// kin at all, free-placed, and every new row seeded its own phase. Hence:
-    ///   - the anchor is HELD once found, and only re-derived when it falls out of
-    ///     range, the crop changes, or the tool goes away - one bed, one phase;
-    ///   - kin is the crop, not the prefab: the sapling AND everything in its
-    ///     m_grownPrefabs, which stand exactly where the sapling did because
-    ///     Plant.Grow spawns them in place.
-    /// (FarmGrid and PlantEasily solve the same drift with on-grid pair detection
-    /// and snap hysteresis; the held anchor buys the same stability inside this
-    /// design's world-aligned axes without either.)
+    /// WHICH lattice - its origin, the phase every row runs from - is Lattice.cs's
+    /// business, and the reasons it is decided the way it is are written there. In
+    /// short: a plant beside plants already in the ground continues their rows, voted
+    /// on by the plants within a few cells so one stray cannot steer a bed; and on open
+    /// ground it lands on one grid shared by the whole world. That replaced a rule that
+    /// fell back on the cursor, and the cursor is what put two patches of one field on
+    /// two grids and walked an oak row off the grid of its first tree (LHM-29).
     ///
-    /// All three properties of a lattice are now the player's, because "it does not
-    /// line up with my build" is not answerable by any default. Its SPACING is
-    /// GridCell, absolute metres, overriding the crop's own grow radius - which is
-    /// per-crop and so can never match a floor. Its ANGLE is GridAngle, for a
-    /// building that does not sit square to the world. And its ORIGIN is GridPinKey:
-    /// anchoring on the nearest kin is exactly right for extending an existing bed
-    /// and cannot be right for starting one, since the phase then comes from wherever
-    /// the first plant happened to land. Pin a corner against the floor instead. A
-    /// pin outranks the found anchor and survives a change of crop, so one pinned bed
-    /// takes carrots and turnips in the same rows.
+    /// This file is the part that runs every frame: the gates, the gestures, and
+    /// putting the ghost where the lattice says.
+    ///
+    /// All three properties of a lattice are the player's, because "it does not line
+    /// up with my build" is not answerable by any default. Its SPACING is GridCell,
+    /// absolute metres, overriding the crop's own grow radius - which is per-crop and
+    /// so can never match a floor. Its ANGLE is GridAngle, for a building that does not
+    /// sit square to the world. And its ORIGIN is GridPinKey: the shared grid and the
+    /// beds already planted are right for everything except lining a new bed up with a
+    /// floor, which is what the pin is for. A pin outranks everything else and survives
+    /// a change of crop, so one pinned bed takes carrots and turnips in the same rows.
     /// </summary>
     [HarmonyPatch]
     internal static class GridPlacement
@@ -56,26 +44,70 @@ namespace Furrow
         private static readonly AccessTools.FieldRef<Player, GameObject> GhostRef =
             AccessTools.FieldRefAccess<Player, GameObject>("m_placementGhost");
 
-        // The held lattice phase. A position, deliberately not the plant itself -
-        // the phase stays valid after the anchor plant is harvested or destroyed,
-        // and a Vector3 cannot become a dead UnityEngine.Object mid-frame.
-        private static Vector3? _anchor;
-        private static string _anchorCrop;
-
         // A pinned phase outranks the found one and survives a change of crop, because
         // it is about the ground rather than about the plant: you pin a corner of the
         // bed you are laying out, then plant carrots and turnips into the same rows.
         // Not held across a session - a pin is for the bed being worked on.
         private static Vector3? _pin;
 
-        // Kin lookup per crop, so the grown-prefab names are not re-read per frame.
-        private static string _kinCrop;
-        private static readonly HashSet<string> _kin = new HashSet<string>();
+        /// <summary>
+        /// The grid in use, as a point on it. A position, deliberately not a plant - it
+        /// stays valid after the plant it came from is harvested, and a Vector3 cannot
+        /// become a dead UnityEngine.Object mid-frame.
+        ///
+        /// It is the vote's tie-break, which is what keeps the rows still while the cursor
+        /// sits between two beds of equal size. With GridShared off it is also this
+        /// session's own grid, carried from bed to bed across open ground.
+        ///
+        /// It is NOT dropped when the ghost disappears, and that is half of the LHM-29 fix.
+        /// It used to be, on the argument that the next pick would land on the same lattice
+        /// anyway - which was true only when the next pick found a plant. Vanilla hides the
+        /// ghost whenever the placement ray misses or runs past reach, so looking up at the
+        /// next spot for an oak dropped the grid, and the next pick - four metres round a
+        /// spot a whole oak's spacing from the last oak - found nothing and started again
+        /// under the cursor.
+        /// </summary>
+        private static Vector3? _current;
 
-        private const float SearchRadius = 4f;   // past that you are starting a new bed
-        private const float HoldRadius = 8f;     // hold the phase across a whole bed:
-                                                 // re-picking at the search edge is what
-                                                 // let the phase churn in the first place
+        internal enum Source
+        {
+            /// <summary>The pin key put it here.</summary>
+            Pin,
+            /// <summary>Plants already in the ground agree on it.</summary>
+            Bed,
+            /// <summary>Nothing stands near: the grid shared by the whole world.</summary>
+            World,
+            /// <summary>GridShared off: the grid this session has been planting on.</summary>
+            Held,
+            /// <summary>GridShared off and nothing to go on: a new grid, starting here.</summary>
+            Here
+        }
+
+        // The last vote, reused while nothing it depended on has moved. The vote walks
+        // every loaded plant and sweeps the ground for grown crops, which is cheap once
+        // and wasteful sixty times a second. Neither limit costs anything that shows:
+        // your own plant placed since the vote went ON the voted grid, so between reruns
+        // the vote can only have gained agreement.
+        private static bool _voted;
+        private static Vector3 _votedAt;
+        private static float _votedTime;
+        private static float _votedStep;
+        private static float _votedAngle;
+        private static bool _votedShared;
+        private static Vector3 _anchor;
+        private static Source _source;
+        private static int _support;
+
+        private const float RevoteDistance = 0.25f;
+        private const float RevoteSeconds = 0.5f;
+
+        private static readonly List<Vector3> _kin = new List<Vector3>();
+
+        /// <summary>Where the last placement's grid came from, for the console and the log.</summary>
+        internal static Source LastSource { get { return _pin.HasValue ? Source.Pin : _source; } }
+
+        /// <summary>How many standing plants agreed on it, when it came from a bed.</summary>
+        internal static int LastSupport { get { return _pin.HasValue ? 0 : _support; } }
 
         /// <summary>
         /// Whether the player is holding the grid away for this placement.
@@ -105,10 +137,9 @@ namespace Furrow
             var ghost = GhostRef(__instance);
             if (ghost == null || !ghost.activeSelf)
             {
-                // Tool away is the end of the planting sweep. Dropping the anchor
-                // here is safe because every plant this grid placed shares its
-                // phase, so the re-pick on the next sweep lands on the same lattice.
-                _anchor = null;
+                // The drawing goes and the next frame votes afresh, but the grid in use
+                // stays - see _current for why dropping it here was the bug.
+                _voted = false;
                 GridPreview.Hide();
                 return;
             }
@@ -137,13 +168,9 @@ namespace Furrow
             // The crop's own grow radius is the tightest spacing that always takes, and
             // it differs per crop - right for a bed of one thing, wrong for lining rows
             // up with a floor, which is why an absolute override exists beside it.
-            var cell = FurrowConfig.GridCell.Value;
-            var step = cell > 0f
-                ? Mathf.Max(0.1f, cell)
-                : Mathf.Max(0.1f, ghostPlant.m_growRadius * 2f
-                                  * Mathf.Max(0.1f, FurrowConfig.Spacing.Value));
+            var step = Lattice.StepFor(ghostPlant);
+            Lattice.Describe(Utils.GetPrefabName(ghost.name), ghostPlant, step);
 
-            var crop = Utils.GetPrefabName(ghost.name);
             var at = ghost.transform.position;
 
             Pin(__instance, at);
@@ -151,71 +178,148 @@ namespace Furrow
             Wheel(__instance);
 
             Vector3 anchor;
-            if (_pin.HasValue)
-            {
-                anchor = _pin.Value;
-            }
-            else
-            {
-                if (_anchorCrop != crop
-                    || (_anchor.HasValue
-                        && FlatSqr(_anchor.Value, at) > HoldRadius * HoldRadius))
-                    _anchor = null;
-
-                if (!_anchor.HasValue)
-                {
-                    // No kin in reach, so the bed starts HERE - the lattice is born
-                    // under the cursor rather than not at all.
-                    //
-                    // Until this, the origin could only ever be a plant that already
-                    // existed, and the consequence was backwards: the first plant of
-                    // every bed was placed blind, with no grid drawn and nothing to
-                    // turn, and wherever it happened to land silently fixed the phase
-                    // and angle for every plant after it. The one plant that most
-                    // needed aiming was the only one with no help, and by the time the
-                    // grid appeared it was already too late to move it.
-                    //
-                    // Seeding on the ghost costs nothing: on the frame it is set the
-                    // ghost is exactly on a lattice point, so nothing jumps, and the
-                    // first plant lands where the drawn grid says it will. The pin key
-                    // re-seats it deliberately, and walking clear of the bed drops it.
-                    var kin = NearestKin(ghostPlant, crop, at);
-                    _anchor = kin.HasValue ? kin.Value : at;
-                    _anchorCrop = crop;
-                }
-                anchor = _anchor.Value;
-            }
-
-            // Rounded in the lattice's own frame, so a turned grid stays square. At the
-            // default angle the two rotations are identity and this is the plain
-            // world-axis round it has always been.
-            var angle = FurrowConfig.GridAngle.Value;
-            var into = Quaternion.Euler(0f, -angle, 0f);
-            var back = Quaternion.Euler(0f, angle, 0f);
-
-            var local = into * (at - anchor);
-            local.x = Mathf.Round(local.x / step) * step;
-            local.z = Mathf.Round(local.z / step) * step;
-
-            var snapped = anchor + back * new Vector3(local.x, 0f, local.z);
-            snapped.y = at.y;
-
-            // Follow the terrain at the snapped spot, or a snap across a dip leaves
-            // the ghost floating and vanilla refuses the placement for it.
-            float ground;
-            if (ZoneSystem.instance != null
-                && ZoneSystem.instance.GetGroundHeight(snapped, out ground))
-                snapped.y = ground;
-
+            var snapped = Resolve(at, step, out anchor);
             ghost.transform.position = snapped;
 
             // Drawn from the same anchor, step and angle the snap just used, so the
             // lines cannot disagree with where the plant will land. Re-rung too, since
             // the ghost has moved since the ring above was drawn.
-            GridPreview.Grid(anchor, step, angle, snapped, _pin.HasValue);
+            GridPreview.Grid(anchor, step, FurrowConfig.GridAngle.Value, snapped, _pin.HasValue);
             GridPreview.Ring(snapped, ghostPlant, Room.Free(snapped, ghostPlant));
 
             Hint(__instance);
+        }
+
+        /// <summary>
+        /// Where a plant with rows <paramref name="step"/> apart, aimed at
+        /// <paramref name="at"/>, lands - and the point its grid runs through.
+        ///
+        /// The one path from an aim to a planted spot. The ghost goes through it every
+        /// frame, and so does `furrow plant`, which is what lets a Devkit scenario test the
+        /// grid a player gets rather than a copy of it.
+        /// </summary>
+        internal static Vector3 Resolve(Vector3 at, float step, out Vector3 anchor)
+        {
+            var angle = FurrowConfig.GridAngle.Value;
+
+            anchor = _pin.HasValue ? _pin.Value : Choose(at, step, angle);
+            return Lattice.Snap(anchor, step, angle, at);
+        }
+
+        /// <summary>
+        /// Throw away everything the grid is holding - the pin, the grid in use and the last
+        /// vote - so the next plant has only the ground to go on. That is the state a fresh
+        /// game starts in, and the state the ghost used to reset to every time it vanished,
+        /// which is why the console exposes it: a scenario that forgets between plants is
+        /// testing the worst case rather than the lucky one.
+        /// </summary>
+        internal static void Forget()
+        {
+            _pin = null;
+            _current = null;
+            _voted = false;
+        }
+
+        /// <summary>
+        /// Which grid, when there is no pin. The reasons for each branch are in Lattice.cs;
+        /// this is the order they are asked in.
+        /// </summary>
+        private static Vector3 Choose(Vector3 at, float step, float angle)
+        {
+            var shared = FurrowConfig.GridShared.Value;
+
+            // A quarter of a cell, and never less than RevoteDistance. Less than that barely
+            // changes which plants are in reach, and a tree's cell is metres wide: re-running
+            // a sweep three cells across for every centimetre the mouse moves would be the
+            // cost of aiming an oak. The half-second limit catches whatever this misses.
+            var revote = Mathf.Max(RevoteDistance, step * 0.25f);
+
+            if (_voted
+                && Time.time - _votedTime < RevoteSeconds
+                && Lattice.FlatSqr(at, _votedAt) < revote * revote
+                && Lattice.SameStep(step, _votedStep)
+                && Mathf.Approximately(angle, _votedAngle)
+                && shared == _votedShared)
+                return _anchor;
+
+            Lattice.Gather(at, step, _kin);
+
+            Vector3 best;
+            int support;
+            if (Lattice.Strongest(_kin, at, step, angle, _current, shared, out best, out support))
+            {
+                _anchor = best;
+                _source = Source.Bed;
+                _support = support;
+            }
+            else if (shared)
+            {
+                _anchor = Vector3.zero;
+                _source = Source.World;
+                _support = 0;
+            }
+            else if (_current.HasValue)
+            {
+                _anchor = _current.Value;
+                _source = Source.Held;
+                _support = 0;
+            }
+            else
+            {
+                // GridShared off, and nothing planted this session or standing near: the
+                // grid is born under the cursor, the way it was before there was a shared
+                // one. On this frame the ghost is exactly on a lattice point, so nothing
+                // jumps and the first plant lands where the drawn grid says it will.
+                _anchor = at;
+                _source = Source.Here;
+                _support = 0;
+            }
+
+            _current = _anchor;
+
+            _voted = true;
+            _votedAt = at;
+            _votedTime = Time.time;
+            _votedStep = step;
+            _votedAngle = angle;
+            _votedShared = shared;
+
+            // Only on a change, so the log says when the rows moved and not that they
+            // did not. Verbose, because a player walking along a field changes this often
+            // and every one of those is the grid working.
+            if (FurrowConfig.Verbose.Value
+                && (!_logged || _loggedSource != _source
+                    || (_loggedAnchor - _anchor).sqrMagnitude > 1e-6f))
+            {
+                _logged = true;
+                _loggedSource = _source;
+                _loggedAnchor = _anchor;
+
+                Grove.GrovePlugin.Log.LogInfo("Furrow grid: " + Describe(_source, _support)
+                                              + " (rows " + step.ToString("0.##") + "m apart, "
+                                              + angle.ToString("0.#") + " degrees).");
+            }
+
+            return _anchor;
+        }
+
+        private static bool _logged;
+        private static Source _loggedSource;
+        private static Vector3 _loggedAnchor;
+
+        /// <summary>Where a grid came from, in words a player would use.</summary>
+        internal static string Describe(Source source, int support)
+        {
+            switch (source)
+            {
+                case Source.Pin: return "on the pinned grid";
+                case Source.Bed:
+                    return "on the grid of the plants already there (" + support
+                           + (support == 1 ? " plant" : " plants") + " in line)";
+                case Source.World: return "on the shared grid, nothing planted near";
+                case Source.Held: return "on the grid this session has been planting on";
+                default: return "on a new grid starting here";
+            }
         }
 
         /// <summary>
@@ -369,87 +473,32 @@ namespace Furrow
         /// <summary>
         /// Pin the lattice where the ghost stands, or lift the pin.
         ///
-        /// The pin is what makes the grid line up with a BUILDING. Anchoring on the
-        /// nearest kin is right for extending a bed that already exists and cannot be
-        /// right for a bed that does not: the phase then comes from wherever the first
-        /// plant happened to land, which is nowhere in particular. Pin a corner against
-        /// your floor and every row runs from it.
+        /// The pin is what makes the grid line up with a BUILDING. Following the plants
+        /// already standing is right for extending a bed, and the shared grid is right for
+        /// keeping every bed in line with every other - and neither has any reason to meet
+        /// your walls. Pin a corner against your floor and every row runs from it. Once a
+        /// few plants are in, the pinned bed is its own evidence, so the pin can be lifted
+        /// and the bed still extends on its rows.
         /// </summary>
         private static void Pin(Player player, Vector3 at)
         {
             if (!Keys.Pressed(FurrowConfig.GridPinKey.Value)) return;
 
+            // Either way the next frame votes afresh. Lifting a pin also lets go of the
+            // grid in use, so what takes over is read off the ground - which, once a few
+            // plants are in, is the pinned bed itself.
+            _voted = false;
+
             if (_pin.HasValue)
             {
                 _pin = null;
-                _anchor = null;
+                _current = null;
                 player.Message(MessageHud.MessageType.Center, "Grid unpinned");
                 return;
             }
 
             _pin = at;
             player.Message(MessageHud.MessageType.Center, "Grid pinned here");
-        }
-
-        /// <summary>
-        /// The nearest standing plant of the same crop, because a carrot grid and a
-        /// turnip grid interleaved is somebody's garden design, not a mistake to
-        /// correct. "Same crop" spans the growth stages - the sapling prefab and its
-        /// m_grownPrefabs - and the grown stage carries Pickable rather than Plant,
-        /// so both components are consulted. Distances are XZ only: on a slope the
-        /// height difference must not decide which plant seeds the lattice.
-        /// </summary>
-        private static Vector3? NearestKin(Plant ghostPlant, string crop, Vector3 at)
-        {
-            if (_kinCrop != crop)
-            {
-                _kin.Clear();
-                _kin.Add(crop);
-                if (ghostPlant.m_grownPrefabs != null)
-                    foreach (var grown in ghostPlant.m_grownPrefabs)
-                        if (grown != null) _kin.Add(grown.name);
-                _kinCrop = crop;
-            }
-
-            Vector3? best = null;
-            var bestSqr = SearchRadius * SearchRadius;
-
-            foreach (var hit in Physics.OverlapSphere(at, SearchRadius))
-            {
-                if (hit == null) continue;
-
-                Vector3 pos;
-                var plant = hit.GetComponentInParent<Plant>();
-                if (plant != null && plant.gameObject != ghostPlant.gameObject
-                    && _kin.Contains(Utils.GetPrefabName(plant.gameObject.name)))
-                {
-                    pos = plant.transform.position;
-                }
-                else
-                {
-                    var pickable = hit.GetComponentInParent<Pickable>();
-                    if (pickable == null
-                        || !_kin.Contains(Utils.GetPrefabName(pickable.gameObject.name)))
-                        continue;
-                    pos = pickable.transform.position;
-                }
-
-                var d = FlatSqr(pos, at);
-                if (d < bestSqr)
-                {
-                    bestSqr = d;
-                    best = pos;
-                }
-            }
-
-            return best;
-        }
-
-        private static float FlatSqr(Vector3 a, Vector3 b)
-        {
-            var dx = a.x - b.x;
-            var dz = a.z - b.z;
-            return dx * dx + dz * dz;
         }
     }
 }

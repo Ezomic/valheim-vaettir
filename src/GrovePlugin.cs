@@ -313,6 +313,7 @@ namespace Grove
             failed += Apply("furrow sowing", typeof(Furrow.Sowing));
             failed += Apply("furrow grid placement", typeof(Furrow.GridPlacement));
             failed += Apply("furrow area picking", typeof(Furrow.AreaPick));
+            failed += Apply("furrow console command", typeof(Furrow.FurrowConsole));
 
             // The bench service, in three groups rather than one, because they fail
             // independently and they fail differently. The crafting patches are the feature;
@@ -453,8 +454,10 @@ namespace Grove
             // that owns the sapling and decide what OTHER players are shown, and
             // SpiritScale is baked into a persistent networked object's transform.
 
-            // The grid and sowing gestures - the angle's whole family.
+            // The grid and sowing gestures - the angle's whole family. GridShared joined
+            // it with LHM-29: it decides where your own first plant of a bed lands.
             Suite.Local(Furrow.FurrowConfig.GridAngle,
+                        Furrow.FurrowConfig.GridShared,
                         Furrow.FurrowConfig.GridTurnScroll,
                         Furrow.FurrowConfig.GridTurnStep,
                         Furrow.FurrowConfig.GridPreview,

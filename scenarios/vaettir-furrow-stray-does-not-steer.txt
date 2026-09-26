@@ -1,0 +1,39 @@
+# Vaettir: one plant put down off the grid does not pull the next one out of the bed.
+#
+# LHM-29. When the grid lost track of a bed it took the NEAREST plant as the new start of its
+# rows. If that one had been planted by hand, off the grid, everything planted after it
+# followed it instead of the bed - which reads in game as the grid changing for no reason
+# partway through a field. The fix counts how many plants agree on each set of rows and goes
+# with the most.
+#
+# So: a bed of four onions, a fifth planted by hand half a row off between them, and then an
+# onion aimed right beside that stray. It must land in the bed's rows. The check prints the
+# grids largest first, so "5 + 1" is the bed with the new onion in it and the stray alone,
+# and "4 + 2" would be the new onion having followed the stray.
+#
+# The bed is laid with `furrow free` so its position against the stray is fixed and cannot
+# depend on where the shared world grid happens to fall around you.
+#
+# The offsets assume onions are spaced one metre apart, which is what they ripped at before
+# 1.0. Takes down every piece within 20m first.
+
+wipe 20
+wait 1
+
+mod furrow forget
+mod furrow free sapling_onion 2.37 2.21
+mod furrow free sapling_onion 3.37 2.21
+mod furrow free sapling_onion 4.37 2.21
+mod furrow free sapling_onion 2.37 3.21
+
+# The stray, half a row off both ways.
+mod furrow free sapling_onion 3.82 3.66
+wait 1
+
+mod furrow forget
+mod furrow plant sapling_onion 4.1 3.5
+printed 4 plants in line yes
+wait 1
+
+mod furrow check sapling_onion 10
+printed on 2 grids (5 + 1) yes

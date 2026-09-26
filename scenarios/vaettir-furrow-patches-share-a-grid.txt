@@ -1,0 +1,41 @@
+# Vaettir: two patches of a field, planted apart and of different crops, are on one grid.
+#
+# LHM-29. Robbin: "when planting crops it sometimes looks like it's using a different grid for
+# a certain patch than another". A patch started more than four metres from the last plant of
+# the SAME crop used to start a grid of its own under the cursor, so a turnip patch beside a
+# carrot patch, or a second carrot patch across a path, came out on its own rows.
+#
+# Now a patch on open ground goes on one grid shared by the whole world. The carrots here and
+# the turnips seven metres off never see each other - that is further than the grid looks for
+# neighbours - and must still line up.
+#
+# Carrots and turnips both ripped at one metre apart, so they can share a grid at all. That was
+# before 1.0; the plant lines in the report say what the game gives now. The offsets assume
+# that metre. With GridCell or Spacing set wider, two plants can round onto one spot.
+#
+# Assumes GridShared is on, which is the default. With it off the turnips start a grid of their
+# own where they are aimed, and the last assertion fails - correctly.
+#
+# Takes down every piece within 20m first. Stand on open ground.
+
+wipe 20
+wait 1
+
+mod furrow forget
+mod furrow plant sapling_carrot 2 2
+printed shared grid yes
+mod furrow plant sapling_carrot 3 2
+mod furrow plant sapling_carrot 2 3
+mod furrow plant sapling_carrot 3 3
+wait 1
+
+# Seven metres off, and a different crop, after the grid has been made to forget.
+mod furrow forget
+mod furrow plant sapling_turnip 9.3 2.4
+printed shared grid yes
+mod furrow plant sapling_turnip 10.3 2.4
+mod furrow plant sapling_turnip 9.3 3.4
+wait 1
+
+mod furrow check sapling_carrot,sapling_turnip 20
+printed on one grid yes

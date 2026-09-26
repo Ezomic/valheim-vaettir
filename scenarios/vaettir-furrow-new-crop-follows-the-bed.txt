@@ -1,0 +1,35 @@
+# Vaettir: a turnip planted beside a carrot bed continues the carrots' rows.
+#
+# LHM-29. The grid used to look only for plants of the SAME crop, so the first turnip beside a
+# carrot bed found none and started a grid of its own where it was aimed. That is the other way
+# one field came out on two grids.
+#
+# The carrot bed is laid with `furrow free`, exactly where each is aimed and on no grid: a bed
+# from before this fix, or one planted by hand with Shift. It is square with itself, a metre
+# apart, and nowhere in particular against the shared grid. The turnips must follow the bed, not
+# the shared grid.
+#
+# The vote is asserted as well as the result. "4 plants in line" says all four carrots were
+# counted and agreed, rather than the turnip happening to land in line with one of them.
+#
+# The offsets assume carrots and turnips are spaced one metre apart, which is what they ripped
+# at before 1.0. Takes down every piece within 20m first. Stand on open ground.
+
+wipe 20
+wait 1
+
+mod furrow forget
+mod furrow free sapling_carrot 2.37 2.21
+mod furrow free sapling_carrot 3.37 2.21
+mod furrow free sapling_carrot 2.37 3.21
+mod furrow free sapling_carrot 3.37 3.21
+wait 1
+
+mod furrow plant sapling_turnip 4.3 2.3
+printed 4 plants in line yes
+mod furrow plant sapling_turnip 4.4 3.1
+printed plants already there yes
+wait 1
+
+mod furrow check sapling_carrot,sapling_turnip 10
+printed on one grid yes

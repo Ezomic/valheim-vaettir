@@ -1,0 +1,56 @@
+# Vaettir: an oak row keeps to the grid of its first sapling.
+#
+# LHM-29. Robbin, planting oaks on live: "it doesnt stick to the grid of the first one and
+# shifts grids". The grid used to remember the bed only through the plant it last found, and
+# it forgot that every time the ghost vanished, which the game does whenever you look past
+# reach for the next spot. It then looked four metres round the cursor for another oak. An
+# oak's rows are metres apart, so often it found none and started a new grid wherever you
+# were aiming.
+#
+# `mod furrow forget` before every plant is that moment, on purpose: the grid is told to
+# remember nothing, so each oak has only the ground to go on.
+#
+# The first oak goes down with `furrow free`, exactly where it is aimed and on no grid at all.
+# That is an oak planted with Shift held, or one planted before this fix. The rest must follow
+# IT - not the shared world grid, and not a new grid of their own.
+#
+# Each aim is about three and a half metres on from the last, so whatever an oak's spacing
+# turns out to be the next one is within reach of one already standing. The spacing has never
+# been measured. The first `furrow plant` line in the report says what the game gave, and so
+# does the log. If it is more than about seven metres, two aims can round onto the same spot;
+# the grid assertion still holds, it just has fewer oaks to hold it with.
+#
+# Takes down every piece within 30m first. Stand on open ground away from anything you built.
+# `furrow` offsets are metres along the grid's own rows from where you stand, so which way you
+# face does not matter.
+
+wipe 30
+wait 1
+
+mod furrow forget
+mod furrow free Oak_Sapling 0.37 3.21
+wait 1
+
+mod furrow forget
+mod furrow plant Oak_Sapling 3.9 3.3
+printed plants already there yes
+wait 1
+
+mod furrow forget
+mod furrow plant Oak_Sapling 7.4 3.2
+printed plants already there yes
+wait 1
+
+mod furrow forget
+mod furrow plant Oak_Sapling 7.3 6.8
+printed plants already there yes
+wait 1
+
+mod furrow forget
+mod furrow plant Oak_Sapling 3.8 6.9
+printed plants already there yes
+wait 1
+
+# Every oak within 30m, one grid, the free one included.
+mod furrow check Oak_Sapling 30
+printed on one grid yes
