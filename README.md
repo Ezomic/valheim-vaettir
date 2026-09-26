@@ -160,8 +160,11 @@ itself.
 
 While you are standing at a crafting station that is within `HodRange` (20m) of a post carrying
 a jib, the crafting panel counts the material in the chests around **that post** as well as
-what is in your pack, and crafting spends out of them. The requirement lines show the total.
-There is no keybind and no panel; it is the crafting window you already use.
+what is in your pack, and crafting spends out of them. A requirement line shows what you are
+carrying against what the recipe costs, then what the chests add in blue: `24/40 +169` is 24
+wood in your pack, 40 needed and 169 more in the chests. A material the chests hold none of
+keeps the game's plain number. There is no keybind and no panel; it is the crafting window you
+already use.
 
 Three things are deliberate and you will notice all of them:
 
@@ -379,7 +382,7 @@ The bench service, which is the hod jib's effect.
 | `AllowUnclassified` | true | Whether an item the mod cannot place in any biome may still be drawn from a chest |
 | `BiomeOverrides` | (a list of roots) | Corrects the derived biome for an item by hand. Everything made from an overridden root follows it |
 | `ShowChestTotals` | true | Add what the chests hold to the amount beside each requirement. Local to you |
-| `ChestTotalFormat` | `{need} <color=#88CCFF>(+{chest})</color>` | How that total is written. Local to you |
+| `ChestTotalFormat` | `{have}/{need} <color=#88CCFF>+{chest}</color>` | How that total is written. A file still on the old default, `{need} <color=#88CCFF>(+{chest})</color>`, is moved to this once. Local to you |
 | `ShortMessage` | The chests could not supply it | Shown when a craft was allowed and the chests then could not supply it. Local to you |
 | `ShowFlight` | true | Send a spirit from the chest to the bench on a craft. Carries nothing; purely for show. Local to you |
 | `RequestTimeout` | 5 | How long to wait for the owner of a chest to answer a withdrawal, in seconds |

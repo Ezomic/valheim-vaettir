@@ -1,20 +1,66 @@
-# Vaettir: the widest chest total a requirement line is likely to carry, shown whole (LHM-28).
+# Vaettir: the widest chest total these numbers make, measured against its slot (LHM-28).
 #
-# vaettir-jib-requirement-line reproduces the reported line, 169 in the chest. This is the
-# same bench with a reinforced chest beside it and 769 in the two together, so the bracket
-# holds three digits against a two-digit cost - "50 (+769)" with the multi-craft key held,
-# nine characters in a label vanilla laid out for two.
+# vaettir-jib-requirement-line checks the reported line, 24 carried and 169 in the chest. This
+# is the same bench with a reinforced chest beside the first, 769 wood in the two together and
+# 124 in your pack, so the Wood line under multi-craft reads "124/50 +769": eleven characters
+# in a slot the game laid out for two. The line may only shrink to size 12, so this is where it
+# either fits at a readable size or shows that it cannot. Nothing here has run in game yet.
 #
-# AFTER IT FINISHES, with the panel still open:
+# NEEDS: singleplayer, on a character whose pack you do not mind losing - `clear` destroys it.
+# Stand on flat ground with about ten metres clear, away from other posts and chests. Keep the
+# mouse pointer off the Craft button while it runs: the pointer leaving that button is the one
+# thing that switches `multicraft` off behind the scenario's back.
 #
-#   1. Click Crude bow. Expect Wood 10 (+769) and Leather scraps 8 (+60), whole.
-#   2. Hold the multi-craft key. Expect 50 (+769) and 40 (+60), whole, and readable.
-#      If the text had to shrink, this is where it is smallest.
-#   3. Search LogOutput.log for "too wide for its slot". Nothing means it fitted at size 12
-#      or larger. A line there means it did not fit even at 12, and it names the widths;
-#      send it to me.
+# Like the other one it needs the new default format in [Hod] ChestTotalFormat,
+# {have}/{need} <color=#88CCFF>+{chest}</color>. A file still on the old default is moved to it
+# the first time this build loads; if the first `panel` fails with "10 (+769)" in its note, that
+# move did not happen.
 #
-# Stand on flat ground with about ten metres clear, away from other posts and chests.
+# THE NUMBERS. The Crude bow costs 10 wood and 8 leather scraps, 50 and 40 under multi-craft.
+# You carry 124 wood and 3 scraps. The wooden chest holds 169 wood and 57 scraps and the
+# reinforced one 600 wood:
+#
+#               x1             x5
+#   Wood        124/10 +769    124/50 +769
+#   Leather     3/8 +57        3/40 +57
+#
+# `panel` and `fits` accept a label that CONTAINS the text. What a broken build draws instead,
+# each of which fails the `panel ... yes` checks:
+#
+#   the old format, or the move not run        "10 (+769)"
+#   only one of the two chests counted         "124/10 +169" or "124/10 +600"
+#   the pack counted with the chests in it     "893/10 +769" and "60/8 +57"
+#   the cost left at x1 under multi-craft      "124/10 +769" where x5 wants "124/50 +769"
+#   the chest count multiplied at x5           "124/50 +3845"
+#
+# `fits` IS THE POINT HERE. It passes when the whole line fits inside its slot and no mask above
+# it cuts a glyph, at whatever size the line was drawn. It fails on a line that is cut off. If it
+# fails with 12pt in its note, the line was shrunk as far as it is allowed and the slot is still
+# narrower, which the log also says once (step 3). That is not the fitting being broken: it is
+# the answer to whether this format fits the game's slot at a size you can read, and the note
+# gives the width it needs against the room it has.
+#
+# THE RUN HOLDS FOR 30 SECONDS at the end with the panel open and the bow selected. Do these
+# then. If the Devkit window covers the crafting panel, move it.
+#
+#   1. Hold Shift, the game's multi-craft key (AltPlace, if you rebound it). The Craft button
+#      reads x5. Expect the Wood slot to read "124/50 +769", "124/50" in white and "+769" in
+#      light blue, whole and readable, and the Leather slot "3/40 +57". If a line had to
+#      shrink, this is where it is smallest.
+#   2. Let go. Expect "124/10 +769" and "3/8 +57".
+#
+# AFTER THE RUN, in LogOutput.log. The line is written once per game session, so it is only
+# there if this was the first run since you started the game.
+#
+#   3. Search for "too wide for its slot". Nothing means every line fitted at size 12 or
+#      larger. A line there names the widths; send it to me.
+#
+# LEAVES BEHIND: the shed, the bench, the stowing post with its jib and both chests with their
+# wood and scraps, inside the patch the next jib scenario wipes. God and ghost mode stay on, as
+# after every jib scenario. It takes defeated_eikthyr away again at the end so the test world is
+# not left with Eikthyr down because of this file; if he really was down in that world, that is
+# undone too. Devkit empties your pack and hands back its kit when the run ends, and switches
+# multi-craft off if a step left it on.
 
 clear
 give Hammer:1,Hoe:1
@@ -30,7 +76,7 @@ wipe 16
 wait 1
 
 # Wood and leather scraps are Meadows materials, so Eikthyr has to be down for the chest to
-# count at all.
+# count at all. Taken away again at the end.
 key defeated_eikthyr
 
 flatten
@@ -71,9 +117,9 @@ wait 4
 place piece_chest_wood 7 3
 wait 2
 
-stock piece_chest_wood Wood:169,LeatherScraps:60
+stock piece_chest_wood Wood:169,LeatherScraps:57
 holds piece_chest_wood Wood 169
-holds piece_chest_wood LeatherScraps 60
+holds piece_chest_wood LeatherScraps 57
 
 # A second chest, a different prefab so `stock` cannot fill the first one twice. Twelve
 # stacks of fifty, well inside a reinforced chest's grid.
@@ -82,18 +128,52 @@ wait 2
 stock piece_chest Wood:600
 holds piece_chest Wood 600
 
-# Your own 24, so the pack is not empty and the line is not only chest stock.
+# The pack: 124 wood and 3 scraps, counted by stack rather than through the game's CountItems,
+# which the jib adds the chests to.
 strip Wood,LeatherScraps
-give Wood:24
-carrying Wood 24
-carrying LeatherScraps 0
+give Wood:124,LeatherScraps:3
+carrying Wood 124
+carrying LeatherScraps 3
 
 goto piece_workbench
 wait 1
 use piece_workbench
+wait 2
 
-# The bow needs 8 leather scraps and every one of them is in the chest, so this is yes only
-# if the jib is counting the chest the line is about.
+# 3 scraps carried against 8 needed, so this is yes only if the jib is counting a chest.
 craftable Bow yes
 
-# No `close`. The panel stays open for steps 1 to 3 above.
+select Bow
+wait 1
+
+# ---- x1
+
+panel 124/10 +769 yes
+panel 3/8 +57 yes
+fits 124/10 +769
+fits 3/8 +57
+
+# ---- x5, the widest
+
+multicraft on
+wait 1
+
+panel 124/50 +769 yes
+panel 3/40 +57 yes
+fits 124/50 +769
+fits 3/40 +57
+
+# ---- back to x1
+
+multicraft off
+wait 1
+
+panel 124/10 +769 yes
+panel 124/50 +769 no
+
+# ---- for your eyes: steps 1 and 2 in the header
+
+wait 30
+
+unkey defeated_eikthyr
+close

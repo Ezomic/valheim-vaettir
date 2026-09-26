@@ -234,15 +234,26 @@ namespace Hod
             // about somebody else's HUD taste is that it is not this one. Applied only when
             // the chests actually hold some, so an ordinary recipe still reads exactly like
             // vanilla.
+            //
+            // The default is the one Robbin picked from three mockups (LHM-28). The old one,
+            // "{need} (+{chest})", put the cost beside the chest total and left the player to
+            // work out whether the two together were enough, without the one number vanilla
+            // never shows here: what is in the pack. This draws have over need, the way the
+            // inventory grid draws a stack, and then what the chests add. A file still holding
+            // the old default is moved to this one once, by ConfigRevision move 2.
             ChestTotalFormat = config.Bind("Hod", "ChestTotalFormat",
-                "{need} <color=#88CCFF>(+{chest})</color>",
+                "{have}/{need} <color=#88CCFF>+{chest}</color>",
                 "How the requirement amount is written when the post's chests hold some of "
-                + "it. Left alone entirely when they hold none, so a normal craft looks "
-                + "exactly like vanilla.\n"
+                + "it. The default shows what you carry over what the recipe costs, then what "
+                + "the chests add in blue: 24/40 +169 is 24 in your pack, 40 needed and 169 "
+                + "more in the chests. Left alone entirely when the chests hold none, so a "
+                + "normal craft shows the game's own plain number.\n"
                 + "Tokens: {need} what the recipe costs, {have} what you are carrying, "
                 + "{chest} what the chests can supply, {total} the two added up.\n"
                 + "TextMeshPro rich text works here, which is what the colour tag is. Set it "
-                + "to {need} to keep vanilla's text and still get the un-greying.\n"
+                + "to {need} to keep vanilla's text and still get the un-greying. The old "
+                + "default was {need} <color=#88CCFF>(+{chest})</color>, and a file still "
+                + "holding it exactly was moved to the new one once.\n"
                 + "The slot was laid out for a bare number, so a longer line is shrunk to fit "
                 + "it, never below size 12. A format too long even for that is left at 12 and "
                 + "runs long, and the log says so once. Shorter is better here: a line that "

@@ -32,15 +32,23 @@ namespace Hod
     /// nothing else, so "the bracket is open" is the fact that actually means "this is the
     /// crafting panel".
     ///
-    /// What it does NOT do is worth knowing before reading the code, because the field names
-    /// suggest otherwise. It does not draw a have/need pair. It writes only the NEEDED amount
-    /// into res_amount, and uses the have count for one thing only: deciding whether that text
-    /// flashes red. The have is read through player.GetInventory().CountItems(name), and a
-    /// crafting-panel line is drawn inside the scope bracket, so the flash and the greying of
-    /// the recipe list are already correct before this file does anything. (A build HUD line is
-    /// not inside it, which is why its flash is vanilla's.) All that is left is telling the
-    /// player WHY, which is the difference between a number that looks right and a number that
-    /// looks like a bug.
+    /// What vanilla does here is worth knowing before reading the code, because the field
+    /// names suggest otherwise. It does not draw a have/need pair. It writes only the NEEDED
+    /// amount into res_amount, and uses the have count for one thing only: deciding whether
+    /// that text flashes red. The have is read through player.GetInventory().CountItems(name),
+    /// and a crafting-panel line is drawn inside the scope bracket, so the flash and the
+    /// greying of the recipe list are already correct before this file does anything. (A build
+    /// HUD line is not inside it, which is why its flash is vanilla's.) All that is left is
+    /// telling the player WHY, which is the difference between a number that looks right and a
+    /// number that looks like a bug.
+    ///
+    /// The default format does that by drawing the pair vanilla leaves out, what you carry
+    /// over what it costs, and then what the chests add, in blue: "24/40 +169". Robbin picked
+    /// it from three mockups (LHM-28). The one before it, "40 (+169)", gave the cost and the
+    /// chest total and left the player to find the third number, the one in the pack, by
+    /// opening the inventory. The flash still colours the whole line and the colour tag
+    /// still keeps the chest part blue, so a line short even with the chests flashes its
+    /// "24/40" red the way vanilla flashes a bare "40".
     ///
     /// Recomputing the have count here re-enters the feature's own CountItems patch - the
     /// bracket is open, that is the whole point - so it goes through CarriedOnly, which
@@ -308,10 +316,13 @@ namespace Hod
         /// Makes the whole line fit the label vanilla drew a bare number in.
         ///
         /// Vanilla's res_amount was laid out for "8" and "40", and the chest total makes the
-        /// line three times that. Robbin's report had it cut at seven characters in both
-        /// states of the panel - "8 (+169" and "40 (+16" - so the bracket was gone in one
-        /// and a digit with it in the other, and a digit gone is a number that is simply
-        /// wrong. The fix is three settings on the label and no layout:
+        /// line several times that - "24/40 +169" in the default format is ten characters in a
+        /// label built for two. Robbin's report, on the older and shorter format, had it cut at
+        /// seven characters in both states of the panel - "8 (+169" and "40 (+16" - so the
+        /// bracket was gone in one and a digit with it in the other, and a digit gone is a
+        /// number that is simply wrong. Nothing below knows which format is in use: the line is
+        /// measured as it will be drawn, colour tags and all, so a longer format is just a
+        /// wider line. The fix is three settings on the label and no layout:
         ///
         ///   one line       wrapping off, so a number and its bracket are never split across
         ///                  two lines of a slot that was laid out for one
@@ -363,11 +374,12 @@ namespace Hod
             }
 
             // Measured when the text or the room changes and not otherwise. The line is
-            // rewritten every frame, but "8 (+169)" on this frame is "8 (+169)" on the next,
-            // and a counted stack changes a few times a minute at most. The room is part of
-            // the key because a size chosen for one width is wrong for another: if the panel
-            // is laid out a frame late, the first measurement is taken against a rect that is
-            // about to change, and with the text alone as the key it would never be retaken.
+            // rewritten every frame, but "24/40 +169" on this frame is "24/40 +169" on the
+            // next, and a counted stack - in the pack or in a chest - changes a few times a
+            // minute at most. The room is part of the key because a size chosen for one
+            // width is wrong for another: if the panel is laid out a frame late, the first
+            // measurement is taken against a rect that is about to change, and with the text
+            // alone as the key it would never be retaken.
             var room = Room(amount);
             if (label.Measured == text && Mathf.Abs(label.Room - room) < 0.01f) return;
 

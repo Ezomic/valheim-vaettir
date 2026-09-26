@@ -18,9 +18,10 @@ namespace Grove
     /// this exists to solve. Anyone who did deliberately set the old default gets moved
     /// once and can set it back; the log says so.
     ///
-    /// On a server none of this decides anything by itself: Core hands the host's value to
-    /// every client, so it is the host's file that has to move, which is exactly the file
-    /// this runs against.
+    /// On a server none of this decides anything by itself for a synced setting: Core hands
+    /// the host's value to every client, so it is the host's file that has to move, which is
+    /// exactly the file this runs against. A setting that is local to each player is never
+    /// handed over, so there it is each player's own file, and that runs through here too.
     /// </summary>
     internal static class ConfigRevision
     {
@@ -31,8 +32,14 @@ namespace Grove
         /// 1 - Vaettir 1.6.1: the stowing post's cost went from 20 fine wood and 20 iron
         ///     nails to 40 fine wood and 20 bronze nails, so the post lands with the Black
         ///     Forest behind you rather than the swamp.
+        /// 2 - LHM-28: the crafting panel's chest total went from "{need} (+{chest})" to
+        ///     "{have}/{need} +{chest}", both with the chest part in blue. Robbin picked it
+        ///     from three mockups after the old line was reported cut off at its slot's
+        ///     edge. Unlike move 1 this entry is local to each player (Suite.Local in
+        ///     GrovePlugin), so it is every player's own file that moves, not only the
+        ///     host's, and each one moves the first time that player loads this version.
         /// </summary>
-        internal const int Current = 1;
+        internal const int Current = 2;
 
         internal static ConfigEntry<int> Revision;
 
@@ -51,6 +58,14 @@ namespace Grove
             if (Revision.Value < 1)
             {
                 Moved(Stow.StowConfig.PostCost, "FineWood:20,IronNails:20");
+            }
+
+            if (Revision.Value < 2)
+            {
+                // The old default exactly as Hirsla shipped it and Vaettir kept it. Anyone
+                // who had written their own layout keeps it, which is the rule; anyone who
+                // wants the old line back can paste this into the file.
+                Moved(Hod.HodConfig.ChestTotalFormat, "{need} <color=#88CCFF>(+{chest})</color>");
             }
 
             Revision.Value = Current;

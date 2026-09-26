@@ -17,7 +17,14 @@ and the mod uses [semantic versioning](https://semver.org).
   "40 (+16". Holding the key does not change the chest count. The longer line lost its last
   digit along with the bracket.
 
-  The line now shrinks to fit the space the game gives that number, down to size 12. A
+  The line now shows what you carry against the cost, then what the chests add, in blue:
+  "24/40 +169" is 24 wood in your pack, 40 needed and 169 more in the chests. Before, it
+  showed the cost and the chest total and you had to open your inventory to know the rest. A
+  material the chests hold none of still shows the game's plain number. If your config
+  file still had the old format exactly, it is moved to the new one once. If you had
+  written your own, it is left alone.
+
+  The line also shrinks to fit the space the game gives that number, down to size 12. A
   line that fits is drawn at the game's own size as before, and a slot showing a plain
   number is put back exactly as the game built it. If a line is still too wide at size 12,
   it stays at 12 and the log says so once.
