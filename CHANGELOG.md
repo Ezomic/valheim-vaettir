@@ -38,6 +38,13 @@ and the mod uses [semantic versioning](https://semver.org).
   The console has a `furrow check` command: `furrow check sapling_carrot` counts how many grids
   the carrots near you are on. It is not a cheat and needs no devcommands.
 
+- **Middle click still turned the planting grid for anyone who first installed 1.3.0.** That
+  version shipped middle click as the turn key. 1.3.1 moved turning to the mouse wheel and set
+  the key to nothing, but a config file already written kept middle click. So middle-clicking a
+  misplaced sapling to remove it turned the grid instead and left the sapling standing. Your
+  config now gets `GridTurnKey` set back to `None` once, only if it still reads `Mouse2`. If you
+  want middle click to turn the grid, set it again and it stays.
+
 - **A plant the grid moved could be planted where the game would have refused it.** The game
   checks tilled ground, wards and no-build areas where you aim, and the grid then moves the
   plant up to half a row. A carrot aimed at the edge of a tilled patch could land on grass, get
