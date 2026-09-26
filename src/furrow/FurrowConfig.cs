@@ -14,6 +14,7 @@ namespace Furrow
     {
         public static ConfigEntry<int> GridLevel;
         public static ConfigEntry<bool> GridEnabled;
+        public static ConfigEntry<bool> GridShared;
         public static ConfigEntry<float> GridCell;
         public static ConfigEntry<float> GridAngle;
         public static ConfigEntry<KeyCode> GridPinKey;
@@ -54,10 +55,24 @@ namespace Furrow
         public static void Bind(ConfigFile config)
         {
             GridEnabled = config.Bind("Furrow", "GridEnabled", true,
-                "From GridLevel up, the cultivator's ghost snaps onto a lattice "
-                + "anchored on the nearest plant of the same kind, so hand-placed "
-                + "plants land in rows and columns. One seed per press stays vanilla; "
-                + "the skill unlock is the alignment.");
+                "From GridLevel up, the cultivator's ghost snaps onto a lattice, so "
+                + "hand-placed plants land in rows and columns. Beside plants already in "
+                + "the ground it continues their rows; see GridShared for open ground. "
+                + "One seed per press stays vanilla; the skill unlock is the alignment.");
+
+            // Personal rather than a server rule, and listed with the angle's family in
+            // GrovePlugin: it decides where YOUR first plant of a bed lands, and nothing
+            // about another player's field. The shared grid lines two players up only
+            // when both leave this on, which is the default and needs nobody to agree.
+            GridShared = config.Bind("Furrow", "GridShared", true,
+                "On open ground, with nothing planted near, put the plant on one grid "
+                + "shared by the whole world, so every bed you ever plant at the same "
+                + "spacing and angle lines up with every other, today's with last week's "
+                + "and yours with anyone else's. Off, the first plant goes exactly where "
+                + "you aim and the grid starts from it, carried to your next bed until you "
+                + "plant beside a different one. Either way a plant beside plants already "
+                + "in the ground follows THEIR rows, and GridPinKey still starts a grid "
+                + "exactly where you choose.");
 
             GridLevel = config.Bind("Furrow", "GridLevel", 10,
                 "The Farming level that unlocks the grid shape. Below it the shape "
@@ -77,7 +92,9 @@ namespace Furrow
             GridAngle = config.Bind("Furrow", "GridAngle", 0f,
                 "Which way the rows run, in degrees. The lattice is world-aligned at 0, "
                 + "so rows run north-south whatever direction you approach from. Turn it "
-                + "to match a building that does not sit square to the world.");
+                + "to match a building that does not sit square to the world. It decides "
+                + "open ground, a lone plant and the pin; beside two or more plants already "
+                + "in line, their own angle wins, so a turn cannot knock a bed off its rows.");
 
             GridFreeKey = config.Bind("Keys", "GridFreeKey", KeyCode.None,
                 "Hold to plant free of the grid - the lattice and its preview stand "
@@ -89,11 +106,11 @@ namespace Furrow
 
             GridPinKey = config.Bind("Keys", "GridPinKey", KeyCode.KeypadPeriod,
                 "Pin the grid to where the ghost is standing, so a row starts exactly "
-                + "there. Without a pin the lattice lines up on the nearest plant of the "
-                + "same crop, which is right for extending a bed and wrong for lining one "
-                + "up with a floor you just laid. Press again to unpin. Only works with "
-                + "the cultivator out and a plant selected, since the ghost is what says "
-                + "where 'here' is.");
+                + "there. Without a pin the lattice follows the plants already in the "
+                + "ground, or the shared grid where there are none, which is right for "
+                + "extending a bed and wrong for lining one up with a floor you just laid. "
+                + "Press again to unpin. Only works with the cultivator out and a plant "
+                + "selected, since the ghost is what says where 'here' is.");
 
             GridTurnKey = config.Bind("Keys", "GridTurnKey", KeyCode.None,
                 "An OPTIONAL key that turns the grid by GridTurnStep, for anyone who "

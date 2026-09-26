@@ -7,6 +7,45 @@ and the mod uses [semantic versioning](https://semver.org).
 
 ### Fixed
 
+- **The planting grid put patches of one field on different grids, and walked an oak row off
+  the grid of its first sapling.** The grid only ever knew about the bed through the plant it
+  had last found. It lost that whenever the ghost vanished, which happens every time you look
+  past reach for the next spot, and then it looked four metres around the cursor for a plant of
+  the same crop. An oak's rows are metres apart, so the spot for the next oak was often further
+  than that from the last one, and it found nothing and started a new grid where you were
+  aiming. A turnip beside carrots found no turnip and did the same.
+
+  The grid is now read off the ground each time. A plant next to plants already in continues
+  their rows, whatever crop they are, as long as they are spaced alike. The search reaches three
+  rows out, so it finds an oak's neighbour as surely as a carrot's. When the plants nearby
+  disagree, the rows most of them sit on win, so one plant put down by hand cannot pull a bed
+  out of line. On open ground a plant goes on one grid shared by the whole world, so beds
+  planted apart still line up with each other. `GridShared` turns that last part off if you
+  would rather the first plant of a bed went exactly where you aim.
+
+  A bed also keeps its angle. Before, the grid only looked for rows at your own angle, so after
+  a turn the bed beside you counted as nothing and the next plant started turned rows around
+  one of its plants. That is easy to do by accident, since scrolling turns the grid. Now two or
+  more plants in line keep their angle, and the message when you turn says so. Your angle still
+  decides open ground and a lone plant. Pin the grid to start new rows at your angle next to a
+  bed.
+
+  A grown tree does not steer the grid, because the game cannot tell it from a wild one. Wild
+  mushrooms, thistles and berry bushes do not steer it either, even though Thicket can grow them
+  from a transplant. The first time each plant is lined up, the log says how far apart the game
+  spaces it.
+
+  The console has a `furrow check` command: `furrow check sapling_carrot` counts how many grids
+  the carrots near you are on. It is not a cheat and needs no devcommands.
+
+- **A plant the grid moved could be planted where the game would have refused it.** The game
+  checks tilled ground, wards and no-build areas where you aim, and the grid then moves the
+  plant up to half a row. A carrot aimed at the edge of a tilled patch could land on grass and
+  get planted. It wilted ten seconds later, and when it should have been ready it was gone, seed
+  and all. The same checks now run
+  again at the spot the plant will actually land. If that spot fails, the ghost turns red and
+  you get the game's usual message.
+
 - **Some Deep North materials counted as Meadows ones for crafting from containers**, so they
   could be pulled from a chest once Eikthyr fell: the Elaking and Jotun drops and the Vanguard
   chestpiece family. The Jotun invasion spawns in every biome, and the shared biome index read

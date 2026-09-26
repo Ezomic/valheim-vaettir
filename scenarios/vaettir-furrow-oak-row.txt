@@ -1,0 +1,91 @@
+# Vaettir: an oak planted a normal oak spacing from the first lands on the first oak's grid.
+#
+# LHM-29. Robbin, planting oaks on live: "it doesnt stick to the grid of the first one and
+# shifts grids". The grid looked four metres round the cursor for another oak, and an oak's rows
+# are metres apart, so the spot for the next oak was often further than that from the last one.
+# It found nothing and started a new grid where you aimed. The grid now reaches three rows out,
+# counted in rows rather than metres.
+#
+# The first oak goes down with `mod furrowtest free`, exactly where it is put and on no grid: an
+# oak planted with Shift held, or one from before this fix. It has to be off the shared grid,
+# because an oak that never found the first one would still land in line with it if both were on
+# the shared grid, and the test could not tell. A step cannot hold Shift, and the Farming gate
+# cannot stand in for it because GridLevel can be 0, which Robbin's own play profile has. The
+# oak stands nine metres along the grid's columns and `face` turns you to it, so forward in
+# every `build` below runs along the columns and right along the rows.
+#
+# Then three more oaks through `build`: the cultivator, the ghost, Furrow's snap and the place
+# button. Each is aimed at least 5.3m from every oak already standing - past the old four
+# metres, and inside three rows for any spacing of 1.8m or more. No aim is a whole number of
+# rows from the first oak whatever the spacing turns out to be: the second and third are 0.4m
+# off its column and its row, and the fourth is 5.3m one way and 5.6m the other, which no one
+# spacing fits both of. So an oak the grid did not move is never in line by chance. Before each one
+# `mod furrowtest forget` empties the grid, which is the state a freshly started game is in, so
+# only the oaks in the ground can carry the row. Nothing but restarting the game does that.
+#
+# What passes: "on one grid" with 2, then 3, then 4 oaks.
+# What a broken build reads: an oak that did not find the others lands on the shared grid or where
+# it was aimed, and the check reads "on 2 grids (1 + 1)", "(2 + 1)" and so on. Two plants alone
+# are one grid at SOME angle whenever the distance between them happens to be a lattice distance,
+# so the two-oak check could be fooled by an unlucky spacing. Three and four oaks cannot.
+#
+# An oak's spacing is asset data and has never been measured. `furrowtest free` prints it ("rows
+# Nm apart") and so does the log. If it is over about ten metres the second oak rounds onto the
+# first one's spot, and the aims need moving out.
+#
+# Needs: singleplayer, grass in the Meadows with twenty-five metres clear. The oaks get no tilled
+# ground; a `build` refused for the ground (NeedDirt, NeedCultivated, WrongBiome) is the spot and
+# not the grid. GridEnabled on, GridCell 0, Sowing off. Farming is set to 50 and put back.
+#
+# Takes down every piece within 25m first. Leaves four oak saplings, which the next run's wipe
+# takes.
+
+clear
+give Cultivator:1,Acorn:5
+skill Farming 50
+wipe 25
+wait 1
+
+mod furrowtest forget
+mod furrowtest free Oak_Sapling 0 9
+printed off any grid yes
+wait 1
+face Oak_Sapling 12
+wait 1
+tool Cultivator
+
+
+# ---- the second oak: 5.28m back toward you from the first, 0.4m right of its column
+
+mod furrowtest forget
+build Oak_Sapling 3.72 0.4
+wait 1
+
+mod furrow check Oak_Sapling 12
+printed furrow check: 2 yes
+printed on one grid yes
+
+
+# ---- the third: 5.28m right of the first, 0.4m short of its row. A step over first, to reach.
+
+move 6 3
+mod furrowtest forget
+build Oak_Sapling 2.6 2.28
+wait 1
+
+mod furrow check Oak_Sapling 12
+printed furrow check: 3 yes
+printed on one grid yes
+
+
+# ---- the fourth: diagonally off the first, behind you and to your right
+
+mod furrowtest forget
+build Oak_Sapling -2.3 2.6
+wait 1
+
+mod furrow check Oak_Sapling 12
+printed furrow check: 4 yes
+printed on one grid yes
+
+skill Farming back
