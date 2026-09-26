@@ -1,32 +1,90 @@
-# Vaettir: a wild mushroom beside a new bed does not decide its rows.
+# Vaettir: wild mushrooms beside a new bed do not decide its rows.
 #
-# LHM-29, found in review before it shipped. The grid reads the rows off plants already in the
-# ground, grown crops included. Thicket's seedlings grow into the wild prefabs themselves, so
-# Pickable_Mushroom counted as a grown crop, and a mushroom is spaced exactly like a carrot. A
-# lone wild mushroom within reach beat the shared grid one plant to none, and a bed started
-# next to it took that mushroom's rows. A second bed next to a different mushroom took its rows.
-# That is two patches of one field on two grids again.
+# LHM-29, found in review before it shipped. The grid reads rows off the plants already in the
+# ground, grown crops included, and Thicket's mushroom seedling grows into Pickable_Mushroom - the
+# same prefab the world scatters wild, and spaced exactly like a carrot. So every wild mushroom in
+# reach counted as a carrot bed of one, beat the shared grid, and a bed started next to it took
+# that mushroom's rows. Now anything the world spawns by itself is left out.
 #
-# Now anything the world grows by itself is not counted. So: one mushroom stood on the ground
-# beside you, and a carrot aimed next to it. The carrot must go on the shared grid, as it would
-# on bare ground.
+# So: two mushrooms stood on the ground around you, two carrots planted within reach of both,
+# and two more carrots nine metres off with nothing near them. All four must be on one grid, the
+# shared one.
 #
-# This only proves something while a mushroom seedling and a carrot are spaced alike, which is
-# 1m for both with Thicket's SpacingScale at 1 and carrots as they ripped before 1.0. If they
-# differ the mushroom never counted and this passes for that reason instead. The carrot line in
-# the report says the carrot's spacing, and the log names Pickable_Mushroom among the plants
-# that grow wild.
+# `grow Pickable_Mushroom 2 3` stands the two mushrooms 4.29m apart, within 0.05 of the diagonal
+# of a three-row square. If they counted, they would be a pair in line at 62 degrees, their rows
+# would outvote everything else, and the first two carrots would go down turned 62 degrees. The
+# far pair lands on the shared grid at your own angle either way. So a broken build shows as an
+# angle, every run, and cannot hide in an offset that happens to line up.
 #
-# Leaves one mushroom standing, since `wipe` only takes down pieces. Pick it. Takes down every
-# piece within 20m first. Stand on open ground.
+# That only holds while Thicket's mushroom seedling steps a metre like the carrot; if it did not,
+# the mushrooms would never have counted and this would pass for that reason alone. So one
+# seedling is put down eight metres behind you with `mod furrowtest free`, which prints its
+# spacing - nothing else reports a plant's spacing - and "rows 1m apart" is required. Eight metres
+# is well outside the reach of every carrot here.
+#
+# Every carrot goes in with `build`: the cultivator, the ghost, Furrow's snap and the place
+# button. `mod furrowtest forget` at the start lifts a pin and empties what the grid is holding,
+# the state of a freshly started game, which nothing but a restart reaches. `free Oak_Sapling 0 12`
+# and `face` turn you along the grid's columns, as in the other Furrow files.
+#
+# What passes: "on one grid" with 4 carrots.
+# What a broken build reads: "on 2 grids (2 + 2)" at two angles, one of them 62.
+#
+# Needs: singleplayer, level ground in the Meadows with twenty metres clear, and no other mushroom
+# within six metres - the `count` step checks that, because a third one would change what a
+# broken build reads. Thicket on, with SpacingScale 1. GridEnabled and GridShared on, GridCell 0,
+# Sowing off, and a GridAngle other than 62 (or 152). Farming is set to 50 and put back.
+#
+# Takes down every piece within 20m first. Leaves the two mushrooms, since `wipe` only takes
+# pieces: pick them, or run this somewhere else next time, or the `count` fails. The four carrots,
+# the seedling and the marker oak go with the next run's wipe.
 
+clear
+give Cultivator:1,CarrotSeeds:10
+skill Farming 50
 wipe 20
 wait 1
 
-grow Pickable_Mushroom 1 3
+mod furrowtest forget
+mod furrowtest free Oak_Sapling 0 12
+printed off any grid yes
+wait 1
+face Oak_Sapling 15
+wait 1
+tool Cultivator
+
+# The premise: a mushroom seedling steps a metre, the same as a carrot.
+mod furrowtest free thicket_mushroom 0 -8
+printed rows 1m apart yes
+
+# Tilled before the mushrooms go up, while nothing stands in the placement ray's way.
+build cultivate_v2 1.1 0.8
+build cultivate_v2 1.1 -0.85
+
+grow Pickable_Mushroom 2 3
+count Pickable_Mushroom 2 6
 wait 1
 
-mod furrowtest forget
-mod furrowtest plant sapling_carrot 0.5 0.5
-printed shared grid yes
-printed in line no
+
+# ---- two carrots beside you, within four metres of both mushrooms however you stand
+
+build sapling_carrot 1.1 0.8
+build sapling_carrot 1.1 -0.85
+wait 1
+
+
+# ---- nine metres to your right, out of reach of the mushrooms and the carrots
+
+move 0 9
+build cultivate_v2 1.1 0.8
+build cultivate_v2 1.1 -0.85
+build sapling_carrot 1.1 0.8
+build sapling_carrot 1.1 -0.85
+wait 1
+
+mod furrow check sapling_carrot 12
+printed furrow check: 4 yes
+printed rows 1m apart yes
+printed on one grid yes
+
+skill Farming back

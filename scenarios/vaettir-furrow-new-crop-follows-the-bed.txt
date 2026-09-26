@@ -1,35 +1,78 @@
 # Vaettir: a turnip planted beside a carrot bed continues the carrots' rows.
 #
-# LHM-29. The grid used to look only for plants of the SAME crop, so the first turnip beside a
-# carrot bed found none and started a grid of its own where it was aimed. That is the other way
-# one field came out on two grids.
+# LHM-29. The grid used to read rows only off plants of the SAME crop, so the first turnip beside
+# a carrot bed found none and started a grid of its own. That is the other way one field came out
+# on two grids. Now any standing plant spaced alike counts, and carrots and turnips both step a
+# metre.
 #
-# The carrot bed is laid with `furrowtest free`, exactly where each is aimed and on no grid: a bed
-# from before this fix, or one planted by hand with Shift. It is square with itself, a metre
-# apart, and nowhere in particular against the shared grid. The turnips must follow the bed, not
-# the shared grid.
+# The carrot bed is four carrots put down with `mod furrowtest free`, exactly where each is put
+# and on no grid: a bed from before this fix, or one planted by hand with Shift held, which a step
+# cannot do. The bed is also turned 30 degrees against your grid, and that is what makes this hard
+# to fool. A turnip that ignored the carrots goes on the shared grid at your own angle, and that
+# can never be the bed's rows. A bed square with your grid would sit on the shared grid by chance
+# about one run in twenty-five.
 #
-# The vote is asserted as well as the result. "4 plants in line" says all four carrots were
-# counted and agreed, rather than the turnip happening to land in line with one of them.
+# The two turnips go in with `build`: the cultivator, the ghost, Furrow's snap and the place
+# button. Each is aimed a quarter of a row off the bed's next free spot, so a turnip the grid did
+# not move is not in the bed's rows either.
 #
-# The offsets assume carrots and turnips are spaced one metre apart, which is what they ripped
-# at before 1.0. Takes down every piece within 20m first. Stand on open ground.
+# `mod furrowtest forget` at the start lifts a pin and empties what the grid is holding, which is
+# the state a freshly started game is in; nothing but a restart does that. `free Oak_Sapling 0 12`
+# and `face` turn you along the grid's columns, so `build` measures forward and right in the same
+# frame `furrowtest free` places the bed in (metres right, then forward).
+#
+# What passes: the bed alone "on one grid" with 4, then carrots and turnips "on one grid" with 6.
+# What a broken build reads: turnips that ignored the carrots read "on 2 grids (4 + 2)" at two
+# angles 30 degrees apart. A grid that is not running reads 3 grids.
+#
+# Needs: singleplayer, level ground in the Meadows with twenty metres clear. GridEnabled on,
+# GridCell 0, Sowing off. Farming is set to 50 and put back. The turnips' spots are tilled; the
+# free carrots stand on untilled ground and wilt after ten seconds, which does not move them.
+#
+# Takes down every piece within 20m first. Leaves the bed, two turnips, the marker oak and two
+# tilled spots; the next run's wipe takes the plants and the oak.
 
+clear
+give Cultivator:1,TurnipSeeds:10
+skill Farming 50
 wipe 20
 wait 1
 
 mod furrowtest forget
-mod furrowtest free sapling_carrot 2.37 2.21
-mod furrowtest free sapling_carrot 3.37 2.21
-mod furrowtest free sapling_carrot 2.37 3.21
-mod furrowtest free sapling_carrot 3.37 3.21
+mod furrowtest free Oak_Sapling 0 12
+printed off any grid yes
+wait 1
+face Oak_Sapling 15
+wait 1
+tool Cultivator
+
+# Tilled before the bed goes down, while nothing stands in the placement ray's way.
+build cultivate_v2 2.98 0.73
+build cultivate_v2 2.47 0.21
+
+
+# ---- the bed: a one-metre square turned 30 degrees, on your left
+
+mod furrowtest free sapling_carrot -2.2 2.4
+mod furrowtest free sapling_carrot -1.334 1.9
+mod furrowtest free sapling_carrot -1.7 3.266
+mod furrowtest free sapling_carrot -0.834 2.766
 wait 1
 
-mod furrowtest plant sapling_turnip 4.3 2.3
-printed 4 plants in line yes
-mod furrowtest plant sapling_turnip 4.4 3.1
-printed plants already there yes
-wait 1
-
-mod furrow check sapling_carrot,sapling_turnip 10
+mod furrow check sapling_carrot 6
+printed furrow check: 4 yes
 printed on one grid yes
+
+
+# ---- the turnips, beside it on the right, far one first
+
+build sapling_turnip 2.98 0.73
+build sapling_turnip 2.47 0.21
+wait 1
+
+mod furrow check sapling_carrot,sapling_turnip 6
+printed furrow check: 6 yes
+printed rows 1m apart yes
+printed on one grid yes
+
+skill Farming back
