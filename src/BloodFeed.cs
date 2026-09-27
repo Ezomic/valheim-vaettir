@@ -33,6 +33,12 @@ namespace Grove
         {
             if (__instance == null || Sapling.All.Count == 0) return;
 
+            // The owner only. In 1.0 a creature with a death animation reaches OnDeath through
+            // CharacterAnimEvent.Die on every client animating it, not just through CheckDeath
+            // on the owner, so without this one kill fed the sapling once per player watching.
+            ZNetView nview;
+            if (!__instance.TryGetComponent(out nview) || !nview.IsValid() || !nview.IsOwner()) return;
+
             var weight = WeightOf(Utils.GetPrefabName(__instance.gameObject));
             if (weight <= 0f) return;
 
@@ -67,8 +73,8 @@ namespace Grove
         /// Everyone defending it sees the count, not just whoever landed the last blow.
         ///
         /// This used to message Player.m_localPlayer, which is wrong in every co-op game
-        /// and looks like the mod being broken. Character.OnDeath runs on the client that
-        /// *owns* the creature and nowhere else, so with two players clearing greydwarfs
+        /// and looks like the mod being broken. Feed only acts on the client that *owns* the
+        /// creature (it checks, since a death animation calls OnDeath everywhere), so with two players clearing greydwarfs
         /// around one sapling the counter appeared for whichever of them happened to own
         /// each corpse - so both of them saw roughly half the kills register and neither
         /// could tell whether the other's kills were counting at all. They were; only the

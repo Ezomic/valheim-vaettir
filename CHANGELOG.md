@@ -7,6 +7,9 @@ and the mod uses [semantic versioning](https://semver.org).
 
 ### Fixed
 
+- **A kill near a sapling could feed it once for every player watching.** In Valheim 1.0 a creature
+  with a death animation runs its death on every client that sees it fall, and each one fed the
+  nearest sapling. Now only the machine that has the creature does.
 - **The planting grid put patches of one field on different grids, and walked an oak row off
   the grid of its first sapling.** The grid only ever knew about the bed through the plant it
   had last found. It lost that whenever the ghost vanished, which happens every time you look
