@@ -47,8 +47,15 @@ wait 1
 tool Cultivator
 
 # Tilled before the bed goes down, while nothing stands in the placement ray's way.
+# A second after every tilling swing. `build` reads the ground's height the moment it starts,
+# and a swing's new ground only reaches the terrain's collider at the end of the frame it lands
+# in, which is the frame Devkit starts the next step in. Without the wait the next `build`
+# aims at the ground as it stood before the swing and fails "could not put the placement ray
+# on the spot". See vaettir-furrow-patches-share-a-grid.
 build cultivate_v2 2.98 0.73
+wait 1
 build cultivate_v2 2.47 0.21
+wait 1
 
 
 # ---- the bed: a one-metre square turned 30 degrees, on your left

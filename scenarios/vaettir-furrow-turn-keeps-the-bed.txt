@@ -48,10 +48,19 @@ face Oak_Sapling 15
 wait 1
 tool Cultivator
 
+# A second after every tilling swing. `build` reads the ground's height the moment it starts,
+# and a swing's new ground only reaches the terrain's collider at the end of the frame it lands
+# in, which is the frame Devkit starts the next step in. Without the wait the next `build`
+# aims at the ground as it stood before the swing and fails "could not put the placement ray
+# on the spot". See vaettir-furrow-patches-share-a-grid.
 build cultivate_v2 3.4 -1.75
+wait 1
 build cultivate_v2 3.4 0
+wait 1
 build cultivate_v2 1.65 -1.75
+wait 1
 build cultivate_v2 1.65 0
+wait 1
 build cultivate_v2 2.6 -3.3
 wait 4
 
@@ -88,7 +97,9 @@ printed on one grid yes
 
 move 0.5 7.5
 build cultivate_v2 3.4 -1.75
+wait 1
 build cultivate_v2 3.4 0
+wait 1
 build sapling_carrot 3.4 -1.75
 build sapling_carrot 3.4 0
 wait 1

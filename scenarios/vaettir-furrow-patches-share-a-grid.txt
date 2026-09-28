@@ -63,9 +63,20 @@ tool Cultivator
 
 # ---- the first patch: a square 1.75m on a side
 
+# A second between tilling swings. `build` reads the height of the ground at its spot the
+# moment it starts, and a swing's new ground only reaches the terrain's collider at the end of
+# the frame it lands in (TerrainComp.DoOperation pokes the heightmap to rebuild in LateUpdate).
+# Devkit starts the next step in that same frame, so a swing started straight after another
+# aimed at the ground as it stood before that one, the ray came down past that height, and the
+# step failed "could not put the placement ray on the spot". On 2026-09-28 the second swing of
+# every row did, on fresh ground; on ground already tilled there was nothing to change and the
+# same swings passed.
 build cultivate_v2 3.4 -1.75
+wait 1
 build cultivate_v2 3.4 0
+wait 1
 build cultivate_v2 1.65 -1.75
+wait 1
 build cultivate_v2 1.65 0
 wait 4
 
@@ -90,8 +101,11 @@ mod furrowtest forget
 move 0.5 7.5
 
 build cultivate_v2 3.4 -1.75
+wait 1
 build cultivate_v2 3.4 0
+wait 1
 build cultivate_v2 1.65 -1.75
+wait 1
 build cultivate_v2 1.65 0
 wait 4
 

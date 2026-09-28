@@ -58,8 +58,15 @@ mod furrowtest free thicket_mushroom 0 -8
 printed rows 1m apart yes
 
 # Tilled before the mushrooms go up, while nothing stands in the placement ray's way.
+# A second after every tilling swing. `build` reads the ground's height the moment it starts,
+# and a swing's new ground only reaches the terrain's collider at the end of the frame it lands
+# in, which is the frame Devkit starts the next step in. Without the wait the next `build`
+# aims at the ground as it stood before the swing and fails "could not put the placement ray
+# on the spot". See vaettir-furrow-patches-share-a-grid.
 build cultivate_v2 1.1 0.8
+wait 1
 build cultivate_v2 1.1 -0.85
+wait 1
 
 grow Pickable_Mushroom 2 3
 count Pickable_Mushroom 2 6
@@ -77,7 +84,9 @@ wait 1
 
 move 0 9
 build cultivate_v2 1.1 0.8
+wait 1
 build cultivate_v2 1.1 -0.85
+wait 1
 build sapling_carrot 1.1 0.8
 build sapling_carrot 1.1 -0.85
 wait 1
