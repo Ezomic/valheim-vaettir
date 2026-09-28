@@ -56,7 +56,8 @@ skill Farming 50
 # as snow too deep. Plain `biome Meadows` answered that and missed the next case: already in the
 # Meadows, it does not move you. The third run came here straight from Malmr, whose last file
 # leaves a copper deposit (rock4_copper_frac) about five metres in front of where you stand, and
-# `wipe` takes only pieces. Every `build` in the three furrow files that ran stopped on that
+# `wipe` took only pieces then (since Devkit 686ff58 it takes what `put` left too). Every `build`
+# in the three furrow files that ran stopped on that
 # deposit ("last on Rock4_cell ... (not the ground)"), so not one sapling or crop went in and each
 # `furrow check` counted only what `furrowtest free` had put down. `fresh` always moves you, to
 # ground no scenario has used. A wild tree or rock can still stand there, and a `build` it stops
