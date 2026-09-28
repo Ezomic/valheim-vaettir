@@ -24,7 +24,8 @@
 #  2. The Deer trophy, the Meadows control: all five are in reach, all five are offered, gate open,
 #     behind defeated_eikthyr.
 #  3. The Elaking trophy, a Jotun trophy and the Elaking hair bundle: each is filed in the Deep
-#     North, all five are in reach, and none is offered.
+#     North, all five are in reach, and, once a BossBiomes row names the Deep North, none is
+#     offered. Until then only the biome lines of this block can pass.
 #
 # Blocks 2 and 3 read `hod item <prefab>`, a console readout added for this scenario, because no
 # workbench recipe takes any of these items and `craftable` has nothing to ask. Its line reads
@@ -41,8 +42,10 @@
 # What a broken build reads.
 #  - Before ce9aaac: the Deep North items read biome=meadows boss=defeated_eikthyr reach=5 offered=5
 #    gate=open, so every biome=deepnorth line and every `reach=5 offered=0 gate=shut` line fails.
-#  - Half the fix, the event counted as a gate but the row still used: the Elaking trophy and hair
-#    bundle pass and the Jotun trophy reads biome=meadows.
+#  - Half the fix, the event counted as a gate but the row still used: the Elaking trophy's and
+#    the hair bundle's biome=deepnorth lines pass and the Jotun trophy reads biome=meadows. Their
+#    gate lines follow the paragraph above: they fail on every build until a BossBiomes row names
+#    the Deep North.
 #  - A jib that serves nothing (HodEnabled off, the scope shut, the post not found): the Bow is not
 #    craftable, and the Deer line reads scope=shut or offered=0, so the zeros on the Deep North lines
 #    mean nothing and are not trusted.
@@ -62,7 +65,20 @@
 #
 # It LEAVES BEHIND the shed, the post, the jib and the chest with what is left in it (the next run
 # wipes them), god and ghost mode on, and the world with NO vanilla boss key set: every one is
-# removed at the start and Eikthyr's again at the end, and none is put back. Use a test world.
+# removed at the start and Eikthyr's again at the end, and none is put back, because a scenario
+# cannot tell which of them the world had. Use a test world. To put a world's progress back, run
+# the lines for the bosses it really had down as a scenario of their own, or type the same names
+# after `setkey` in the console with devcommands on, or type each into Devkit's global key pane:
+#   key defeated_eikthyr
+#   key defeated_gdking
+#   key defeated_bonemass
+#   key defeated_dragon
+#   key defeated_goblinking
+#   key defeated_queen
+#   key defeated_fader
+# All seven come off although today no row gates the Deep North, so that whichever vanilla boss's
+# key the Deep North row ends up naming is already off when this runs. If that row names a key
+# outside these seven, add an unkey for it beside them.
 
 clear
 give Hammer:1,Hoe:1

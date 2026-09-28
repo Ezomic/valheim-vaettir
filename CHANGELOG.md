@@ -62,7 +62,9 @@ and the mod uses [semantic versioning](https://semver.org).
 - **Some Deep North materials counted as Meadows ones for crafting from containers**, so they
   could be pulled from a chest once Eikthyr fell: the Elaking and Jotun drops and the Vanguard
   chestpiece family. The Jotun invasion spawns in every biome, and the shared biome index read
-  that as the Meadows. Invasion spawns no longer decide where a creature belongs.
+  that as the Meadows. Invasion spawns no longer decide where a creature belongs. They are Deep
+  North items now, and no `BossBiomes` row names the Deep North yet, so until one does they come
+  out of a chest with no boss killed. The log says so the first time it happens.
 
 - **The chest total on a crafting requirement line was cut off at the edge of its slot.** At a
   bench served by a hod jib the Wood slot read "8 (+169" and, with the multi-craft key held,
