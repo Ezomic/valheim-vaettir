@@ -5,6 +5,13 @@ and the mod uses [semantic versioning](https://semver.org).
 
 ## [Unreleased]
 
+### Added
+
+- `hod item <prefab>` in the console prints the biome a material is filed under, the boss that
+  opens it for the hod jib, and how many of it the chests around the post hold and would hand to
+  a craft. Run it standing at a station the jib serves. It is not a cheat and needs no
+  devcommands.
+
 ### Fixed
 
 - **A kill near a sapling could feed it once for every player watching.** In Valheim 1.0 a creature

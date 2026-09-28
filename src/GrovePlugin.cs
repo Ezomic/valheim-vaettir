@@ -324,6 +324,7 @@ namespace Grove
             // "hod".
             failed += Apply("hod crafting", typeof(Hod.HodCrafting));
             failed += Apply("hod requirement lines", typeof(Hod.HodRequirement));
+            failed += Apply("hod console readout", typeof(Hod.HodConsole));
 
             // This one's result is read rather than only counted, and that is the one place
             // in this method where a failed patch group has to do more than be reported.

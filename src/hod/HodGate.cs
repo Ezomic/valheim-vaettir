@@ -179,6 +179,20 @@ namespace Hod
             return null;
         }
 
+        /// <summary>
+        /// The key of the first BossBiomes row naming this biome, or null when no row does.
+        ///
+        /// For the `hod item` readout (see HodConsole). Null is the answer that explains an item
+        /// Allows lets through with no boss down: a biome no row names is left open, see Allows.
+        /// </summary>
+        public static string BossOf(string biome)
+        {
+            foreach (var tier in Tiers())
+                if (tier.Biome == biome) return tier.BossKey;
+
+            return null;
+        }
+
         /// <summary>What the chests are currently serving, for one line in the log.</summary>
         public static string Describe()
         {
