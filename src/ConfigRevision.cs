@@ -38,8 +38,14 @@ namespace Grove
         ///     edge. Unlike move 1 this entry is local to each player (Suite.Local in
         ///     GrovePlugin), so it is every player's own file that moves, not only the
         ///     host's, and each one moves the first time that player loads this version.
+        /// 3 - LHM-36: BossBiomes gained a Deep North row, read off the Frozen King prefab,
+        ///     after core ce9aaac filed the Elaking and Jotun drops and the Vanguard family
+        ///     in the Deep North. Without the move the row reaches no machine that has run
+        ///     Vaettir before, and on those every one of those items comes out of a chest
+        ///     with no boss killed. BossBiomes is synced, so it is the host's file that
+        ///     decides on a server, as with move 1.
         /// </summary>
-        internal const int Current = 2;
+        internal const int Current = 3;
 
         internal static ConfigEntry<int> Revision;
 
@@ -66,6 +72,17 @@ namespace Grove
                 // who had written their own layout keeps it, which is the rule; anyone who
                 // wants the old line back can paste this into the file.
                 Moved(Hod.HodConfig.ChestTotalFormat, "{need} <color=#88CCFF>(+{chest})</color>");
+            }
+
+            if (Revision.Value < 3)
+            {
+                // The default as it stood from Hirsla's fold until the Deep North row, which
+                // is also exactly what both local profiles held when the row was added.
+                Moved(Hod.HodConfig.BossBiomes,
+                    "defeated_eikthyr:meadows, defeated_gdking:blackforest, "
+                    + "defeated_bonemass:swamp, defeated_bonemass:ocean, "
+                    + "defeated_dragon:mountain, defeated_goblinking:plains, "
+                    + "defeated_queen:mistlands, defeated_fader:ashlands");
             }
 
             Revision.Value = Current;

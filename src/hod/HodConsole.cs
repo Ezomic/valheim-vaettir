@@ -32,6 +32,19 @@ namespace Hod
     /// The answer is name=value tokens with no spaces inside them, in a fixed order, because
     /// Devkit's `printed` step matches a substring and a scenario pins a count by asserting it
     /// together with its neighbour: "offered=5" alone is also true of "offered=50".
+    ///
+    /// boss= is the key the biome's BossBiomes row waits on. It reads boss=none when no row
+    /// names the biome, which is why such a biome is open, and boss=unresolved when the row
+    /// reads its key off a boss prefab and has not found one in this world, which is why such a
+    /// biome is shut. The Deep North's row is the one that reads a prefab, and this token is
+    /// how its key is learned without the log.
+    ///
+    /// <b>`hodkey` is the one command here that changes anything</b>, and it is a cheat for
+    /// that reason: it sets or removes the key a biome's row waits on. A scenario needs it
+    /// because the Deep North's key is read at run time and cannot be written into a test as a
+    /// string, so Devkit's own `unkey` step has nothing to name. Devkit reaches it with its
+    /// `mod` step, which runs a mod's command without the cheat mark. It can do nothing
+    /// `setkey` and `removekey` cannot; it only looks the key up.
     /// </summary>
     internal static class HodConsole
     {
@@ -52,6 +65,46 @@ namespace Hod
                 "item <prefab>: which biome the hod jib files a material under, and how many of it the "
                 + "chests around the post would hand to a craft. Use it at a station the jib serves",
                 new Terminal.ConsoleEvent(OnCommand), isCheat: false);
+
+            // Failable, so a refusal reaches Devkit's `mod` step as a failed step rather than
+            // as a line of text a scenario would have to think to check.
+            new Terminal.ConsoleCommand("hodkey",
+                "<biome> on|off: set or remove the global key the hod jib's BossBiomes row for that "
+                + "biome waits on, including a key read off a boss prefab",
+                new Terminal.ConsoleEventFailable(OnKeyCommand), isCheat: true);
+        }
+
+        private static object OnKeyCommand(Terminal.ConsoleEventArgs args)
+        {
+            if (args.Length < 3) return "hodkey <biome> on|off, for example hodkey deepnorth off";
+
+            var biome = args[1].ToLowerInvariant();
+            var mode = args[2].ToLowerInvariant();
+            if (mode != "on" && mode != "off") return "say on or off, not " + args[2];
+
+            var zone = ZoneSystem.instance;
+            if (zone == null) return "no world, so no keys. Load one first";
+
+            bool named;
+            var keys = HodGate.KeysOf(biome, out named);
+            if (!named) return "no BossBiomes row names '" + biome + "', so nothing opens or shuts it";
+
+            if (keys.Count == 0)
+                return "the " + biome + " row has not found its key in this world, so there is "
+                       + "nothing to " + (mode == "on" ? "set" : "remove") + ". The log says which "
+                       + "prefabs it tried";
+
+            foreach (var key in keys)
+            {
+                if (mode == "on") zone.SetGlobalKey(key);
+                else zone.RemoveGlobalKey(key);
+            }
+
+            var term = args.Context;
+            if (term != null)
+                term.AddString("hodkey biome=" + biome + " key=" + string.Join(",", keys.ToArray()) + " " + mode);
+
+            return true;
         }
 
         private static void OnCommand(Terminal.ConsoleEventArgs args)
@@ -94,6 +147,8 @@ namespace Hod
         private static string Describe(string prefabName, string sharedName)
         {
             var biome = BiomeIndex.BiomeOf(prefabName);
+
+            // A key, HodGate.Unresolved, or null for no row. See the class docstring.
             var boss = HodGate.BossOf(biome);
 
             return "hod item=" + prefabName

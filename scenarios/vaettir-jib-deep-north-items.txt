@@ -1,5 +1,5 @@
 # Vaettir: with only Eikthyr down, a Deep North drop stays in the chest while a Meadows one comes out
-# for a craft. LHM-36.
+# for a craft, and it comes out once the Deep North's own key is set. LHM-36.
 #
 # The bug. Valheim 1.0 gave the Elaking, Krigen and Hexen a "Fimbulvinter" spawn row whose biome mask
 # is every biome, gated only by the jotun_invasion persistent event. The shared biome index read that
@@ -7,32 +7,48 @@
 # trophies, the Elaking hair bundle and the Vanguard chest family out of a chest from Eikthyr on.
 # core ce9aaac made an event row place nothing.
 #
-# THIS FAILS ON THE BUILD IT WAS WRITTEN AGAINST (2026-09-28: core ce9aaac, BossBiomes at its
-# default), and the failure is real, not the scenario's. The fix moved these items into the Deep
-# North, and no BossBiomes row names the Deep North. HodGate.Allows lets a biome no row names
-# through with nothing killed (a biome no boss can open would otherwise be shut forever), so the
-# items went from "gated at Eikthyr" to "not gated at all". Read from the code, not from a run:
-# expect the biome=deepnorth lines to pass and the three `reach=5 offered=0 gate=shut` lines to
-# fail, each console line reading boss=none. Which boss opens the Deep North is not decided here.
-# Once a BossBiomes row names it, this scenario is the test for that row.
+# That moved these items into the Deep North, and at first no BossBiomes row named the Deep North.
+# HodGate.Allows lets a biome no row names through with nothing killed, so the items went from "gated
+# at Eikthyr" to "not gated at all". Robbin decided on 2026-09-28 that the Deep North's own boss opens
+# it. The row is `@FrozenKing_p3|FrozenKing_p2|FrozenKing:deepnorth`: the Frozen King's key is asset
+# data that no assembly carries, so the row names his three phase prefabs and the key is read off the
+# first that carries one, in each world. Until it is found, the Deep North is shut.
+#
+# THE KEY IS NOT WRITTEN IN THIS FILE, on purpose. Nobody had read it when this was written, and a
+# guessed string that is wrong would make the lines below fail, or pass for the wrong reason. So the
+# Deep North lines assert that SOME key was found (boss=unresolved and boss=none are both failures)
+# and leave the string alone. The first run is how it gets learned. It is the boss= token on those
+# lines, the key= token in the result of each `mod hodkey` step, and a line in the log reading
+# "Deep North materials open at <key>, read off <prefab>". Note it here once it is known:
+#   Deep North key: not yet read
 #
 # What it proves. One chest beside a hod jib holds five each of TrophyDeer, TrophyElaking,
 # TrophyJotunWarrior and ElakingHairBundle, plus the wood and scraps for a bow. Every vanilla boss
-# key is removed and Eikthyr's put back, so the Meadows is the only biome any boss has opened.
+# key is removed, and the Deep North's, and then Eikthyr's is put back, so the Meadows is the only
+# biome any boss has opened.
 #  1. The jib serves this chest through the real crafting panel: `craftable Bow yes` with the wood
 #     only in the chest. That is Player.HaveRequirements, the panel's own test.
 #  2. The Deer trophy, the Meadows control: all five are in reach, all five are offered, gate open,
 #     behind defeated_eikthyr.
 #  3. The Elaking trophy, a Jotun trophy and the Elaking hair bundle: each is filed in the Deep
-#     North, all five are in reach, and, once a BossBiomes row names the Deep North, none is
-#     offered. Until then only the biome lines of this block can pass.
+#     North behind a key read off the Frozen King, all five are in reach, and none is offered.
+#  4. With the Deep North's key set, the Elaking trophy comes out: all five offered, gate open. So
+#     the shut gate in 3 is shut because its key is unset, not because it waits on a key that can
+#     never match.
 #
-# Blocks 2 and 3 read `hod item <prefab>`, a console readout added for this scenario, because no
+# Blocks 2 to 4 read `hod item <prefab>`, a console readout added for this scenario, because no
 # workbench recipe takes any of these items and `craftable` has nothing to ask. Its line reads
-# hod item= index= scope= biome= boss= reach= offered= gate=. offered is HodChests.CountAllowed, the
-# number the counting patch adds to your pack's count inside a crafting question, with the same
-# per-stack gate the take uses. reach is the same chests with the gate left out, so offered=0 cannot
-# be a chest the post does not reach: `reach=5 offered=0` is asserted as one pair.
+# hod item= index= scope= biome= boss= reach= offered= gate=. boss= is the key the biome's row waits
+# on, boss=unresolved when that row found no key in this world, and boss=none when no row names the
+# biome. offered is HodChests.CountAllowed, the number the counting patch adds to your pack's count
+# inside a crafting question, with the same per-stack gate the take uses. reach is the same chests
+# with the gate left out, so offered=0 cannot be a chest the post does not reach: `reach=5 offered=0`
+# is asserted as one pair.
+#
+# `mod hodkey deepnorth off` and `on` remove and set whatever key the Deep North row found, which is
+# how this file handles a key it cannot name. hodkey is Vaettir's own cheat command, run through
+# Devkit's `mod` step so the test character is not marked. When the row has found no key it refuses,
+# and the step fails.
 #
 # HOW TO RUN IT. Singleplayer, in a test world, on own-profile (play.ps1). Stand on flat ground with
 # about eight metres clear in front of you and NOT within twenty metres of another stowing post or
@@ -41,11 +57,19 @@
 #
 # What a broken build reads.
 #  - Before ce9aaac: the Deep North items read biome=meadows boss=defeated_eikthyr reach=5 offered=5
-#    gate=open, so every biome=deepnorth line and every `reach=5 offered=0 gate=shut` line fails.
+#    gate=open, so every biome=deepnorth line and every Deep North gate line fails.
 #  - Half the fix, the event counted as a gate but the row still used: the Elaking trophy's and
-#    the hair bundle's biome=deepnorth lines pass and the Jotun trophy reads biome=meadows. Their
-#    gate lines follow the paragraph above: they fail on every build until a BossBiomes row names
-#    the Deep North.
+#    the hair bundle's biome=deepnorth lines pass and the Jotun trophy reads biome=meadows, gate open.
+#  - A BossBiomes with no Deep North row, which is a file edited by hand before this version (the
+#    move to the new default only touches a file still on the old default): each `mod hodkey` step
+#    fails, refusing because no row names deepnorth, and the Deep North lines read boss=none
+#    offered=5 gate=open.
+#  - A row that found no key, because none of the three prefabs is in this world or none carries a
+#    defeat key: each `mod hodkey` step fails, and the Deep North lines read boss=unresolved
+#    offered=0 gate=shut. That is shut, as designed, but for the wrong reason, so the boss=unresolved
+#    lines fail. The log's warning names each prefab it tried and what it found.
+#  - A key found but not the one the gate looks up: block 4 reads offered=0 gate=shut with the key
+#    set.
 #  - A jib that serves nothing (HodEnabled off, the scope shut, the post not found): the Bow is not
 #    craftable, and the Deer line reads scope=shut or offered=0, so the zeros on the Deep North lines
 #    mean nothing and are not trusted.
@@ -53,6 +77,10 @@
 #    gate answers open for everything.
 #
 # WHAT IT CANNOT SEE:
+#  - That the key read off the prefab is the one the Frozen King's death really sets. It is the field
+#    Character.OnDeath hands to SetGlobalKey, so it should be, but here every key is set by hand and
+#    no boss is killed. Only a real kill tests that, and which of his three phases carries the key is
+#    something the log line says rather than something this run checks.
 #  - A craft actually taking a Deep North item out of the chest. None of these items is in a
 #    workbench recipe; the Elaking materials go into upgrades at the Deep North forge. The take path
 #    filters by the same HodGate.AllowsStack that offered counts through, but that is from reading
@@ -61,14 +89,14 @@
 #    compiles the same shared BiomeIndex source as Yoke, and yoke-deep-north-items.txt checks those
 #    item by item against Yoke's copy. Here three stand for the rest.
 #  - A chest somebody else owns. This one is yours; vaettir-jib-remote-chest covers the other case.
-#  - A real boss kill. The keys are set by hand.
 #
 # It LEAVES BEHIND the shed, the post, the jib and the chest with what is left in it (the next run
-# wipes them), god and ghost mode on, and the world with NO vanilla boss key set: every one is
-# removed at the start and Eikthyr's again at the end, and none is put back, because a scenario
-# cannot tell which of them the world had. Use a test world. To put a world's progress back, run
-# the lines for the bosses it really had down as a scenario of their own, or type the same names
-# after `setkey` in the console with devcommands on, or type each into Devkit's global key pane:
+# wipes them), god and ghost mode on, and the world with NO boss key set, the Deep North's included:
+# every one is removed at the start, Eikthyr's and the Deep North's are set again along the way and
+# removed at the end, and none is put back, because a scenario cannot tell which of them the world had.
+# Use a test world. To put a world's progress back, run the lines for the bosses it really had down
+# as a scenario of their own, or type the same names after `setkey` in the console with devcommands
+# on, or type each into Devkit's global key pane:
 #   key defeated_eikthyr
 #   key defeated_gdking
 #   key defeated_bonemass
@@ -76,9 +104,9 @@
 #   key defeated_goblinking
 #   key defeated_queen
 #   key defeated_fader
-# All seven come off although today no row gates the Deep North, so that whichever vanilla boss's
-# key the Deep North row ends up naming is already off when this runs. If that row names a key
-# outside these seven, add an unkey for it beside them.
+#   mod hodkey deepnorth on
+# The last line is the Deep North's key, which this file cannot name. For setkey or the key pane, use
+# the key the readout printed as boss= on a Deep North item.
 
 clear
 give Hammer:1,Hoe:1
@@ -134,9 +162,10 @@ wait 2
 stock piece_chest_wood Wood:100,LeatherScraps:50
 stock piece_chest_wood TrophyDeer:5,TrophyElaking:5,TrophyJotunWarrior:5,ElakingHairBundle:5
 
-# Only Eikthyr. Every vanilla boss key comes off first, so no other boss can open a biome for these
-# items whatever this world has seen, and then Eikthyr's goes back on. Putting it back is a real
-# key add, and that is what makes the gate recompute from the list as it now stands.
+# Only Eikthyr. Every vanilla boss key comes off first, and the Deep North's through hodkey because
+# this file does not know it, so no other boss can open a biome for these items whatever this world
+# has seen. Then Eikthyr's goes back on. Putting it back is a real key add, and that is what makes
+# the gate recompute from the list as it now stands.
 unkey defeated_eikthyr
 unkey defeated_gdking
 unkey defeated_bonemass
@@ -144,6 +173,7 @@ unkey defeated_dragon
 unkey defeated_goblinking
 unkey defeated_queen
 unkey defeated_fader
+mod hodkey deepnorth off
 wait 2
 key defeated_eikthyr
 wait 2
@@ -167,23 +197,41 @@ printed item=TrophyDeer index=complete scope=open yes
 printed biome=meadows boss=defeated_eikthyr yes
 printed reach=5 offered=5 gate=open yes
 
-# ---- 3. the Deep North drops. Filed in the Deep North, in reach, and not offered.
+# ---- 3. the Deep North drops. Filed in the Deep North behind a key that was found, in reach, and
+# not offered. boss= is not pinned to a string; see the header.
 
 console hod item TrophyElaking
 printed item=TrophyElaking index=complete scope=open yes
 printed biome=deepnorth yes
+printed boss=unresolved no
+printed boss=none no
 printed reach=5 offered=0 gate=shut yes
 
 console hod item TrophyJotunWarrior
 printed item=TrophyJotunWarrior index=complete scope=open yes
 printed biome=deepnorth yes
+printed boss=unresolved no
+printed boss=none no
 printed reach=5 offered=0 gate=shut yes
 
 console hod item ElakingHairBundle
 printed item=ElakingHairBundle index=complete scope=open yes
 printed biome=deepnorth yes
+printed boss=unresolved no
+printed boss=none no
 printed reach=5 offered=0 gate=shut yes
 
-# Shut the crafting panel `use` opened, and take Eikthyr back off.
+# ---- 4. the Deep North's own key opens it, set by hand as the Frozen King's death would set it.
+
+mod hodkey deepnorth on
+wait 2
+
+console hod item TrophyElaking
+printed item=TrophyElaking index=complete scope=open yes
+printed biome=deepnorth yes
+printed reach=5 offered=5 gate=open yes
+
+# Shut the crafting panel `use` opened, and take the Deep North's key and Eikthyr's back off.
 close
+mod hodkey deepnorth off
 unkey defeated_eikthyr

@@ -100,24 +100,43 @@ namespace Hod
             // different purpose: which biome has the world earned. Two mods disagreeing
             // about which boss owns which biome would be two mods giving one player
             // different answers out of one set of keys.
+            //
+            // The Deep North row names prefabs rather than a key, because the Frozen King's
+            // key is asset data nobody has read (see HodGate.ReadPrefabRows). The three names
+            // are his three phases, the last first, since the death that ends the fight is the
+            // one that should open the biome; the log line on a world load says which of them
+            // actually carries a key. Boss8FrozenKing, the other name in the asset manifest,
+            // is left out: it is an achievement asset under Achievements/AchievementItems, not
+            // a prefab, so ZNetScene can never hold it. A file still on the default from
+            // before this row existed is moved to this one once, by ConfigRevision move 3.
             BossBiomes = config.Bind("Hod", "BossBiomes",
                 "defeated_eikthyr:meadows, defeated_gdking:blackforest, "
                 + "defeated_bonemass:swamp, defeated_bonemass:ocean, "
                 + "defeated_dragon:mountain, defeated_goblinking:plains, "
-                + "defeated_queen:mistlands, defeated_fader:ashlands",
+                + "defeated_queen:mistlands, defeated_fader:ashlands, "
+                + "@FrozenKing_p3|FrozenKing_p2|FrozenKing:deepnorth",
                 "boss:biome, comma separated. Kill a biome's boss and the materials that "
                 + "biome gives you start coming out of the chests around the post. Before "
-                + "Eikthyr the jib does nothing at all; by Fader it does everything, and "
-                + "that is the point - the convenience is the reward for finishing the "
-                + "game, not a thing you install to skip it.\n"
+                + "Eikthyr the jib does nothing at all; by the Frozen King it does "
+                + "everything, and that is the point - the convenience is the reward for "
+                + "finishing the game, not a thing you install to skip it.\n"
                 + "One boss may name several biomes. Bonemass carries the Ocean as well as "
                 + "the Swamp, because no boss lives in the water and without a row naming it "
                 + "every fish, and chitin, and bait would be locked out for the whole game. "
                 + "Bonemass rather than an earlier one because the longship is the boat that "
                 + "makes fishing worth hauling.\n"
-                + "Deep North is deliberately absent: it has no boss and no items of its "
-                + "own, and a biome no row names is left open rather than shut forever - see "
-                + "AllowUnclassified for the same argument made about items.\n"
+                + "A row starting with @ names the boss PREFAB instead of its key, and the key "
+                + "is read off that prefab when a world loads: the one its death sets. Several "
+                + "prefabs may be named with | between them, and the first that carries a key "
+                + "is used. The Deep North row is written this way because the Frozen King's "
+                + "key is stored in the game's assets, not its code, and nobody has read it "
+                + "yet. The log says which key it found and from which prefab, as 'Deep North "
+                + "materials open at ...'. Until a key is found the Deep North stays SHUT: its "
+                + "materials stay in the chest whoever has been killed, and the log warns.\n"
+                + "A biome no row names at all is left open rather than shut forever, and the "
+                + "log warns about that too - see AllowUnclassified for the same argument "
+                + "made about items. So deleting the Deep North row does not lock its "
+                + "materials away, it lets them out from the first day.\n"
                 + "Which biome an item belongs to is worked out from the game's own tables, "
                 + "not a list here: the vegetation table places a copper deposit in the "
                 + "Black Forest and the deposit says it drops copper ore, so copper ore is a "

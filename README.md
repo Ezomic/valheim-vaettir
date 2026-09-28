@@ -180,8 +180,9 @@ Three things are deliberate and you will notice all of them:
 
 **The boss rule.** A material is only served out of a chest if the biome it comes from has had
 its boss killed: Eikthyr opens the Meadows, the Elder the Black Forest, Bonemass the Swamp and
-the Ocean, Moder the Mountains, Yagluth the Plains, the Queen the Mistlands, Fader the Ashlands.
-Before Eikthyr the jib does nothing at all; by Fader it does everything. This is what keeps the
+the Ocean, Moder the Mountains, Yagluth the Plains, the Queen the Mistlands, Fader the Ashlands,
+and the Frozen King the Deep North. Before Eikthyr the jib does nothing at all; by the Frozen King
+it does everything. This is what keeps the
 convenience from running ahead of the game - a chest full of black metal is not a shortcut past
 the Plains - and it is why the build-menu description names it. A jib that seems to be doing
 nothing is usually a biome you have not earned yet rather than a broken piece.
@@ -401,7 +402,7 @@ The bench service, which is the hod jib's effect.
 | --- | --- | --- |
 | `HodEnabled` | true | Off leaves the crafting panel counting only what you are carrying. The pieces stay buildable and stay standing |
 | `HodRange` | 20 | How far the service reaches, measured **from the post** that carries the jib. Both which benches it serves and which chests it counts |
-| `BossBiomes` | `defeated_eikthyr:meadows, defeated_gdking:blackforest, defeated_bonemass:swamp, defeated_bonemass:ocean, …` | Which global key opens which biome. Ocean rides Bonemass |
+| `BossBiomes` | `defeated_eikthyr:meadows, defeated_gdking:blackforest, defeated_bonemass:swamp, defeated_bonemass:ocean, …` and a Deep North row | Which global key opens which biome. Ocean rides Bonemass. A row starting with `@` names boss prefabs instead of a key, and the key is read off the first of them that carries one. The Deep North's row is written that way and names the Frozen King's three phases, because his key lives in the game's assets. Until it is found the Deep North stays shut. A file still on the old default, without that row, is moved to this once |
 | `AllowUnclassified` | true | Whether an item the mod cannot place in any biome may still be drawn from a chest |
 | `BiomeOverrides` | (a list of roots) | Corrects the derived biome for an item by hand. Everything made from an overridden root follows it |
 | `ShowChestTotals` | true | Add what the chests hold to the amount beside each requirement. Local to you |
