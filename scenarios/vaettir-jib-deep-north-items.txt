@@ -19,7 +19,9 @@
 # Deep North lines assert that SOME key was found (boss=unresolved and boss=none are both failures)
 # and leave the string alone. The first run is how it gets learned. It is the boss= token on those
 # lines, the key= token in the result of each `mod hodkey` step, and a line in the log reading
-# "Deep North materials open at <key>, read off <prefab>". Note it here once it is known:
+# "Deep North materials open at <key>, read off <prefab>". If the three phases carry different keys,
+# a warning beside that line names each one, and the row uses the first. Note it here once it is
+# known, with the prefab it came from and whether that warning appeared:
 #   Deep North key: not yet read
 #
 # What it proves. One chest beside a hod jib holds five each of TrophyDeer, TrophyElaking,
@@ -80,7 +82,11 @@
 #  - That the key read off the prefab is the one the Frozen King's death really sets. It is the field
 #    Character.OnDeath hands to SetGlobalKey, so it should be, but here every key is set by hand and
 #    no boss is killed. Only a real kill tests that, and which of his three phases carries the key is
-#    something the log line says rather than something this run checks.
+#    something the log line says rather than something this run checks. That includes a phase key:
+#    hodkey sets whichever key was resolved, so this file passes just the same if it is one a phase
+#    change sets rather than the last death. Two phases carrying different keys get a warning in the
+#    log; one key found on only one phase gets nothing, and the prefab named in the Info line is the
+#    thing to read.
 #  - A craft actually taking a Deep North item out of the chest. None of these items is in a
 #    workbench recipe; the Elaking materials go into upgrades at the Deep North forge. The take path
 #    filters by the same HodGate.AllowsStack that offered counts through, but that is from reading

@@ -428,17 +428,27 @@ namespace Hod
         /// ZNetScene, which is torn down and rebuilt on every world load including a logout to
         /// the menu. So the answer belongs to the scene it was read from: a different scene is
         /// read again, and no scene at all (the menu) drops every key back to unresolved. The
-        /// ObjectDB stub at the start of a session does not come into it, because this reads
-        /// ZNetScene, and ZNetScene.Awake publishes the instance and fills its whole prefab
-        /// table in one synchronous call, so nothing ever sees it half built.
+        /// ObjectDB stub at the start of a session does not come into the key's resolution,
+        /// because this reads ZNetScene, and ZNetScene.Awake publishes the instance and fills
+        /// its whole prefab table in one synchronous call, so nothing ever sees it half built.
         ///
-        /// <b>Fail closed.</b> Until a key is found the row's biome stays SHUT. That is the
-        /// opposite of the rule for a biome with no row at all, and Robbin chose it on
-        /// 2026-09-28: a row is a claim that the biome is gated, a Deep North material left in
-        /// its chest is a trip the player makes by hand, and one walking out with no boss killed
-        /// is the one thing this feature promises will not happen. The shut is not silent
-        /// either, which was the objection to shutting an untiered biome: the warning below
-        /// names every prefab it tried and what it found.
+        /// <b>Fail closed, for the key.</b> Until a key is found the row's biome stays SHUT.
+        /// That is the opposite of the rule for a biome with no row at all, and Robbin chose it
+        /// on 2026-09-28: a row is a claim that the biome is gated, a Deep North material left
+        /// in its chest is a trip the player makes by hand, and one walking out with no boss
+        /// killed is the one thing this feature promises will not happen. The shut is not
+        /// silent either, which was the objection to shutting an untiered biome: the warning
+        /// below names every prefab it tried and what it found.
+        ///
+        /// That promise covers resolving the key and nothing wider. The gate as a whole still
+        /// answers OPEN, for every item and the Deep North's with them, while BiomeIndex is
+        /// incomplete (the first line of Allows), because an index that cannot place an item
+        /// cannot say which row it falls under. That covers the ObjectDB stub, the gap between
+        /// a world's ObjectDB.Awake and its SpawnSystem.Awake, and a whole world, until the
+        /// next load, when the index build throws (HodWorld.Rebuild's catch, which logs an
+        /// error saying so). It is older than this row and deliberate: the first two windows
+        /// close before a player exists, and the third is a leak rather than a lock-out, which
+        /// is the direction the rest of the feature fails in.
         ///
         /// Once a prefab has been tried in a scene it is not tried again in that scene. Its
         /// table is complete from Awake, so a second look could only find the same thing. A
@@ -479,12 +489,24 @@ namespace Hod
         /// Every name is looked at, not only up to the first hit, because the log line is how
         /// the key gets learned: the Frozen King is three prefabs, one per phase, and which of
         /// them carries the key is as unread as the key itself.
+        ///
+        /// <b>Two different keys get a warning of their own.</b> The first key found is still
+        /// the one used, but if a phase carries a key of its own, say one set when the fight
+        /// moves on, the biome would open partway through the fight rather than at its end.
+        /// Nothing downstream can see that: the Info line reads as success, and the scenario
+        /// sets whatever key was resolved, so it passes either way. A warning is what makes
+        /// the first learning run stop and look, where the same fact buried in a long Info
+        /// line would not. One key found on only one phase is the case this still cannot
+        /// flag, because there is nothing to compare it with; the Info line names the prefab
+        /// it came from, and that is the thing to read.
         /// </summary>
         private static string Read(ZNetScene scene, Tier tier)
         {
             string key = null;
             string from = null;
             var seen = new List<string>();
+            var keys = new List<string>();
+            var keyed = new List<string>();
 
             foreach (var name in tier.Prefabs)
             {
@@ -492,7 +514,12 @@ namespace Hod
                 var carried = DefeatKey(scene, name, out found);
                 seen.Add(name + " (" + found + ")");
 
-                if (key != null || carried == null) continue;
+                if (carried == null) continue;
+
+                if (!keys.Contains(carried)) keys.Add(carried);
+                keyed.Add(carried + " on " + name);
+
+                if (key != null) continue;
 
                 key = carried;
                 from = name;
@@ -504,6 +531,18 @@ namespace Hod
                 Say(scene, place + " materials open at " + key + ", read off " + from
                     + ". The hod jib's BossBiomes row '" + tier.Text + "' looked at "
                     + string.Join(", ", seen.ToArray()) + ".", false);
+
+                if (keys.Count > 1)
+                {
+                    Say(scene, "The hod jib's BossBiomes row '" + tier.Text + "' found "
+                        + "different defeat keys on the prefabs it names: "
+                        + string.Join(", ", keyed.ToArray()) + ". It uses the first, " + key
+                        + " from " + from + ", so " + place + " materials open when that key "
+                        + "is set. If that is not the key the fight's last death sets, they open "
+                        + "partway through it: put the prefab whose death ends the fight first "
+                        + "in the row.",
+                        true);
+                }
             }
             else
             {
