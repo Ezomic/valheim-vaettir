@@ -314,6 +314,7 @@ namespace Grove
             failed += Apply("furrow grid placement", typeof(Furrow.GridPlacement));
             failed += Apply("furrow area picking", typeof(Furrow.AreaPick));
             failed += Apply("furrow console command", typeof(Furrow.FurrowConsole));
+            failed += Apply("sapling console command", typeof(BloodFeed.Readout));
 
             // The bench service, in three groups rather than one, because they fail
             // independently and they fail differently. The crafting patches are the feature;

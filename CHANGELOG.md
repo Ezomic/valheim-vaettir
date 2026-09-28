@@ -11,6 +11,9 @@ and the mod uses [semantic versioning](https://semver.org).
   opens it for the hod jib, and how many of it the chests around the post hold and would hand to
   a craft. Run it standing at a station the jib serves. It is not a cheat and needs no
   devcommands.
+- `vaettir sapling` in the console prints how many kills your machine has fed to a sapling this
+  session, and how much the nearest sapling has been fed and whose machine has it. It is not a
+  cheat and needs no devcommands.
 
 ### Fixed
 

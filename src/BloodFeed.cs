@@ -21,6 +21,11 @@ namespace Grove
         private static string _weightsRaw;
 
         /// <summary>
+        /// Kills this machine has fed to a sapling this session, for `vaettir sapling`.
+        /// </summary>
+        internal static int FedHere;
+
+        /// <summary>
         /// The nearest sapling gets it, not every sapling in range.
         ///
         /// Feeding all of them would mean two saplings planted side by side grow twice
@@ -61,6 +66,7 @@ namespace Grove
 
             if (best == null) return;
 
+            FedHere++;
             best.Feed(weight);
 
             if (GroveConfig.Messages.Value && best.Progress < 1f) Count(best);
@@ -146,6 +152,101 @@ namespace Grove
 
             float found;
             return _weights.TryGetValue(prefab, out found) ? found : 0f;
+        }
+
+        /// <summary>
+        /// `vaettir sapling` in the console: how many kills THIS machine has fed to a sapling this
+        /// session, and the nearest sapling's count and which machine has it.
+        ///
+        /// Written for paired-kill-credit-killer.txt and paired-kill-credit-watcher.txt in
+        /// Utangard's scenarios (LHM-36), which check that a kill feeds a sapling once however many
+        /// players watch it die. The sapling's own count cannot say that. A second machine feeding
+        /// the same kill claims the sapling and writes its copy of the count plus one, and while
+        /// that copy is a moment old it writes the very number the owner has just written, so a
+        /// kill fed twice can read as fed once. The count a machine keeps of its own feeds moves
+        /// only when that machine fed, whatever the sapling ends up saying.
+        ///
+        /// isCheat false: it reads a sapling this game has loaded and a number kept in memory, and
+        /// changes nothing.
+        /// </summary>
+        [HarmonyPatch]
+        internal static class Readout
+        {
+            /// <summary>How far it looks for a sapling. Well past FeedRange's default of 24.</summary>
+            private const float Reach = 30f;
+
+            /// <summary>
+            /// Process-wide: Terminal's command table is a private static nothing clears, so a
+            /// second registration would be a duplicate that outlives the world.
+            /// </summary>
+            private static bool _registered;
+
+            [HarmonyPostfix]
+            [HarmonyPatch(typeof(Terminal), "InitTerminal")]
+            private static void Register()
+            {
+                if (_registered) return;
+                _registered = true;
+
+                new Terminal.ConsoleCommand("vaettir",
+                    "vaettir sapling - the kills this machine has fed to a sapling, and the nearest sapling's count and owner",
+                    new Terminal.ConsoleEvent(OnCommand), isCheat: false);
+            }
+
+            private static void OnCommand(Terminal.ConsoleEventArgs args)
+            {
+                var term = args.Context;
+                if (term == null) return;
+
+                if (args.Length < 2 || args[1].ToLowerInvariant() != "sapling")
+                {
+                    term.AddString("vaettir sapling - how many kills this machine has fed to a sapling this session, "
+                                   + "and how much the nearest sapling within 30 m has been fed and which machine has it");
+                    return;
+                }
+
+                var player = Player.m_localPlayer;
+                if (player == null)
+                {
+                    term.AddString("vaettir sapling: no character in a world yet");
+                    return;
+                }
+
+                term.AddString("vaettir sapling: fedhere=" + FedHere
+                               + "   (kills this machine fed to a sapling this session; only the machine that has the creature feeds)");
+
+                Sapling best = null;
+                var bestDistance = Reach;
+
+                foreach (var sapling in Sapling.All)
+                {
+                    if (sapling == null) continue;
+
+                    var distance = Vector3.Distance(sapling.transform.position, player.transform.position);
+                    if (distance > bestDistance) continue;
+
+                    best = sapling;
+                    bestDistance = distance;
+                }
+
+                if (best == null)
+                {
+                    term.AddString("vaettir sapling: nearest=none   (no sapling within 30 m)");
+                    return;
+                }
+
+                ZNetView nview;
+                var owner = !best.TryGetComponent(out nview) || !nview.IsValid() ? "nobody"
+                          : nview.IsOwner() ? "here" : "elsewhere";
+
+                term.AddString("vaettir sapling: fed=" + Mathf.FloorToInt(best.Blood) + "/" + Mathf.FloorToInt(best.Needed)
+                               + " owner=" + owner
+                               + "   (" + SaplingPrefab.Name + ", "
+                               + bestDistance.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture)
+                               + " m away, belongs to "
+                               + (owner == "here" ? "this machine" : owner == "elsewhere" ? "another machine" : "no machine")
+                               + ")");
+            }
         }
     }
 }
