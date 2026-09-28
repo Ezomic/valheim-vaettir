@@ -331,7 +331,7 @@ namespace Hod
         /// measured as it will be drawn, colour tags and all, so a longer format is just a
         /// wider line. The fix is three settings on the label and one width:
         ///
-        ///   one width      the slot's, not the label's - see below
+        ///   one width      the slot's, not the label's, as below
         ///   one line       wrapping off, so a number and its bracket are never split across
         ///                  two lines of a slot that was laid out for one
         ///   one size       chosen here from the WIDTH of the line and nothing else, between
