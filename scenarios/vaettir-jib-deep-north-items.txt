@@ -130,23 +130,18 @@ sweep
 wipe 14
 wait 1
 
-# Level the ground the shed goes on. `flatten` levels ten metres around the point the camera is
-# on, at your own height, not the ground under you, so it is aimed first: a marker where the
-# bench goes, faced, and taken away again by the second wipe. Without the aim, on 2026-09-28, it
-# levelled wherever the camera was left pointing and not the site: the shed's front beams sat
-# 0.9m lower than its floor a metre behind them, half of it over a pit a metre deep that the
-# last Furrow scenario's tilling had left (Jafna was holding a height more than 20m below the
-# ground, and the cultivator smooths toward it). The bench stood 1.3m above the spot `goto`
-# found and 2.3m from it, past CraftingStation.m_useDistance (2m unless the prefab says
+# Level the ground the shed goes on: ten metres across, centred 4.4m ahead where the shed's
+# middle stands, at your own height. On 2026-09-28 it was not levelled at all. Devkit's `flatten`
+# then aimed at the camera's look point, and in 1.0 the game cancelled its op every time ("Failed
+# to deserialize TerrainOp settings") while the note said "Levelled", so the shed went up half
+# over a pit a metre deep that the last Furrow scenario's tilling had left (Jafna was holding a
+# height more than 20m below the ground, and the cultivator smooths toward it). Its front beams
+# sat 0.9m lower than its floor a metre behind them, and the bench stood 1.3m above the spot
+# `goto` found and 2.3m from it, past CraftingStation.m_useDistance (2m unless the prefab says
 # otherwise), so `use` was refused, the jib's scope stayed shut, and every count below read 0
-# for that reason alone.
-place wood_beam 4.4 0 0 0
-wait 1
-face wood_beam 8
-wait 1
-flatten
-wait 1
-wipe 14
+# for that reason alone. Devkit 1b48353 made `flatten` level for real, centred on you or on the
+# spot its arguments name, and fail when the ground did not take it.
+flatten 4.4 0
 wait 1
 
 # The shelter and bench, captured from one built by hand. See vaettir-jib-gate.txt.
