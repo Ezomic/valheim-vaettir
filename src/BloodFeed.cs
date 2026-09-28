@@ -35,10 +35,12 @@ namespace Grove
         /// first) and GetZDO is null. On every other machine OnDeath returns early at its own
         /// IsOwner check, before Destroy, so there the view is still valid and IsOwner is
         /// false, as it should be. A postfix guarded on "valid and owner" therefore turned
-        /// away every machine, the owner included: from the guard's arrival on 2026-09-27
-        /// until this prefix on 2026-09-28 no kill fed a sapling anywhere, in singleplayer
-        /// or online. Nothing complained, because a sapling that is never fed looks exactly
-        /// like one nobody has fought near.
+        /// away every machine, the owner included: every build carrying that guard (977857b,
+        /// 2026-09-27, never released) fed no sapling on any machine, in singleplayer or
+        /// online, until this prefix on 2026-09-28. Released 1.6.2 predates the guard and
+        /// kept feeding, once per player watching. Nothing complained about the builds that
+        /// fed nothing, because a sapling that is never fed looks exactly like one nobody has
+        /// fought near.
         ///
         /// Nothing else is read off the ZDO. Feed needs the prefab name and where the body
         /// fell, and both come off the GameObject, which Object.Destroy leaves standing until
@@ -61,14 +63,23 @@ namespace Grove
         /// </summary>
         [HarmonyPostfix]
         [HarmonyPatch(typeof(Character), "OnDeath")]
-        private static void Feed(Character __instance, bool __state)
+        private static void Feed(Character __instance, bool __state, bool __runOriginal)
         {
             // The owner only, and ReadOwner is what knows which machine that is. In 1.0 a
             // creature with a death animation reaches OnDeath through CharacterAnimEvent.Die on
             // every client animating it, not just through CheckDeath on the owner, so with no
             // guard one kill fed the sapling once per player watching. Asking the view here
             // instead cannot work: see ReadOwner for why it is already empty on the owner.
-            if (!__state || __instance == null || Sapling.All.Count == 0) return;
+            //
+            // And only when vanilla's death actually ran. ReadOwner is a void prefix, so it
+            // runs even when another mod's bool prefix skips OnDeath, and Harmony runs
+            // postfixes either way. The owner would then feed a sapling for a creature that
+            // never died and was never destroyed, whose view is still valid, so the next
+            // Die event on it would feed again. __runOriginal is Harmony's own record of
+            // whether the prefixes let OnDeath run (HarmonyX 2.9 declares it before the
+            // postfixes and hands it over by name). No mod Vaettir ships beside skips OnDeath
+            // today; this is so that one which does cannot turn one kill into several.
+            if (!__state || !__runOriginal || __instance == null || Sapling.All.Count == 0) return;
 
             var weight = WeightOf(Utils.GetPrefabName(__instance.gameObject));
             if (weight <= 0f) return;
