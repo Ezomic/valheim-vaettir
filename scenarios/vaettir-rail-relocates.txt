@@ -40,4 +40,14 @@ wait 4
 
 grid stow_post 6x2
 stacks stow_post 12
-ground 0
+
+# Breaking the rail also refunds what it cost, as breaking any piece you built does
+# (WearNTear.Destroy calls Piece.DropResources): one stack each of FineWood, IronNails and
+# LeatherScraps at the rail's feet, with the default RailCost. None of them is anything
+# `fill` puts in the post, so the three are named and counted apart from the post's own.
+# This file was written while the upgrades were free (fixed in 1.6.1, the same evening),
+# when a broken rail refunded nothing, and its count went stale with that fix.
+dropped FineWood 1
+dropped IronNails 1
+dropped LeatherScraps 1
+ground 3
