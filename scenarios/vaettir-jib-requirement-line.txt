@@ -4,7 +4,13 @@
 # recipe costs, then what the chests add in blue: "24/10 +169". This builds that bench, reads
 # the lines the panel is really drawing for the Crude bow at x1 and at x5, measures whether
 # each one fits its slot, then takes the leather out of the chest and checks that line goes
-# back to the game's own plain number. Nothing here has run in game yet.
+# back to the game's own plain number.
+#
+# FIRST RUN, 2026-09-28: every `panel` line read right, and both Wood `fits` failed at 12pt,
+# "24/10 +169" needing 55.2 and "24/50 +169" 56.9 against 47.5. That 47.5 was res_amount's
+# own rect, the part of the slot the game gave a bare number, centred in a slot 64 wide with no
+# mask above it. The mod now widens the label to its slot and fits the line to that, so both
+# should pass, at 13.9 and 13.5pt by the numbers above. The widening has not run in game.
 #
 # NEEDS: singleplayer, on a character whose pack you do not mind losing - `clear` destroys it.
 # Stand on flat ground with about ten metres clear, away from other posts and chests. Keep the
@@ -69,8 +75,8 @@
 # AFTER THE RUN, in LogOutput.log. Both lines are written once per game session, so they are
 # there after the first run since you started the game and not after a second one.
 #
-#   5. Search for "Hod requirement line, measured once". Expect one line. Send it to me: it
-#      holds the slot's real size, which could not be read without the game running.
+#   5. Search for "Hod requirement line, measured once". Expect one line, saying res_amount
+#      was "widened to its slot from the game's 47.5". Send it to me if it says anything else.
 #   6. Search for "too wide for its slot". Expect nothing. A line there means some line did not
 #      fit even at size 12, and it names the widths.
 #

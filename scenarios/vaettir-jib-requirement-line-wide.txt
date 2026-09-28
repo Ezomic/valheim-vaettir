@@ -4,7 +4,13 @@
 # is the same bench with a reinforced chest beside the first, 769 wood in the two together and
 # 124 in your pack, so the Wood line under multi-craft reads "124/50 +769": eleven characters
 # in a slot the game laid out for two. The line may only shrink to size 12, so this is where it
-# either fits at a readable size or shows that it cannot. Nothing here has run in game yet.
+# either fits at a readable size or shows that it cannot.
+#
+# FIRST RUN, 2026-09-28: every `panel` line read right, and both Wood `fits` failed at 12pt,
+# "124/10 +769" needing 61 and "124/50 +769" 62.6 against 47.5, which was res_amount's own
+# rect and not the slot: the slot is 64 wide with no mask above it. The mod now widens the
+# label to its slot, so both should pass at a little over 12pt. The widening has not run in
+# game.
 #
 # NEEDS: singleplayer, on a character whose pack you do not mind losing - `clear` destroys it.
 # Stand on flat ground with about ten metres clear, away from other posts and chests. Keep the

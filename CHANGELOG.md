@@ -80,10 +80,11 @@ and the mod uses [semantic versioning](https://semver.org).
   file still had the old format exactly, it is moved to the new one once. If you had
   written your own, it is left alone.
 
-  The line also shrinks to fit the space the game gives that number, down to size 12. A
-  line that fits is drawn at the game's own size as before, and a slot showing a plain
-  number is put back exactly as the game built it. If a line is still too wide at size 12,
-  it stays at 12 and the log says so once.
+  The line also gets the whole width of its slot, where the game gave the number only the
+  middle of it, and shrinks to fit that, down to size 12. A line that fits is drawn at the
+  game's own size as before, and a slot showing a plain number is put back exactly as the
+  game built it. If a line is still too wide at size 12, it stays at 12 and the log says so
+  once.
 
 ## [1.6.2] - 2026-09-22
 

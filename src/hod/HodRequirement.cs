@@ -72,7 +72,7 @@ namespace Hod
     /// screenshots show the line cut after the same seven characters, four digits, a space, a
     /// bracket and a plus, and that is exactly what "8 (+169)" and "40 (+169)" look like
     /// through one fixed width: the first loses its bracket, the second is a digit longer and
-    /// loses the 9 as well. That is why the line is now fitted to its label - see
+    /// loses the 9 as well. That is why the line is now fitted to its slot - see
     /// <see cref="Fit"/> - and it is also why a clipped number is not a cosmetic bug. It reads
     /// as the mod counting wrong.
     ///
@@ -287,6 +287,13 @@ namespace Hod
             /// <summary>The size vanilla draws at, and so the largest this ever uses.</summary>
             public float Ceiling;
 
+            /// <summary>
+            /// The rect vanilla built, as its sizeDelta, which is the one field widening the label
+            /// writes, and as a width, so the label is never made narrower than it was.
+            /// </summary>
+            public Vector2 SizeDelta;
+            public float Width;
+
             /// <summary>The floor, or the ceiling when vanilla is already smaller than it.</summary>
             public float Lowest;
 
@@ -313,7 +320,7 @@ namespace Hod
         private static bool _warnedTooWide;
 
         /// <summary>
-        /// Makes the whole line fit the label vanilla drew a bare number in.
+        /// Makes the whole line fit the slot vanilla drew a bare number in.
         ///
         /// Vanilla's res_amount was laid out for "8" and "40", and the chest total makes the
         /// line several times that - "24/40 +169" in the default format is ten characters in a
@@ -322,8 +329,9 @@ namespace Hod
         /// bracket was gone in one and a digit with it in the other, and a digit gone is a
         /// number that is simply wrong. Nothing below knows which format is in use: the line is
         /// measured as it will be drawn, colour tags and all, so a longer format is just a
-        /// wider line. The fix is three settings on the label and no layout:
+        /// wider line. The fix is three settings on the label and one width:
         ///
+        ///   one width      the slot's, not the label's - see below
         ///   one line       wrapping off, so a number and its bracket are never split across
         ///                  two lines of a slot that was laid out for one
         ///   one size       chosen here from the WIDTH of the line and nothing else, between
@@ -349,15 +357,25 @@ namespace Hod
         /// only thing this needs to know is whether the line fits across, so that is the only
         /// thing measured, and the size is set rather than negotiated.
         ///
-        /// No widths are set and none are hardcoded. The label keeps the rect vanilla gave it,
-        /// which is the thing that could not be read offline - it lives in an asset bundle -
-        /// and is measured here, and logged once, instead.
+        /// <b>The room is the slot, because the label the game built is narrower than the
+        /// slot it sits in.</b> The first version fitted the line to res_amount's own rect and set
+        /// no widths, since the layout lives in an asset bundle and could not be read offline.
+        /// The first run in game read it (the once-a-session log line below): res_amount is
+        /// 47.5 wide, centred in a slot 64 wide, with no mask above either. The default format
+        /// at size 12 needs 55 for "24/10 +169" and 63 for "124/50 +769", so against the label
+        /// every line with a three-digit chest count went to the floor, still ran past the
+        /// label's edges, and warned that it was too wide for its slot when the slot had room
+        /// for it. Both requirement-line scenarios failed `fits` on exactly that. So the label
+        /// is widened to the slot (<see cref="Widen"/>), the width read off the slot every time
+        /// and never written down here, and the size is chosen against that: "24/10 +169" is
+        /// drawn at about 14 instead of 12, whole and inside its slot.
         ///
-        /// The settings are written once, when a label is first fitted, and put back by
-        /// <see cref="Unfit"/> the moment its line goes back to vanilla's number. Leaving them
-        /// on would have been nearly invisible, but "a recipe with nothing in the chests reads
-        /// exactly like vanilla" is a promise in the config file, and it is cheaper to keep it
-        /// literally than to argue that it is kept in effect.
+        /// The three settings are written once, when a label is first fitted, the width whenever
+        /// the slot's changes, and all four are put back by <see cref="Unfit"/> the moment its
+        /// line goes back to vanilla's number. Leaving them on would have been nearly invisible,
+        /// but "a recipe with nothing in the chests reads exactly like vanilla" is a promise in
+        /// the config file, and it is cheaper to keep it literally than to argue that it is kept
+        /// in effect.
         /// </summary>
         private static void Fit(Transform elementRoot, TMP_Text amount, string text)
         {
@@ -373,6 +391,11 @@ namespace Hod
                 amount.fontSize = label.Ceiling;
             }
 
+            // Every time rather than once, because the slot can be laid out a frame after the
+            // label is first fitted, and a width read off a slot that has none yet would leave
+            // the label at vanilla's for as long as it stays fitted. It writes only on a change.
+            Widen(elementRoot, amount, label);
+
             // Measured when the text or the room changes and not otherwise. The line is
             // rewritten every frame, but "24/40 +169" on this frame is "24/40 +169" on the
             // next, and a counted stack - in the pack or in a chest - changes a few times a
@@ -387,6 +410,39 @@ namespace Hod
             label.Room = room;
 
             Measure(elementRoot, amount, text, label, room);
+        }
+
+        /// <summary>
+        /// Makes the label as wide as the slot it sits in, about its own centre.
+        ///
+        /// Only for a label that is a direct child of its slot, unscaled and centred on its
+        /// pivot, which is how the game builds res_amount today. Then the label's own position
+        /// and the slot's rect are in the same space, and growing it with its anchors keeps its
+        /// middle where it was, so the text, which the game centres, does not move sideways.
+        /// Any other layout keeps the rect the game gave it: a line that does not fit that is
+        /// shrunk and then runs over, as it did before this, rather than being moved somewhere
+        /// the game did not put it.
+        ///
+        /// Never narrower than the game built it, and the room is the smaller of the two sides
+        /// from the label's centre, so a label a little off the middle of its slot still ends
+        /// inside it.
+        /// </summary>
+        private static void Widen(Transform elementRoot, TMP_Text amount, Label label)
+        {
+            var slot = elementRoot as RectTransform;
+            var own = amount.rectTransform;
+
+            if (slot == null || own.parent != slot) return;
+            if (Mathf.Abs(own.pivot.x - 0.5f) > 0.001f) return;
+            if (Mathf.Abs(own.localScale.x - 1f) > 0.001f) return;
+
+            var centre = own.localPosition.x;
+            var half = Mathf.Min(centre - slot.rect.xMin, slot.rect.xMax - centre);
+            var width = Mathf.Max(label.Width, 2f * half);
+
+            if (Mathf.Abs(own.rect.width - width) < 0.01f) return;
+
+            own.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, width);
         }
 
         /// <summary>The width the label gives its text, the way TMP itself works it out.</summary>
@@ -407,7 +463,9 @@ namespace Hod
                 Min = amount.fontSizeMin,
                 Max = amount.fontSizeMax,
                 Wrapping = amount.textWrappingMode,
-                Overflow = amount.overflowMode
+                Overflow = amount.overflowMode,
+                SizeDelta = amount.rectTransform.sizeDelta,
+                Width = amount.rectTransform.rect.width
             };
 
             // With auto size off, the size it draws at is the size it asks for. With it on,
@@ -511,6 +569,8 @@ namespace Hod
 
             amount.textWrappingMode = label.Wrapping;
             amount.overflowMode = label.Overflow;
+
+            amount.rectTransform.sizeDelta = label.SizeDelta;
         }
 
         /// <summary>
@@ -633,8 +693,12 @@ namespace Hod
 
             line.Append("Hod requirement line, measured once: res_amount is ")
                 .Append(N(rect.width)).Append(" x ").Append(N(rect.height))
-                .Append(", x ").Append(N(rect.xMin)).Append(" to ").Append(N(rect.xMax))
-                .Append(" (margins left ").Append(N(margin.x))
+                .Append(", x ").Append(N(rect.xMin)).Append(" to ").Append(N(rect.xMax));
+
+            if (Mathf.Abs(rect.width - label.Width) >= 0.01f)
+                line.Append(", widened to its slot from the game's ").Append(N(label.Width));
+
+            line.Append(" (margins left ").Append(N(margin.x))
                 .Append(", right ").Append(N(margin.z))
                 .Append(", top ").Append(N(margin.y))
                 .Append(", bottom ").Append(N(margin.w)).Append(")");
