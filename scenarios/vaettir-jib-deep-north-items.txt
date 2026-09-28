@@ -22,7 +22,9 @@
 # "Deep North materials open at <key>, read off <prefab>". If the three phases carry different keys,
 # a warning beside that line names each one, and the row uses the first. Note it here once it is
 # known, with the prefab it came from and whether that warning appeared:
-#   Deep North key: not yet read
+#   Deep North key: defeated_frozenking_p3, read off FrozenKing_p3, on 2026-09-28. The warning
+#   appeared: FrozenKing carries defeated_frozenking and FrozenKing_p2 carries none. Which of
+#   the two the end of the fight sets is still for a real kill to show.
 #
 # What it proves. One chest beside a hod jib holds five each of TrophyDeer, TrophyElaking,
 # TrophyJotunWarrior and ElakingHairBundle, plus the wood and scraps for a bow. Every vanilla boss
@@ -128,7 +130,23 @@ sweep
 wipe 14
 wait 1
 
+# Level the ground the shed goes on. `flatten` levels ten metres around the point the camera is
+# on, at your own height, not the ground under you, so it is aimed first: a marker where the
+# bench goes, faced, and taken away again by the second wipe. Without the aim, on 2026-09-28, it
+# levelled wherever the camera was left pointing and not the site: the shed's front beams sat
+# 0.9m lower than its floor a metre behind them, half of it over a pit a metre deep that the
+# last Furrow scenario's tilling had left (Jafna was holding a height more than 20m below the
+# ground, and the cultivator smooths toward it). The bench stood 1.3m above the spot `goto`
+# found and 2.3m from it, past CraftingStation.m_useDistance (2m unless the prefab says
+# otherwise), so `use` was refused, the jib's scope stayed shut, and every count below read 0
+# for that reason alone.
+place wood_beam 4.4 0 0 0
+wait 1
+face wood_beam 8
+wait 1
 flatten
+wait 1
+wipe 14
 wait 1
 
 # The shelter and bench, captured from one built by hand. See vaettir-jib-gate.txt.
