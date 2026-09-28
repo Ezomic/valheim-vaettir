@@ -30,18 +30,24 @@
 # free carrots stand on untilled ground and wilt after ten seconds, which does not move them.
 #
 # Takes down every piece within 20m first. Leaves the bed, two turnips, the marker oak and two
-# tilled spots; the next run's wipe takes the plants and the oak.
+# tilled spots behind; the next run plants on fresh ground of its own.
 
 clear
 give Cultivator:1,TurnipSeeds:10
 skill Farming 50
 
-# The Meadows, found rather than promised, because a suite run starts wherever the scenario
-# before it left you. On 2026-09-28 that was the Deep North, inside the Queen's entrance
-# utangard-queen-door-stays-sealed spawns, and ten Vaettir files failed on the place and not
-# on the mod: tilling refused as snow too deep, and the entrance's own pieces, cut through by
-# `wipe`, falling and dropping copper scrap. Already in the Meadows, this does not move you.
-biome Meadows
+# Meadows the map has not shown you yet, found rather than promised, because a suite run starts
+# wherever the scenario before it left you. In the second 2.3.0 run that was the Deep North,
+# inside the Queen's entrance utangard-queen-door-stays-sealed spawns, where tilling was refused
+# as snow too deep. Plain `biome Meadows` answered that and missed the next case: already in the
+# Meadows, it does not move you. The third run came here straight from Malmr, whose last file
+# leaves a copper deposit (rock4_copper_frac) about five metres in front of where you stand, and
+# `wipe` takes only pieces. Every `build` in the three furrow files that ran stopped on that
+# deposit ("last on Rock4_cell ... (not the ground)"), so not one sapling or crop went in and each
+# `furrow check` counted only what `furrowtest free` had put down. `fresh` always moves you, to
+# ground no scenario has used. A wild tree or rock can still stand there, and a `build` it stops
+# names it the same way.
+biome Meadows fresh
 wait 3
 
 wipe 20
