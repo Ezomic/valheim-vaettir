@@ -8,7 +8,7 @@ namespace Grove
     /// <summary>
     /// Greydwarf deaths feed the nearest sapling.
     ///
-    /// The hook is `Character.OnDeath`, which is `protected virtual` and - checked
+    /// The hook is `Character.OnDeath`, which is `virtual` and - checked
     /// against the decompiled source rather than assumed - is *not* overridden by
     /// `Humanoid`, which overrides only `OnDamaged`. Greydwarfs are Humanoids, so
     /// their deaths dispatch to the base body and a postfix there sees them. If a
@@ -26,6 +26,33 @@ namespace Grove
         internal static int FedHere;
 
         /// <summary>
+        /// Whether this machine owns the dying creature, read before vanilla's death runs,
+        /// because by the time Feed runs it can no longer be read at all.
+        ///
+        /// On the owner, Character.OnDeath ends in ZNetScene.Destroy, and that calls
+        /// ZNetView.ResetZDO, which nulls the view's ZDO before any postfix gets a turn. So in
+        /// a postfix the owner's view is invalid, IsOwner answers false (it asks IsValid
+        /// first) and GetZDO is null. On every other machine OnDeath returns early at its own
+        /// IsOwner check, before Destroy, so there the view is still valid and IsOwner is
+        /// false, as it should be. A postfix guarded on "valid and owner" therefore turned
+        /// away every machine, the owner included: from the guard's arrival on 2026-09-27
+        /// until this prefix on 2026-09-28 no kill fed a sapling anywhere, in singleplayer
+        /// or online. Nothing complained, because a sapling that is never fed looks exactly
+        /// like one nobody has fought near.
+        ///
+        /// Nothing else is read off the ZDO. Feed needs the prefab name and where the body
+        /// fell, and both come off the GameObject, which Object.Destroy leaves standing until
+        /// the end of the frame.
+        /// </summary>
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(Character), "OnDeath")]
+        private static void ReadOwner(Character __instance, out bool __state)
+        {
+            ZNetView nview;
+            __state = __instance != null && __instance.TryGetComponent(out nview) && nview.IsOwner();
+        }
+
+        /// <summary>
         /// The nearest sapling gets it, not every sapling in range.
         ///
         /// Feeding all of them would mean two saplings planted side by side grow twice
@@ -34,15 +61,14 @@ namespace Grove
         /// </summary>
         [HarmonyPostfix]
         [HarmonyPatch(typeof(Character), "OnDeath")]
-        private static void Feed(Character __instance)
+        private static void Feed(Character __instance, bool __state)
         {
-            if (__instance == null || Sapling.All.Count == 0) return;
-
-            // The owner only. In 1.0 a creature with a death animation reaches OnDeath through
-            // CharacterAnimEvent.Die on every client animating it, not just through CheckDeath
-            // on the owner, so without this one kill fed the sapling once per player watching.
-            ZNetView nview;
-            if (!__instance.TryGetComponent(out nview) || !nview.IsValid() || !nview.IsOwner()) return;
+            // The owner only, and ReadOwner is what knows which machine that is. In 1.0 a
+            // creature with a death animation reaches OnDeath through CharacterAnimEvent.Die on
+            // every client animating it, not just through CheckDeath on the owner, so with no
+            // guard one kill fed the sapling once per player watching. Asking the view here
+            // instead cannot work: see ReadOwner for why it is already empty on the owner.
+            if (!__state || __instance == null || Sapling.All.Count == 0) return;
 
             var weight = WeightOf(Utils.GetPrefabName(__instance.gameObject));
             if (weight <= 0f) return;
@@ -80,8 +106,8 @@ namespace Grove
         ///
         /// This used to message Player.m_localPlayer, which is wrong in every co-op game
         /// and looks like the mod being broken. Feed only acts on the client that *owns* the
-        /// creature (it checks, since a death animation calls OnDeath everywhere), so with two players clearing greydwarfs
-        /// around one sapling the counter appeared for whichever of them happened to own
+        /// creature (ReadOwner checks, since a death animation calls OnDeath everywhere), so
+        /// with two players clearing greydwarfs around one sapling the counter appeared for whichever of them happened to own
         /// each corpse - so both of them saw roughly half the kills register and neither
         /// could tell whether the other's kills were counting at all. They were; only the
         /// message was missing.
