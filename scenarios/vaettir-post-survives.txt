@@ -16,6 +16,15 @@ give Hammer:1,Hoe:1
 give FineWood:250,BronzeNails:40,GroveHeartwood:6
 god
 ghost
+
+# The Meadows, found rather than promised, because a suite run starts wherever the scenario
+# before it left you. On 2026-09-28 that was the Deep North, inside the Queen's entrance
+# utangard-queen-door-stays-sealed spawns, and ten Vaettir files failed on the place and not
+# on the mod: tilling refused as snow too deep, and the entrance's own pieces, cut through by
+# `wipe`, falling and dropping copper scrap. Already in the Meadows, this does not move you.
+biome Meadows
+wait 3
+
 sweep
 
 wipe 14
@@ -28,10 +37,16 @@ grid stow_post 6x2
 fill stow_post 12
 stacks stow_post 12
 
-# Out far enough that the base unloads, then back.
+# Out far enough that the base unloads, then back to the spot you left, with `back` and not
+# with `move -250`. `move` sets you down on the highest thing under its target, so the way
+# back is only the way out while nothing stands over where you stood. On 2026-09-28 something
+# did: the return put you on top of the Queen's entrance, 35m above the post, and `grid` and
+# `stacks` look 20m round you, so both read "no stow_post nearby" with the post standing
+# there full. `back` goes to the spot `mark` took.
+mark
 move 250
 wait 3
-move -250
+back
 wait 3
 
 grid stow_post 6x2

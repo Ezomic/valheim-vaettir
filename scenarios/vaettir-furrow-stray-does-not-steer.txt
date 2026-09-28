@@ -36,6 +36,15 @@
 clear
 give Cultivator:1,OnionSeeds:5
 skill Farming 50
+
+# The Meadows, found rather than promised, because a suite run starts wherever the scenario
+# before it left you. On 2026-09-28 that was the Deep North, inside the Queen's entrance
+# utangard-queen-door-stays-sealed spawns, and ten Vaettir files failed on the place and not
+# on the mod: tilling refused as snow too deep, and the entrance's own pieces, cut through by
+# `wipe`, falling and dropping copper scrap. Already in the Meadows, this does not move you.
+biome Meadows
+wait 3
+
 wipe 20
 wait 1
 
