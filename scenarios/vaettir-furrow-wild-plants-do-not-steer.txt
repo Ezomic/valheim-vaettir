@@ -95,6 +95,15 @@ build sapling_carrot 1.1 0.8
 build sapling_carrot 1.1 -0.85
 wait 1
 
+# Both of them, counted where they stand before anything else goes in. In 2.3.0's fourth run the
+# check at the end found 3 carrots where 4 had been planted, all on one grid at 0 degrees, and
+# neither log says which one was missing or when it went: all four `build`s placed, Player.log has
+# a PlacePiece line for each, and nothing reported destroying one. Four metres reaches these two
+# and nothing else this file plants, so a carrot lost beside the mushrooms fails here, one lost
+# over there fails at the next count, and a last count short of the two added up is the check.
+mod furrow check sapling_carrot 4
+printed furrow check: 2 yes
+
 
 # ---- nine metres to your right, out of reach of the mushrooms and the carrots
 
@@ -106,6 +115,9 @@ wait 1
 build sapling_carrot 1.1 0.8
 build sapling_carrot 1.1 -0.85
 wait 1
+
+mod furrow check sapling_carrot 4
+printed furrow check: 2 yes
 
 mod furrow check sapling_carrot 12
 printed furrow check: 4 yes
