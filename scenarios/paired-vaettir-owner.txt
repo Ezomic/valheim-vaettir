@@ -1,26 +1,26 @@
 #! partner paired-vaettir-asker
 # Vaettir, TWO CLIENTS - the side that owns the chest and answers for it.
 #
-# Run this one on client A. Its partner is paired-vaettir-asker.txt on client B, and neither
-# proves anything alone. What they prove together is the half of the hod jib that a single
-# machine structurally cannot reach: a chest whose owner is somebody else, who is there, and
-# who answers. Solo, HodWithdraw.Ask early-returns because every chest in the world is yours;
-# vaettir-jib-remote-chest reaches the request and the timeout by handing a chest to a peer
-# that does not exist, and stops exactly where a reply would come back.
+# Run this one on client A. Its partner is paired-vaettir-asker.txt, which Devkit starts on
+# client B the moment this one starts, and neither proves anything alone. What they prove
+# together is the half of the hod jib that a single machine structurally cannot reach: a chest
+# whose owner is somebody else, who is there, and who answers. Solo, HodWithdraw.Ask
+# early-returns because every chest in the world is yours; vaettir-jib-remote-chest reaches the
+# request and the timeout by handing a chest to a peer that does not exist, and stops exactly
+# where a reply would come back.
 #
 # HOW TO RUN IT
 #
-#   1. sync-all so the client and the dev server are the SAME BUILD - Core's gate compares
-#      the compiler's build id, not the version.
-#   2. Start both clients and join the dev server. play2.ps1 mirrors this profile into
-#      own-profile-2; you need a second character, because Valheim will not load one that is
-#      already in play.
-#   3. Stand the two characters TOGETHER on flat ground, ten metres clear, away from
-#      anything built. B finds this client's bench by looking for the nearest one, so "near
-#      enough to see each other" is the whole requirement.
-#   4. Press Run on THIS one first. It builds everything and then waits for B.
-#   5. Press Run on paired-vaettir-asker.txt on the other client. It waits for the signal from
-#      here, so pressing it early is fine.
+#   Run own-profile\pair.ps1. When it says READY, press Run on this file in the window titled
+#   "Valheim A": F6 > Scenarios > Two players > paired-vaettir-owner > Run. Nothing else.
+#
+# What used to be done by hand is now in the two files, and this version of them (2026-09-30)
+# has not been run yet. This side stages its own ground first, `stage 16`: cleared, levelled, and
+# moved off any world location in the way. It is a step here and on this side only, because the
+# automatic stage never runs for a paired- file, whose partner's stage would take this side's
+# build down. B waits wherever it is until the chest is stocked and then comes over by itself
+# with `partner`, after the stage, so a stage that had to move this character cannot leave B
+# standing beside the spot it left.
 #
 # The two sides talk through global keys, which the server broadcasts to everybody. The
 # names are deliberately not GlobalKeys members, so they are inert world state.
@@ -38,6 +38,9 @@ sweep
 # would run out of step and report whatever that produced.
 unkey rig_chest_ready
 unkey rig_b_crafted
+
+# Clear, level ground under the build, wherever this character happened to log out.
+stage 16
 
 wipe 16
 wait 1

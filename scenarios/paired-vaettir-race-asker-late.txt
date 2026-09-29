@@ -1,9 +1,18 @@
 #! partner paired-vaettir-race-owner
 # Vaettir, TWO CLIENTS - the genuinely simultaneous race.
 #
-# Run this on client B INSTEAD OF paired-vaettir-race-asker.txt, against the same
-# paired-vaettir-race-owner.txt on client A - that file works for either variant unchanged,
-# because its assertions never say which side won.
+# HOW TO RUN IT
+#
+#   Run own-profile\pair.ps1. When it says READY, press Run on THIS file in the window titled
+#   "Valheim A": F6 > Scenarios > Two players > paired-vaettir-race-asker-late > Run.
+#
+# Its `#! partner` line starts paired-vaettir-race-owner.txt on the other client, which works for
+# either variant unchanged, because its assertions never say which side won. So in this variant
+# the owner runs in window B and this file in window A, the other way round from the plain race.
+# Nothing in either file cares which window it is in. Pressing race-owner instead would start
+# the plain paired-vaettir-race-asker.txt, since that is the partner race-owner names.
+#
+# This version (2026-09-30) has not been run yet.
 #
 # This client owns nothing. Its craft fires a withdrawal request that is in flight while the
 # owner is spending out of the same chest locally, and the owner's clamp against live stock
@@ -24,13 +33,24 @@
 # EITHER SIDE MAY WIN and both are correct. Only two bows is wrong, and the assertions say
 # nothing about who got it.
 #
-# Press Run on this whenever you like. It waits for the other client.
+# It stays wherever this character is until the owner's chest is stocked, then comes over with
+# `partner`. Not before, because the owner stages its ground first, and a stage can move it.
 
 clear
 give Hammer:1,Hoe:1
 god
 ghost
 sweep
+
+# The signals this side waits for. The owner's file starts in the same second as this one, and a
+# `waitfor` on a key an abandoned run left set would return before the owner's own clearing got
+# here. A key removed from a client is only gone here once the server's answer comes back, which
+# is what the wait is for. The owner sets none of them until its build is standing, so this
+# cannot clear a live one.
+unkey rig_race_ready
+unkey rig_race_go
+unkey rig_a_dropped
+wait 2
 
 # Carried once so the material is known and the recipe appears in the panel, then thrown
 # away. A single plank here and the craft is partly self-funded, which would let both sides
@@ -40,6 +60,10 @@ strip Wood,LeatherScraps
 wait 1
 
 waitfor rig_race_ready 300
+
+# Beside the owner, two metres to its right and facing its way, short of the shed it built ahead
+# of itself.
+partner
 
 # Walk to the bench BEFORE the race starts. A teleport is slow and would make this client
 # late by seconds rather than by frames.

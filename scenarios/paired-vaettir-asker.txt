@@ -1,22 +1,30 @@
 #! partner paired-vaettir-owner
 # Vaettir, TWO CLIENTS - the side that asks for somebody else's material.
 #
-# Run this one on client B. Its partner is paired-vaettir-owner.txt on client A, which builds
-# everything and stocks the chest. Read that file's header for how to set the pair up; this
-# one is the short half.
+# Nothing to press here. Devkit runs this on client B the moment paired-vaettir-owner.txt
+# starts on client A, which builds everything and stocks the chest. Read that file's header for
+# how the pair is run (own-profile\pair.ps1, then one Run on A); this one is the short half.
 #
 # What it proves: a craft paid for out of a chest this client does not own and may not write
 # to. The whole withdrawal round trip - Ask, the routed request, the correlation id, the
 # owner's clamp against live stock, the reply, and the material landing in this pack before
 # ConsumeResources is reached.
 #
-# Press Run on this whenever you like. It waits for the other client.
+# It stays wherever this character is until A's chest is stocked, then comes over with
+# `partner`. Not before, because A stages its ground first, and a stage can move A.
 
 clear
 give Hammer:1,Hoe:1
 god
 ghost
 sweep
+
+# The signal this side waits for. It starts in the same second as A's file, and a `waitfor` on
+# a key an abandoned run left set would return before A's own clearing got here. A key removed
+# from a client is only gone here once the server's answer comes back, which is what the wait is
+# for. A does not set it until its build is standing, so this cannot clear a live one.
+unkey rig_chest_ready
+wait 2
 
 # One of each, then thrown away. Carrying a material once is how a character comes to know
 # it, and a recipe whose materials are unknown is not in the crafting panel at all - so this
@@ -28,6 +36,9 @@ strip Wood,LeatherScraps
 wait 1
 
 waitfor rig_chest_ready 300
+
+# Beside A, two metres to its right and facing its way, short of the shed A built ahead of itself.
+partner
 
 # A built it, so find it rather than assume where it is.
 goto piece_workbench

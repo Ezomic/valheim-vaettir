@@ -1,8 +1,18 @@
 #! partner paired-vaettir-race-asker
 # Vaettir, TWO CLIENTS - two players spending out of one chest at the same moment.
 #
-# Run this on client A. Its partner is paired-vaettir-race-asker.txt on client B. See
-# paired-vaettir-owner.txt for how to set the rig up; this pair uses the same one.
+# Run this on client A. Its partner is paired-vaettir-race-asker.txt, which Devkit starts on
+# client B the moment this one starts.
+#
+# HOW TO RUN IT
+#
+#   Run own-profile\pair.ps1. When it says READY, press Run on this file in the window titled
+#   "Valheim A": F6 > Scenarios > Two players > paired-vaettir-race-owner > Run. Nothing else.
+#
+# For the genuinely simultaneous variant press paired-vaettir-race-asker-late instead, in the
+# same window; it starts this file on the other client. This version of the three files
+# (2026-09-30) has not been run yet. As in paired-vaettir-owner.txt, this side stages its own
+# ground and the asker comes over by itself with `partner` once the chest is stocked.
 #
 # WHAT IT IS FOR. Everything else about the hod jib can be wrong by a number. This can be
 # wrong by an ITEM. The chest holds exactly one bow's worth - 10 wood and 8 leather scraps -
@@ -44,6 +54,9 @@ unkey rig_race_set
 unkey rig_race_go
 unkey rig_a_dropped
 unkey rig_b_dropped
+
+# Clear, level ground under the build, wherever this character happened to log out.
+stage 16
 
 wipe 16
 wait 1

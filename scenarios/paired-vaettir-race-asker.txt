@@ -1,9 +1,9 @@
 #! partner paired-vaettir-race-owner
 # Vaettir, TWO CLIENTS - the side that has to ask, racing the side that does not.
 #
-# Run this on client B. Its partner is paired-vaettir-race-owner.txt on client A, which
-# builds everything, owns the chest and stocks it with exactly one bow's worth. Read that
-# file's header for what the pair is for.
+# Nothing to press here. Devkit runs this on client B the moment paired-vaettir-race-owner.txt
+# starts on client A, which builds everything, owns the chest and stocks it with exactly one
+# bow's worth. Read that file's header for what the pair is for and how it is run.
 #
 # This client owns nothing. Its craft fires a withdrawal request that is in flight while the
 # owner is spending out of the same chest locally, and the owner's clamp against live stock
@@ -23,13 +23,23 @@
 # paired-vaettir-race-asker-late.txt, which is this file plus a wait that lines this client's
 # press up with the owner's DoCrafting instead of with its press.
 #
-# Press Run on this whenever you like. It waits for the other client.
+# It stays wherever this character is until A's chest is stocked, then comes over with
+# `partner`. Not before, because A stages its ground first, and a stage can move A.
 
 clear
 give Hammer:1,Hoe:1
 god
 ghost
 sweep
+
+# The signals this side waits for. It starts in the same second as A's file, and a `waitfor` on
+# a key an abandoned run left set would return before A's own clearing got here. A key removed
+# from a client is only gone here once the server's answer comes back, which is what the wait is
+# for. A sets none of them until its build is standing, so this cannot clear a live one.
+unkey rig_race_ready
+unkey rig_race_go
+unkey rig_a_dropped
+wait 2
 
 # Carried once so the material is known and the recipe appears in the panel, then thrown
 # away. A single plank here and the craft is partly self-funded, which would let both sides
@@ -39,6 +49,9 @@ strip Wood,LeatherScraps
 wait 1
 
 waitfor rig_race_ready 300
+
+# Beside A, two metres to its right and facing its way, short of the shed A built ahead of itself.
+partner
 
 # Walk to the bench BEFORE the race starts. A teleport is slow and would make this client
 # late by seconds rather than by frames.
