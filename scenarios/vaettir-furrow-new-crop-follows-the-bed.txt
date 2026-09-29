@@ -25,12 +25,14 @@
 # What a broken build reads: turnips that ignored the carrots read "on 2 grids (4 + 2)" at two
 # angles 30 degrees apart. A grid that is not running reads 3 grids.
 #
-# Needs: singleplayer, level ground in the Meadows with twenty metres clear. GridEnabled on,
-# GridCell 0, Sowing off. Farming is set to 50 and put back. The turnips' spots are tilled; the
-# free carrots stand on untilled ground and wilt after ten seconds, which does not move them.
+# Needs: singleplayer, in a test world. GridEnabled on, GridCell 0, Sowing off. Farming is set to
+# 50 and put back. The turnips' spots are tilled; the free carrots stand on untilled ground and
+# wilt after ten seconds, which does not move them. The level Meadows ground with twenty metres
+# clear that this used to ask for is the `stage`'s job now.
 #
-# Takes down every piece within 20m first. Leaves the bed, two turnips, the marker oak and two
-# tilled spots behind; the next run plants on fresh ground of its own.
+# The stage after `biome` takes down everything within thirty metres first, the world's own trees,
+# rocks and wild plants for good, and levels the ground. Leaves the bed, two turnips, the marker oak
+# and two tilled spots behind; the next run plants on fresh ground of its own.
 
 clear
 give Cultivator:1,TurnipSeeds:10
@@ -46,13 +48,17 @@ skill Farming 50
 # in the three furrow files that ran stopped on that
 # deposit ("last on Rock4_cell ... (not the ground)"), so not one sapling or crop went in and each
 # `furrow check` counted only what `furrowtest free` had put down. `fresh` always moves you, to
-# ground no scenario has used. A wild tree or rock can still stand there, and a `build` it stops
-# names it the same way.
+# ground no scenario has used.
 biome Meadows fresh
 wait 3
 
-wipe 20
-wait 1
+# Cleared and levelled where `fresh` put you: every piece, drop, tree, rock and wild plant within
+# thirty metres taken down, and the ground levelled to the height under your feet, so every `build`
+# and tilling swing below aims at the same ground. Devkit's automatic stage before the first step
+# ran where the file before left you, which `fresh` never is. Before the stage a wild tree or rock
+# could still stand here and stop a `build`, which named it the way it named the deposit. This
+# replaces the `wipe 20` that stood here: the stage takes down everything it did and more.
+stage
 
 mod furrowtest forget
 mod furrowtest free Oak_Sapling 0 12

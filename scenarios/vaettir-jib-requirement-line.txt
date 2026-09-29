@@ -12,10 +12,12 @@
 # mask above it. The mod now widens the label to its slot and fits the line to that, so both
 # should pass, at 13.9 and 13.5pt by the numbers above. The widening has not run in game.
 #
-# NEEDS: singleplayer, on a character whose pack you do not mind losing - `clear` destroys it.
-# Stand on flat ground with about ten metres clear, away from other posts and chests. Keep the
-# mouse pointer off the Craft button while it runs: the pointer leaving that button is the one
-# thing that switches `multicraft` off behind the scenario's back.
+# NEEDS: singleplayer, on a character whose pack you do not mind losing - `clear` destroys it. A
+# test world, and never near a real base: the `stage` after `biome` takes down EVERYTHING built
+# within thirty metres and the world's own trees and rocks for good, and levels the ground, which
+# is the flat ground, ten metres clear and distance from other posts and chests this used to ask
+# for. Keep the mouse pointer off the Craft button while it runs: the pointer leaving that button
+# is the one thing that switches `multicraft` off behind the scenario's back.
 #
 # It also needs the new default format in your config. A file still on the old default,
 # {need} <color=#88CCFF>(+{chest})</color>, is moved to the new one the first time this build
@@ -81,7 +83,7 @@
 #      fit even at size 12, and it names the widths.
 #
 # LEAVES BEHIND: the shed, the bench, the stowing post with its jib and the chest holding 169
-# wood, all inside the patch the next jib scenario wipes, and you standing where you started,
+# wood, all inside the patch the next scenario stages, and you standing where you started,
 # on the ground beside it rather than on the shed's floor. God and ghost mode stay on, as after
 # every jib scenario. It takes defeated_eikthyr away again at the end so the test world is not
 # left with Eikthyr down because of this file; if he really was down in that world, that is
@@ -108,17 +110,20 @@ ghost
 biome Meadows
 wait 3
 
-sweep
-
-wipe 16
-wait 1
+# Cleared and levelled where `biome` left you: every piece, drop, tree and rock within thirty
+# metres taken down, and the ground levelled to the height under your feet for thirty metres,
+# which covers the shed's back. Devkit's automatic stage before the first step ran where the file
+# before left you, which is not here when `biome` moved you. It replaces the `sweep` and `wipe 16`
+# that stood here and the `flatten 4.4 0` round the shed's middle that stood after `key`: it does
+# all three over more ground, to the same height.
+stage
 
 # Down onto the ground, and remember the spot. The jib file before this one ends with `goto
 # piece_workbench`, which stands you on its shed's floor about 3m ahead of where it began. `wipe`
-# takes that floor away under a body that is asleep, nothing wakes it, and it hangs where the
-# floor was (see Arrival in Devkit's Scenario.cs). In 2.3.0's fourth run that left you 0.5m up
-# here and 0.6m up in vaettir-jib-takes-once, and `flatten` refused both times rather than level
-# towards the air. `landed` puts you down.
+# took that floor away under a body that is asleep, nothing woke it, and it hung where the floor
+# was (see Arrival in Devkit's Scenario.cs). In 2.3.0's fourth run that left you 0.5m up here and
+# 0.6m up in vaettir-jib-takes-once, and `flatten` refused both times rather than level towards
+# the air. The stage puts you down on the ground it levelled, and `landed` checks it.
 #
 # The same run also showed the second cost of those 3m. No jib file came back from its `goto`,
 # so each one started 3m further on than the last: from deep-north-items to takes-once the site
@@ -135,13 +140,11 @@ mark
 # count at all. Taken away again at the end.
 key defeated_eikthyr
 
-# Levelled round the shed's middle, 4.4m ahead, as vaettir-jib-deep-north-items does. A bare
-# `flatten` levels a circle round your feet, and the back of the shed stands 5.5m out, past its
-# edge: in the same run vaettir-jib-requirement-line-wide's back beams went down 1.2m above its
-# front ones.
-flatten 4.4 0
-wait 1
-
+# The shed goes on the stage's level ground. The back of the shed stands 5.5m out: a bare
+# `flatten` levelled a circle round your feet that stopped short of it, and in the same run
+# vaettir-jib-requirement-line-wide's back beams went down 1.2m above its front ones. The stage
+# levels thirty metres, so the whole shed stands on it.
+#
 # The shed, so the bench can be crafted at. Captured from one built by hand.
 place wood_beam 3.2 1.0 5 0.01
 place wood_beam 3.4 -1.0 -174 0.00

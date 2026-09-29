@@ -6,7 +6,10 @@
 #
 # The hover text is the only place any of this is reported, which is why it is asserted.
 #
-# Stand on flat ground with about ten metres clear, away from other posts.
+# The `stage` after `biome` clears and levels thirty metres round you, so the flat ground, the ten
+# metres clear and the distance from other posts this used to ask for are its job now. It takes
+# down EVERYTHING built there, and the world's own trees and rocks for good, so run it in a test
+# world and never near a real base.
 
 clear
 give Hammer:1,Hoe:1
@@ -22,10 +25,12 @@ ghost
 biome Meadows
 wait 3
 
-sweep
-
-wipe 16
-wait 1
+# Cleared and levelled where `biome` left you: every piece, drop, tree and rock within thirty
+# metres taken down, and the ground levelled to the height under your feet, out past the rail 12m
+# away. Devkit's automatic stage before the first step ran where the file before left you, which
+# is not here when `biome` moved you. It replaces the `sweep` and `wipe 16` that stood here, doing
+# both over more ground.
+stage
 
 place stow_post 4 0
 wait 6

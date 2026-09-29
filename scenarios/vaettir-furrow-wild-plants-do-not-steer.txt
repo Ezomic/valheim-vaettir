@@ -30,14 +30,19 @@
 # What passes: "on one grid" with 4 carrots.
 # What a broken build reads: "on 2 grids (2 + 2)" at two angles, one of them 62.
 #
-# Needs: singleplayer, level ground in the Meadows with twenty metres clear, and no other mushroom
-# within six metres - the `count` step checks that, because a third one would change what a
-# broken build reads. Thicket on, with SpacingScale 1. GridEnabled and GridShared on, GridCell 0,
-# Sowing off, and a GridAngle other than 62 (or 152). Farming is set to 50 and put back.
+# Needs: singleplayer, in a test world, and no other mushroom within six metres. The `count` step
+# checks that, because a third one would change what a broken build reads, and the `stage` after
+# `biome` sees to it, since it takes every pickable plant within thirty metres down before `grow`
+# stands the two this file needs. The level Meadows ground with twenty metres clear that this used
+# to ask for is the stage's job now too. Thicket on, with SpacingScale 1. GridEnabled and
+# GridShared on, GridCell 0, Sowing off, and a GridAngle other than 62 (or 152). Farming is set to
+# 50 and put back.
 #
-# Takes down every piece within 20m first. Leaves the two mushrooms, the four carrots, the
-# seedling and the marker oak behind. The next run plants on fresh ground of its own, so the two
-# mushrooms, which `wipe` cannot take, are never in its `count`.
+# The stage takes down everything within thirty metres first, the world's own trees, rocks and
+# wild plants for good, and levels the ground. Leaves the two mushrooms, the four carrots, the
+# seedling and the marker oak behind. The next run plants on fresh ground of its own, and its
+# stage would take the two mushrooms down in any case, which `wipe` never could, so they are never
+# in its `count`.
 
 clear
 give Cultivator:1,CarrotSeeds:10
@@ -53,13 +58,21 @@ skill Farming 50
 # in the three furrow files that ran stopped on that
 # deposit ("last on Rock4_cell ... (not the ground)"), so not one sapling or crop went in and each
 # `furrow check` counted only what `furrowtest free` had put down. `fresh` always moves you, to
-# ground no scenario has used. A wild tree or rock can still stand there, and a `build` it stops
-# names it the same way.
+# ground no scenario has used.
 biome Meadows fresh
 wait 3
 
-wipe 20
-wait 1
+# Cleared and levelled where `fresh` put you: every piece, drop, tree, rock and wild plant within
+# thirty metres taken down, and the ground levelled to the height under your feet, so every `build`
+# and tilling swing below aims at the same ground. Devkit's automatic stage before the first step
+# ran where the file before left you, which `fresh` never is. Before the stage a wild tree or rock
+# could still stand here and stop a `build`, which named it the way it named the deposit. This
+# replaces the `wipe 20` that stood here: the stage takes down everything it did and more.
+#
+# The wild mushrooms go with it, since the stage takes every pickable plant, and that is safe for
+# this file: the two it needs are stood up by `grow` below, after the stage, and the `count` after
+# them now has only those two to find.
+stage
 
 mod furrowtest forget
 mod furrowtest free Oak_Sapling 0 12

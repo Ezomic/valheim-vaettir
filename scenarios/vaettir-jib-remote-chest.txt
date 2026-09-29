@@ -28,7 +28,10 @@
 # Still out of reach either way: two players crafting from one chest in the same second.
 # That is a race between two machines and there is no honest way to stage it on one.
 #
-# Stand on flat ground with about ten metres clear, away from other posts and chests.
+# The `stage` after `biome` clears and levels thirty metres round you, so the flat ground, the ten
+# metres clear and the distance from other posts and chests this used to ask for are its job now.
+# It takes down EVERYTHING built there, and the world's own trees and rocks for good, so run it in
+# a test world and never near a real base.
 
 clear
 give Hammer:1,Hoe:1
@@ -50,22 +53,20 @@ ghost
 biome Meadows
 wait 3
 
-sweep
+# Cleared and levelled where `biome` left you: every piece, drop, tree and rock within thirty
+# metres taken down, and the ground levelled to the height under your feet for thirty metres,
+# which covers the shed's back. Devkit's automatic stage before the first step ran where the file
+# before left you, which is not here when `biome` moved you. It replaces the `sweep` and `wipe 16`
+# that stood here and the `flatten 4.4 0` round the shed's middle that stood after `key`: it does
+# all three over more ground, to the same height.
+stage
 
-wipe 16
-wait 1
-
-# Down onto the ground, since `wipe` can take the last file's floor out from under you and
-# leave you hanging, and remember the spot for the `back` at the end. See
-# vaettir-jib-requirement-line.txt.
+# Down onto the ground, which the stage has already put you on, and remember the spot for the
+# `back` at the end. See vaettir-jib-requirement-line.txt.
 landed
 mark
 
 key defeated_eikthyr
-
-# Round the shed's middle, not round your feet, so its back is level too.
-flatten 4.4 0
-wait 1
 
 place wood_beam 3.2 1.0 5 0.01
 place wood_beam 3.4 -1.0 -174 0.00

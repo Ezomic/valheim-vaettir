@@ -3,7 +3,10 @@
 # No expectations in this one on purpose. It is the three minutes at the start of every
 # session - kit, god mode, a post, a rail beside it - and nothing else. Run it, then play.
 #
-# Stand on flat ground with about six metres clear in front of you before pressing Run.
+# Devkit stages the spot you stand on before the first step, with StageBeforeEachScenario on as it
+# is by default: thirty metres round you cleared and levelled, which is the flat ground and six
+# metres clear this used to ask for. It takes down EVERYTHING built there, and the world's own
+# trees and rocks for good, so press Run in a test world and never near a real base.
 
 clear
 give Hammer:1,Hoe:1
@@ -13,7 +16,9 @@ god
 ghost
 
 # Clear the spot so this can be run here again. Removes EVERYTHING built within
-# 14m, not just what a scenario placed - do not run it near a real base.
+# 14m, not just what a scenario placed - do not run it near a real base. After the
+# automatic stage this finds nothing left to take; it stays for a run with
+# StageBeforeEachScenario off, where it is the only clearing there is.
 wipe 14
 sweep
 wait 1

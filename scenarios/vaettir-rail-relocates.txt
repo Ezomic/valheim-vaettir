@@ -9,8 +9,10 @@
 #
 # The long waits are PostSize's five second settle - see the note in vaettir-rail-spills.
 #
-# Stand on flat ground with about six metres clear in front of you, and NOT within twenty
-# metres of another stowing post.
+# The `stage` after `biome` clears and levels thirty metres round you, so the flat ground, the six
+# metres clear and the twenty metres from any other stowing post this used to ask for are its job
+# now. It takes down EVERYTHING built there, and the world's own trees and rocks for good, so run it
+# in a test world and never near a real base.
 
 clear
 give Hammer:1,Hoe:1
@@ -26,13 +28,13 @@ ghost
 biome Meadows
 wait 3
 
-sweep
-
-# Take down whatever the last run left standing, so this spot can be used again
-# instead of walking to fresh ground every time. It removes EVERYTHING built
-# within 14m, not just what a scenario placed - do not run this near a real base.
-wipe 14
-wait 1
+# Take down whatever the last run left standing, so this spot can be used again instead of
+# walking to fresh ground every time, and every drop, so the `ground 3` at the end counts only the
+# rail's refund. The stage removes EVERYTHING built within thirty metres, not just what a scenario
+# placed, and the world's own trees and rocks, and levels the ground. It runs here as well as
+# before the first step, because that one ran where the file before left you, which is not here
+# when `biome` moved you. It replaces the `sweep` and `wipe 14` that stood here.
+stage
 
 place stow_post 4 0
 wait 6

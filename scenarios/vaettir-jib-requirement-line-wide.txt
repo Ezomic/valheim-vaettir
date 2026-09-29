@@ -12,10 +12,12 @@
 # label to its slot, so both should pass at a little over 12pt. The widening has not run in
 # game.
 #
-# NEEDS: singleplayer, on a character whose pack you do not mind losing - `clear` destroys it.
-# Stand on flat ground with about ten metres clear, away from other posts and chests. Keep the
-# mouse pointer off the Craft button while it runs: the pointer leaving that button is the one
-# thing that switches `multicraft` off behind the scenario's back.
+# NEEDS: singleplayer, on a character whose pack you do not mind losing - `clear` destroys it. A
+# test world, and never near a real base: the `stage` after `biome` takes down EVERYTHING built
+# within thirty metres and the world's own trees and rocks for good, and levels the ground, which
+# is the flat ground, ten metres clear and distance from other posts and chests this used to ask
+# for. Keep the mouse pointer off the Craft button while it runs: the pointer leaving that button
+# is the one thing that switches `multicraft` off behind the scenario's back.
 #
 # Like the other one it needs the new default format in [Hod] ChestTotalFormat,
 # {have}/{need} <color=#88CCFF>+{chest}</color>. A file still on the old default is moved to it
@@ -62,7 +64,7 @@
 #      larger. A line there names the widths; send it to me.
 #
 # LEAVES BEHIND: the shed, the bench, the stowing post with its jib and both chests with their
-# wood and scraps, inside the patch the next jib scenario wipes. God and ghost mode stay on, as
+# wood and scraps, inside the patch the next scenario stages. God and ghost mode stay on, as
 # after every jib scenario. It takes defeated_eikthyr away again at the end so the test world is
 # not left with Eikthyr down because of this file; if he really was down in that world, that is
 # undone too. Devkit empties your pack and hands back its kit when the run ends, and switches
@@ -85,14 +87,16 @@ ghost
 biome Meadows
 wait 3
 
-sweep
+# Cleared and levelled where `biome` left you: every piece, drop, tree and rock within thirty
+# metres taken down, and the ground levelled to the height under your feet for thirty metres,
+# which covers the shed's back. Devkit's automatic stage before the first step ran where the file
+# before left you, which is not here when `biome` moved you. It replaces the `sweep` and `wipe 16`
+# that stood here and the `flatten 4.4 0` round the shed's middle that stood after `key`: it does
+# all three over more ground, to the same height.
+stage
 
-wipe 16
-wait 1
-
-# Down onto the ground, since `wipe` can take the last file's floor out from under you and
-# leave you hanging, and remember the spot for the `back` at the end. See
-# vaettir-jib-requirement-line.txt.
+# Down onto the ground, which the stage has already put you on, and remember the spot for the
+# `back` at the end. See vaettir-jib-requirement-line.txt.
 landed
 mark
 
@@ -100,11 +104,9 @@ mark
 # count at all. Taken away again at the end.
 key defeated_eikthyr
 
-# Round the shed's middle, not round your feet. In 2.3.0's fourth run a bare `flatten` here left
-# the back beams 1.2m above the front ones.
-flatten 4.4 0
-wait 1
-
+# The shed goes on the stage's level ground, all of it. In 2.3.0's fourth run a bare `flatten`
+# here, round your feet, left the back beams 1.2m above the front ones.
+#
 # The shed, so the bench can be crafted at. Captured from one built by hand.
 place wood_beam 3.2 1.0 5 0.01
 place wood_beam 3.4 -1.0 -174 0.00

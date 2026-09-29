@@ -54,10 +54,13 @@
 # Devkit's `mod` step so the test character is not marked. When the row has found no key it refuses,
 # and the step fails.
 #
-# HOW TO RUN IT. Singleplayer, in a test world, on own-profile (play.ps1). Stand on flat ground with
-# about eight metres clear in front of you and NOT within twenty metres of another stowing post or
-# chest: the post reaches chests 20 metres out (HodRange), and another chest holding a Deer trophy
-# would make reach read more than 5. It takes down every piece within 14 metres.
+# HOW TO RUN IT. Singleplayer, in a test world, on own-profile (play.ps1). The `stage` after `biome`
+# takes down every piece, drop, tree and rock within thirty metres and levels the ground, so the flat
+# ground, the eight metres clear and the distance from other stowing posts and chests this used to
+# ask for are its job now. That distance still matters: the post reaches chests 20 metres out
+# (HodRange), and another chest holding a Deer trophy would make reach read more than 5. The stage
+# takes down EVERYTHING built within thirty metres, not just what a scenario placed, and the
+# world's own trees and rocks for good, so never near a real base.
 #
 # What a broken build reads.
 #  - Before ce9aaac: the Deep North items read biome=meadows boss=defeated_eikthyr reach=5 offered=5
@@ -98,13 +101,13 @@
 #    item by item against Yoke's copy. Here three stand for the rest.
 #  - A chest somebody else owns. This one is yours; vaettir-jib-remote-chest covers the other case.
 #
-# It LEAVES BEHIND the shed, the post, the jib and the chest with what is left in it (the next run
-# wipes them), god and ghost mode on, and the world with NO boss key set, the Deep North's included:
-# every one is removed at the start, Eikthyr's and the Deep North's are set again along the way and
-# removed at the end, and none is put back, because a scenario cannot tell which of them the world had.
-# Use a test world. To put a world's progress back, run the lines for the bosses it really had down
-# as a scenario of their own, or type the same names after `setkey` in the console with devcommands
-# on, or type each into Devkit's global key pane:
+# It LEAVES BEHIND the shed, the post, the jib and the chest with what is left in it (the next
+# scenario's stage takes them down), god and ghost mode on, and the world with NO boss key set, the
+# Deep North's included: every one is removed at the start, Eikthyr's and the Deep North's are set
+# again along the way and removed at the end, and none is put back, because a scenario cannot tell
+# which of them the world had. Use a test world. To put a world's progress back, run the lines for
+# the bosses it really had down as a scenario of their own, or type the same names after `setkey`
+# in the console with devcommands on, or type each into Devkit's global key pane:
 #   key defeated_eikthyr
 #   key defeated_gdking
 #   key defeated_bonemass
@@ -133,31 +136,31 @@ ghost
 biome Meadows
 wait 3
 
-sweep
+# Cleared and levelled where `biome` left you: every piece, drop, tree and rock within thirty
+# metres taken down, EVERYTHING built and not just what a scenario placed, and the ground levelled
+# to the height under your feet. Devkit's automatic stage before the first step ran where the file
+# before left you, which is not here when `biome` moved you. This replaces the `sweep` and
+# `wipe 14` that stood here and the `flatten 4.4 0` that stood after `mark`: the stage does all
+# three over more ground, to the same height.
+stage
 
-# Takes down EVERYTHING built within 14m, not just what a scenario placed.
-wipe 14
-wait 1
-
-# Down onto the ground, since `wipe` can take a floor out from under you and leave you hanging,
-# and remember the spot for the `back` at the end. See vaettir-jib-requirement-line.txt.
+# Down onto the ground, which the stage has already put you on, and remember the spot for the
+# `back` at the end. See vaettir-jib-requirement-line.txt.
 landed
 mark
 
-# Level the ground the shed goes on: ten metres across, centred 4.4m ahead where the shed's
-# middle stands, at your own height. On 2026-09-28 it was not levelled at all. Devkit's `flatten`
-# then aimed at the camera's look point, and in 1.0 the game cancelled its op every time ("Failed
-# to deserialize TerrainOp settings") while the note said "Levelled", so the shed went up half
-# over a pit a metre deep that the last Furrow scenario's tilling had left (Jafna was holding a
-# height more than 20m below the ground, and the cultivator smooths toward it). Its front beams
-# sat 0.9m lower than its floor a metre behind them, and the bench stood 1.3m above the spot
-# `goto` found and 2.3m from it, past CraftingStation.m_useDistance (2m unless the prefab says
-# otherwise), so `use` was refused, the jib's scope stayed shut, and every count below read 0
-# for that reason alone. Devkit 1b48353 made `flatten` level for real, centred on you or on the
-# spot its arguments name, and fail when the ground did not take it.
-flatten 4.4 0
-wait 1
-
+# The shed goes on the stage's level ground, which reaches well past its back 5.5m out. On
+# 2026-09-28 it was not levelled at all. Devkit's `flatten` then aimed at the camera's look point,
+# and in 1.0 the game cancelled its op every time ("Failed to deserialize TerrainOp settings")
+# while the note said "Levelled", so the shed went up half over a pit a metre deep that the last
+# Furrow scenario's tilling had left (Jafna was holding a height more than 20m below the ground,
+# and the cultivator smooths toward it). Its front beams sat 0.9m lower than its floor a metre
+# behind them, and the bench stood 1.3m above the spot `goto` found and 2.3m from it, past
+# CraftingStation.m_useDistance (2m unless the prefab says otherwise), so `use` was refused, the
+# jib's scope stayed shut, and every count below read 0 for that reason alone. Devkit 1b48353 made
+# `flatten` level for real, and `flatten 4.4 0` levelled ten metres round the shed's middle here
+# until the stage came to level all of it.
+#
 # The shelter and bench, captured from one built by hand. See vaettir-jib-gate.txt.
 place wood_beam 3.2 1.0 5 0.01
 place wood_beam 3.4 -1.0 -174 0.00

@@ -9,7 +9,11 @@
 # recorded a size at its WIDEST for five seconds, deliberately, so a fresh post really is
 # 6x4 for five seconds and only then becomes 6x2.
 #
-# Stand on flat ground with a few metres clear, and NOT near another stowing post.
+# The `stage` after `biome` clears and levels thirty metres round you, another stowing post
+# included, so the flat ground and the few metres clear this used to ask for are its job now. It
+# takes down EVERYTHING built there, and the world's own trees and rocks for good, so run it in a
+# test world and never near a real base. There is no stage after `back`: that is the post this file
+# is testing, and a stage there would take it down.
 
 clear
 give Hammer:1,Hoe:1
@@ -25,10 +29,12 @@ ghost
 biome Meadows
 wait 3
 
-sweep
-
-wipe 14
-wait 1
+# Cleared and levelled where `biome` left you: every piece, drop, tree and rock within thirty
+# metres taken down, so the `ground 0` at the end counts only what this file dropped, and the
+# ground levelled to the height under your feet. Devkit's automatic stage before the first step ran
+# where the file before left you, which is not here when `biome` moved you. It replaces the `sweep`
+# and `wipe 14` that stood here, doing both over more ground.
+stage
 
 place stow_post 4 0
 wait 6
