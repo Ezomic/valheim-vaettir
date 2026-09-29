@@ -1,3 +1,4 @@
+#! partner paired-vaettir-asker
 # Vaettir, TWO CLIENTS - the side that owns the chest and answers for it.
 #
 # Run this one on client A. Its partner is paired-vaettir-asker.txt on client B, and neither

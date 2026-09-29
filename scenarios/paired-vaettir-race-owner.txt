@@ -1,3 +1,4 @@
+#! partner paired-vaettir-race-asker
 # Vaettir, TWO CLIENTS - two players spending out of one chest at the same moment.
 #
 # Run this on client A. Its partner is paired-vaettir-race-asker.txt on client B. See

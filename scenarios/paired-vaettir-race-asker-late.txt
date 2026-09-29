@@ -1,3 +1,4 @@
+#! partner paired-vaettir-race-owner
 # Vaettir, TWO CLIENTS - the genuinely simultaneous race.
 #
 # Run this on client B INSTEAD OF paired-vaettir-race-asker.txt, against the same

@@ -1,3 +1,4 @@
+#! partner paired-vaettir-owner
 # Vaettir, TWO CLIENTS - the side that asks for somebody else's material.
 #
 # Run this one on client B. Its partner is paired-vaettir-owner.txt on client A, which builds

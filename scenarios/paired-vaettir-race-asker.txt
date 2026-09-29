@@ -1,3 +1,4 @@
+#! partner paired-vaettir-race-owner
 # Vaettir, TWO CLIENTS - the side that has to ask, racing the side that does not.
 #
 # Run this on client B. Its partner is paired-vaettir-race-owner.txt on client A, which
