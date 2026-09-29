@@ -37,9 +37,16 @@ sweep
 wipe 14
 wait 1
 
+# Down onto the ground, since `wipe` can take the last file's floor out from under you and
+# leave you hanging, and remember the spot for the `back` at the end. See
+# vaettir-jib-requirement-line.txt.
+landed
+mark
+
 # Level the ground first. place raycasts each piece to its own height, so on a slope a
-# captured build lands in pieces and anything unsupported is gone within a second.
-flatten
+# captured build lands in pieces and anything unsupported is gone within a second. Round the
+# shed's middle, 4.4m ahead, rather than round your feet, so its back is level too.
+flatten 4.4 0
 wait 1
 
 # The station, the post, the jib that serves it, and a chest to serve out of.
@@ -125,3 +132,8 @@ use piece_workbench
 craftable Bow yes
 # Shut the crafting panel use opened.
 close
+
+# Back to where this began, so the next file does not start on this shed's floor. `landed`
+# first, because `goto` teleported you and the game refuses another teleport for two seconds.
+landed
+back

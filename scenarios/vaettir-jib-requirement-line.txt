@@ -81,7 +81,8 @@
 #      fit even at size 12, and it names the widths.
 #
 # LEAVES BEHIND: the shed, the bench, the stowing post with its jib and the chest holding 169
-# wood, all inside the patch the next jib scenario wipes. God and ghost mode stay on, as after
+# wood, all inside the patch the next jib scenario wipes, and you standing where you started,
+# on the ground beside it rather than on the shed's floor. God and ghost mode stay on, as after
 # every jib scenario. It takes defeated_eikthyr away again at the end so the test world is not
 # left with Eikthyr down because of this file; if he really was down in that world, that is
 # undone too. Devkit empties your pack and hands back its kit when the run ends, and switches
@@ -112,11 +113,33 @@ sweep
 wipe 16
 wait 1
 
+# Down onto the ground, and remember the spot. The jib file before this one ends with `goto
+# piece_workbench`, which stands you on its shed's floor about 3m ahead of where it began. `wipe`
+# takes that floor away under a body that is asleep, nothing wakes it, and it hangs where the
+# floor was (see Arrival in Devkit's Scenario.cs). In 2.3.0's fourth run that left you 0.5m up
+# here and 0.6m up in vaettir-jib-takes-once, and `flatten` refused both times rather than level
+# towards the air. `landed` puts you down.
+#
+# The same run also showed the second cost of those 3m. No jib file came back from its `goto`,
+# so each one started 3m further on than the last: from deep-north-items to takes-once the site
+# walked 18m, off the ground the first file levelled and up a slope. This file's shed then went
+# up over something that is not terrain, standing 1.6m to 4.8m above it on the right-hand side,
+# which `place` lands on: a floor went down at 45.5 over ground at 40.7, the roof went with it,
+# and the bench refused with "it wants a roof, or a fire", which failed every panel step after
+# it. `mark` here and `back` at the end bring every jib file home to where it began, so the next
+# one builds on the same patch instead of three metres into the unknown.
+landed
+mark
+
 # Wood and leather scraps are Meadows materials, so Eikthyr has to be down for the chest to
 # count at all. Taken away again at the end.
 key defeated_eikthyr
 
-flatten
+# Levelled round the shed's middle, 4.4m ahead, as vaettir-jib-deep-north-items does. A bare
+# `flatten` levels a circle round your feet, and the back of the shed stands 5.5m out, past its
+# edge: in the same run vaettir-jib-requirement-line-wide's back beams went down 1.2m above its
+# front ones.
+flatten 4.4 0
 wait 1
 
 # The shed, so the bench can be crafted at. Captured from one built by hand.
@@ -230,3 +253,8 @@ wait 45
 
 unkey defeated_eikthyr
 close
+
+# Back to the spot `mark` took, so the next file starts where this one did. `landed` first,
+# because `goto` teleported you and the game refuses another teleport for two seconds after one.
+landed
+back

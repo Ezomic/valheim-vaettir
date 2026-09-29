@@ -139,6 +139,11 @@ sweep
 wipe 14
 wait 1
 
+# Down onto the ground, since `wipe` can take a floor out from under you and leave you hanging,
+# and remember the spot for the `back` at the end. See vaettir-jib-requirement-line.txt.
+landed
+mark
+
 # Level the ground the shed goes on: ten metres across, centred 4.4m ahead where the shed's
 # middle stands, at your own height. On 2026-09-28 it was not levelled at all. Devkit's `flatten`
 # then aimed at the camera's look point, and in 1.0 the game cancelled its op every time ("Failed
@@ -263,3 +268,7 @@ printed reach=5 offered=5 gate=open yes
 close
 mod hodkey deepnorth off
 unkey defeated_eikthyr
+
+# Back to where this began, so the next file does not start on this shed's floor.
+landed
+back

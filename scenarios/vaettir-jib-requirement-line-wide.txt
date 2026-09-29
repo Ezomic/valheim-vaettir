@@ -90,11 +90,19 @@ sweep
 wipe 16
 wait 1
 
+# Down onto the ground, since `wipe` can take the last file's floor out from under you and
+# leave you hanging, and remember the spot for the `back` at the end. See
+# vaettir-jib-requirement-line.txt.
+landed
+mark
+
 # Wood and leather scraps are Meadows materials, so Eikthyr has to be down for the chest to
 # count at all. Taken away again at the end.
 key defeated_eikthyr
 
-flatten
+# Round the shed's middle, not round your feet. In 2.3.0's fourth run a bare `flatten` here left
+# the back beams 1.2m above the front ones.
+flatten 4.4 0
 wait 1
 
 # The shed, so the bench can be crafted at. Captured from one built by hand.
@@ -192,3 +200,7 @@ wait 30
 
 unkey defeated_eikthyr
 close
+
+# Back to where this began, so the next file does not start on this shed's floor.
+landed
+back

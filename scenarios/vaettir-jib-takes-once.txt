@@ -36,9 +36,16 @@ sweep
 wipe 16
 wait 1
 
+# Down onto the ground, since `wipe` can take the last file's floor out from under you and
+# leave you hanging (0.6m up in 2.3.0's fourth run, and `flatten` refused), and remember the
+# spot for the `back` at the end. See vaettir-jib-requirement-line.txt.
+landed
+mark
+
 key defeated_eikthyr
 
-flatten
+# Round the shed's middle, not round your feet, so its back is level too.
+flatten 4.4 0
 wait 1
 
 # The shed, so the bench can be crafted at. Captured from one built by hand.
@@ -127,3 +134,7 @@ carrying Bow 2
 craftable Bow no
 
 close
+
+# Back to where this began, so the next file does not start on this shed's floor.
+landed
+back
