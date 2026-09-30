@@ -3,38 +3,64 @@
 Notable changes to Vaettir. Format follows [Keep a Changelog](https://keepachangelog.com),
 and the mod uses [semantic versioning](https://semver.org).
 
-## [Unreleased]
+## [1.6.3] - 2026-09-30
 
 ### Added
 
-- `hod item <prefab>` in the console prints the biome a material is filed under, the boss that
-  opens it for the hod jib, and how many of it the chests around the post hold and would hand to
-  a craft. Run it standing at a station the jib serves. It is not a cheat and needs no
-  devcommands.
-- `vaettir sapling` in the console prints how many kills your machine has fed to a sapling this
-  session, and how much the nearest sapling has been fed and whose machine has it. It is not a
-  cheat and needs no devcommands.
+Three console commands. They only read, so none of them is a cheat or needs devcommands.
+
+- `hod item <prefab>` prints the biome a material is filed under, the boss that opens it for the
+  hod jib, and how many of it the chests around the post hold and would hand to a craft. Run it
+  standing at a station the jib serves.
+- `furrow check <plant>` counts how many planting grids the plants of that kind near you are on,
+  for example `furrow check sapling_carrot`.
+- `vaettir sapling` prints how many kills your machine has fed to a sapling this session, and
+  how much the nearest sapling has been fed and whose machine has it.
 
 ### Fixed
 
-- **A kill near a sapling could feed it once for every player watching.** In Valheim 1.0 a creature
-  with a death animation runs its death on every client that sees it fall, and each one fed the
-  nearest sapling. Now only the machine that has the creature does.
+- **Deep North materials came out of the chests too early.** The Elaking and Jotun drops and
+  the Vanguard chestpiece family were filed as Meadows items, so they could be pulled from a
+  chest once Eikthyr fell. The Jotun invasion spawns in every biome, and the shared biome index
+  read that as the Meadows. Invasion spawns no longer decide where a creature belongs, and those
+  items are Deep North items now.
+
+  The rest of the Deep North was not gated at all, because no `BossBiomes` row named it and a
+  biome no row names is left open. Now the Frozen King opens it. The new row reads his key off
+  the boss himself when a world loads, and the log says which key it found. Until it finds one,
+  Deep North materials stay in the chest. A config file still on the old `BossBiomes` default
+  gets the row once, and one you changed yourself is left alone. On a server it is the host's
+  file that counts.
+
+- **The chest total on a crafting requirement line was cut off at the edge of its slot.** At a
+  bench served by a hod jib the Wood slot read "8 (+169", and with the multi-craft key held,
+  "40 (+16".
+
+  The line now shows what you carry against the cost, then what the chests add, in blue:
+  "24/40 +169" is 24 wood in your pack, 40 needed and 169 more in the chests. A material the
+  chests hold none of still shows the game's plain number. A config file still on the old
+  format exactly is moved to the new one once. If you wrote your own, it is left alone.
+
+  The line gets the whole width of its slot, where the game gave the number only the middle of
+  it, and shrinks to fit, down to size 12. A line that fits is drawn at the game's own size, and
+  a slot showing a plain number is put back exactly as the game built it. A line still too wide
+  at size 12 stays at 12, and the log says so once.
+
 - **The planting grid put patches of one field on different grids, and walked an oak row off
-  the grid of its first sapling.** The grid only ever knew about the bed through the plant it
-  had last found. It lost that whenever the ghost vanished, which happens every time you look
-  past reach for the next spot, and then it looked four metres around the cursor for a plant of
-  the same crop. An oak's rows are metres apart, so the spot for the next oak was often further
-  than that from the last one, and it found nothing and started a new grid where you were
-  aiming. A turnip beside carrots found no turnip and did the same.
+  the grid of its first sapling.** The grid only knew about a bed through the last plant it had
+  found. It lost that whenever the ghost vanished, which happens every time you look past reach
+  for the next spot, and then it searched four metres around the cursor for a plant of the same
+  crop. An oak's rows are further apart than that, so the next oak often found nothing and
+  started a new grid where you were aiming. A turnip beside carrots found no turnip and did the
+  same.
 
   The grid is now read off the ground each time. A plant next to plants already in continues
   their rows, whatever crop they are, as long as they are spaced alike. The search reaches three
   rows out, so it finds an oak's neighbour as surely as a carrot's. When the plants nearby
   disagree, the rows most of them sit on win, so one plant put down by hand cannot pull a bed
   out of line. On open ground a plant goes on one grid shared by the whole world, so beds
-  planted apart still line up with each other. `GridShared` turns that last part off if you
-  would rather the first plant of a bed went exactly where you aim.
+  planted apart still line up. Turn `GridShared` off if you would rather the first plant of a
+  bed went exactly where you aim.
 
   A bed also keeps its angle. Before, the grid only looked for rows at your own angle, so after
   a turn the bed beside you counted as nothing and the next plant started turned rows around
@@ -48,43 +74,17 @@ and the mod uses [semantic versioning](https://semver.org).
   from a transplant. The first time each plant is lined up, the log says how far apart the game
   spaces it.
 
-  The console has a `furrow check` command: `furrow check sapling_carrot` counts how many grids
-  the carrots near you are on. It is not a cheat and needs no devcommands.
-
 - **A plant the grid moved could be planted where the game would have refused it.** The game
   checks tilled ground, wards and no-build areas where you aim, and the grid then moves the
   plant up to half a row. A carrot aimed at the edge of a tilled patch could land on grass and
-  get planted. It wilted ten seconds later, and when it should have been ready it was gone, seed
-  and all. The same checks now run
-  again at the spot the plant will actually land. If that spot fails, the ghost turns red and
-  you get the game's usual message.
+  be planted anyway. It wilted ten seconds later, and when it should have been ready it was
+  gone, seed and all. The same checks now run again where the plant will actually land. If that
+  spot fails, the ghost turns red and you get the game's usual message.
 
-- **Some Deep North materials counted as Meadows ones for crafting from containers**, so they
-  could be pulled from a chest once Eikthyr fell: the Elaking and Jotun drops and the Vanguard
-  chestpiece family. The Jotun invasion spawns in every biome, and the shared biome index read
-  that as the Meadows. Invasion spawns no longer decide where a creature belongs. They are Deep
-  North items now, and the Frozen King opens the Deep North: a new `BossBiomes` row reads his key
-  off the boss himself when a world loads, and until it finds one, Deep North materials stay in the
-  chest. A config file still on the old `BossBiomes` gets the row once; one you changed yourself
-  does not.
-
-- **The chest total on a crafting requirement line was cut off at the edge of its slot.** At a
-  bench served by a hod jib the Wood slot read "8 (+169" and, with the multi-craft key held,
-  "40 (+16". Holding the key does not change the chest count. The longer line lost its last
-  digit along with the bracket.
-
-  The line now shows what you carry against the cost, then what the chests add, in blue:
-  "24/40 +169" is 24 wood in your pack, 40 needed and 169 more in the chests. Before, it
-  showed the cost and the chest total and you had to open your inventory to know the rest. A
-  material the chests hold none of still shows the game's plain number. If your config
-  file still had the old format exactly, it is moved to the new one once. If you had
-  written your own, it is left alone.
-
-  The line also gets the whole width of its slot, where the game gave the number only the
-  middle of it, and shrinks to fit that, down to size 12. A line that fits is drawn at the
-  game's own size as before, and a slot showing a plain number is put back exactly as the
-  game built it. If a line is still too wide at size 12, it stays at 12 and the log says so
-  once.
+- **A kill could feed a sapling once for every player who watched it die.** In Valheim 1.0 a
+  creature that dies through a death animation runs its death on every client that sees it
+  fall, and each of them fed the nearest sapling. A plain greydwarf is not one of those. Now
+  only the machine that has the creature feeds the sapling.
 
 ## [1.6.2] - 2026-09-22
 
