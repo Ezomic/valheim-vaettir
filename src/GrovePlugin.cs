@@ -306,6 +306,7 @@ namespace Grove
             failed += Apply("blood feeding", typeof(BloodFeed));
             failed += Apply("grove", typeof(GrovePatches));
             failed += Apply("stow", typeof(Stow.StowPatches));
+            failed += Apply("stow console readout", typeof(Stow.StowConsole));
             failed += Apply("thicket skill gate", typeof(Thicket.SkillGate));
             failed += Apply("thicket transplanting", typeof(Thicket.Transplant));
             failed += Apply("thicket carrying", typeof(Thicket.Carry));

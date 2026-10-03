@@ -73,7 +73,7 @@ in range wants it.
 
 ### Telling a chest what it holds
 
-Chest windows get a `Holds…` button under the game's own Stack all. The post has no button of
+Chest windows get a `Holds…` button in the row of the game's own Stack all, to its left, and under the lowest row of slots when that row has no room. The post has no button of
 its own because it distributes outward, so the rules live on the chests. The panel offers
 groups and single items, a search box for naming an exact item, and a `Learn from contents`
 button that reads the chest's current contents into a rule. Clicking a group cycles it through

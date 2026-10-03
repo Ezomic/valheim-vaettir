@@ -1,0 +1,97 @@
+# Vaettir: the Holds button covers no inventory cell, in a narrow chest and in a wide one. LHM-58.
+#
+# The bug. The button was cloned from Place stacks and put one button-height and 4px under it. In a
+# narrow chest that is empty space. In a chest wide enough for the grid to reach the right edge, a
+# Reinforced chest being six columns, it is the top right cell, and the stack of 100 in it is half
+# hidden behind the button. Robbin sent a screenshot on 2026-10-01.
+#
+# The fix. RulesButton.Place runs after every InventoryGui.UpdateContainer, once the grid has its
+# cells, and puts the button in the row Place stacks is in, to the left of the pair, checked against
+# the cells, both buttons, the window's edge and the title's drawn text. When the row cannot take it
+# the button goes under the lowest row of cells.
+#
+# What it proves. For each chest, four sizes from the smallest to the widest, `stow holds` reads the
+# open window and prints state, cellcount, cellhits and otherhits (see StowConsole). The button must
+# be shown, the grid must have cells (a window measured before its grid exists would print zero hits
+# and pass for nothing), and the button's rectangle must overlap no cell and none of Take all, Place
+# stacks or the title text.
+#
+# WHAT IT CANNOT SEE.
+#  - Other resolutions and aspect ratios. The window scales with the canvas, so the layout should
+#    hold, but this runs at whatever size the game is at. Run it again at another size by hand.
+#  - A modded chest or a Sinka-stacked chest. Their prefab names are not written here. Copy a block
+#    with the prefab name once it is known; the shape is the four lines under each `use`.
+#  - Whether the button looks right where it is put. The numbers say it covers nothing, not that it
+#    is a good place. The `button=x,y,w,h` token is in the output for the log.
+#  - The stowing post, where the button is hidden on purpose.
+#
+# HOW TO RUN IT. Singleplayer, in a test world, on own-profile. The stage takes down everything built
+# within thirty metres, so never near a real base.
+#
+# It LEAVES BEHIND four chests, god and ghost mode on.
+
+clear
+god
+ghost
+
+biome Meadows
+wait 3
+stage
+landed
+mark
+
+place piece_chest_private 5 -3
+place piece_chest_wood 5 -1
+place piece_chest 5 1
+place piece_chest_blackmetal 5 3
+wait 3
+
+# ---- 1. the smallest chest, a Private chest.
+
+use piece_chest_private
+wait 2
+console stow holds
+printed state=shown yes
+printed cellcount=0 no
+printed cellhits=0 yes
+printed otherhits=0 yes
+close
+wait 1
+
+# ---- 2. the wood chest.
+
+use piece_chest_wood
+wait 2
+console stow holds
+printed state=shown yes
+printed cellcount=0 no
+printed cellhits=0 yes
+printed otherhits=0 yes
+close
+wait 1
+
+# ---- 3. the Reinforced chest, the one in the screenshot.
+
+use piece_chest
+wait 2
+console stow holds
+printed state=shown yes
+printed cellcount=0 no
+printed cellhits=0 yes
+printed otherhits=0 yes
+close
+wait 1
+
+# ---- 4. the Blackmetal chest, the widest.
+
+use piece_chest_blackmetal
+wait 2
+console stow holds
+printed state=shown yes
+printed cellcount=0 no
+printed cellhits=0 yes
+printed otherhits=0 yes
+close
+
+landed
+back
