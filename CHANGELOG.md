@@ -3,6 +3,33 @@
 Notable changes to Vaettir. Format follows [Keep a Changelog](https://keepachangelog.com),
 and the mod uses [semantic versioning](https://semver.org).
 
+## [Unreleased]
+
+### Fixed
+
+- **The hod jib did not serve what a trader sells.** The Cured squirrel hamstring from the Bog
+  Witch stayed in the chest at a bench that needed it. The cause was not the recipe derivation
+  the ticket suspected: `BiomeOverrides` shipped with `CuredSquirrelHamstring:mistlands`, a pin
+  that beats every other answer, so the hamstring waited on the Queen although the Bog Witch
+  sells it in the Swamp. The pin is gone from the default, and a file still on the old default
+  is moved once. A file where you edited the list keeps its pin; delete the entry yourself.
+
+  More generally, what a trader sells is not grown, dropped or found, so nothing placed it.
+  A trader's stock is now filed under the biome of the trader: Haldor the Black Forest, the Bog
+  Witch the Swamp, Hildir the Plains, so those items come out of a chest once the Elder,
+  Bonemass or Yagluth is down. It is read off the traders' own stock when a world loads, and an
+  item that is also found or dropped in an earlier biome keeps the earlier one. An entry in
+  `BiomeOverrides` still wins. The new `TraderBiomes` setting names the three traders, and the
+  log names any trader that sells items and is not listed.
+
+  A recipe made from a traded item is still placed from its other ingredients, as before.
+
+### Added
+
+- `hod traders` prints how many items the traders of each biome sell, and what they are. `hod
+  item` gained a `sold=` token, the biome of the earliest trader selling that item.
+- Scenario `vaettir-jib-trader-items`. Not yet run in game.
+
 ## [1.6.3] - 2026-09-30
 
 ### Added

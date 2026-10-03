@@ -191,6 +191,12 @@ Which biome an item belongs to is derived from the world rather than listed: whe
 what drops it, and what recipes it feeds into. `AllowUnclassified` decides what happens to
 anything that lands in none of those, and `BiomeOverrides` is where you correct one by hand.
 
+What a trader sells is none of those, so it is filed under the trader's own biome: Haldor's stock
+opens with the Elder, the Bog Witch's with Bonemass, Hildir's with Yagluth. The stock is read off
+the traders at load, not listed, and an item that is also found or dropped earlier keeps the
+earlier biome. `TraderBiomes` names the three traders, and `hod traders` in the console says what
+each sells.
+
 ## Farming
 
 **Grid.** With the cultivator out and a plant selected, from Farming 10, the ghost snaps to a
@@ -404,7 +410,8 @@ The bench service, which is the hod jib's effect.
 | `HodRange` | 20 | How far the service reaches, measured **from the post** that carries the jib. Both which benches it serves and which chests it counts |
 | `BossBiomes` | `defeated_eikthyr:meadows, defeated_gdking:blackforest, defeated_bonemass:swamp, defeated_bonemass:ocean, …` and a Deep North row | Which global key opens which biome. Ocean rides Bonemass. A row starting with `@` names boss prefabs instead of a key, and the key is read off the first of them that carries one. The Deep North's row is written that way and names the Frozen King's three phases, because his key lives in the game's assets. Until it is found the Deep North stays shut. A file still on the old default, without that row, is moved to this once |
 | `AllowUnclassified` | true | Whether an item the mod cannot place in any biome may still be drawn from a chest |
-| `BiomeOverrides` | (a list of roots) | Corrects the derived biome for an item by hand. Everything made from an overridden root follows it |
+| `BiomeOverrides` | (a list of roots) | Corrects the derived biome for an item by hand. Everything made from an overridden root follows it. It beats `TraderBiomes` |
+| `TraderBiomes` | `Haldor:blackforest, BogWitch:swamp, Hildir:plains` | The biome each trader's stock is filed under. Read off the trader prefabs when a world loads |
 | `ShowChestTotals` | true | Add what the chests hold to the amount beside each requirement. Local to you |
 | `ChestTotalFormat` | `{have}/{need} <color=#88CCFF>+{chest}</color>` | How that total is written. A file still on the old default, `{need} <color=#88CCFF>(+{chest})</color>`, is moved to this once. Local to you |
 | `ShortMessage` | The chests could not supply it | Shown when a craft was allowed and the chests then could not supply it. Local to you |

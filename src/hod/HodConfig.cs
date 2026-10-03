@@ -36,6 +36,7 @@ namespace Hod
         public static ConfigEntry<string> BossBiomes;
         public static ConfigEntry<bool> AllowUnclassified;
         public static ConfigEntry<string> BiomeOverrides;
+        public static ConfigEntry<string> TraderBiomes;
 
         public static ConfigEntry<bool> ShowChestTotals;
         public static ConfigEntry<string> ChestTotalFormat;
@@ -204,7 +205,7 @@ namespace Hod
                 + "TrophyGoblinBruteBrosShaman:plains, GoblinSpear:plains, JuteBlue:plains, "
                 + "JuteRed:plains, BombBlob_Tar:plains, "
                 + "TrophyGrowth:mistlands, TrophyKvastur:ashlands, TrophyCharredMage:ashlands, "
-                + "CuredSquirrelHamstring:mistlands, TurretBoltBone:mistlands, "
+                + "TurretBoltBone:mistlands, "
                 // Ashlands, which is almost entirely location work.
                 + "AsksvinEgg:ashlands, AsksvinCarrionNeck:ashlands, "
                 + "AsksvinCarrionPelvic:ashlands, AsksvinCarrionRibcage:ashlands, "
@@ -232,6 +233,18 @@ namespace Hod
                 + "This is Yoke's list verbatim. The two mods ask the same question of the "
                 + "same tables and a divergence between them would be one player getting two "
                 + "different answers about one item.");
+
+            TraderBiomes = config.Bind("Hod", "TraderBiomes",
+                "Haldor:blackforest, BogWitch:swamp, Hildir:plains",
+                "trader prefab:biome, comma separated.\n"
+                + "What a trader sells is not grown, dropped or found, so the biome tables "
+                + "cannot place it. Everything a listed trader sells is filed under that "
+                + "trader's biome instead, read off the trader's own stock when a world loads, "
+                + "so the Bog Witch's wares come out of a chest once Bonemass is down, Haldor's "
+                + "once the Elder is, and Hildir's once Yagluth is. An item that is also found "
+                + "or dropped somewhere, or sold by two traders, takes the earliest biome that "
+                + "offers it. An entry in BiomeOverrides still beats this.\n"
+                + "The log names any trader prefab that sells items and is not listed here.");
 
             // ---------------------------------------------------------------- interface
 

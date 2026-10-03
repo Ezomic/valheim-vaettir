@@ -44,8 +44,12 @@ namespace Grove
         ///     Vaettir before, and on those every one of those items comes out of a chest
         ///     with no boss killed. BossBiomes is synced, so it is the host's file that
         ///     decides on a server, as with move 1.
+        /// 4 - LHM-63: BiomeOverrides lost CuredSquirrelHamstring:mistlands. That pin beat
+        ///     every other source, and the Bog Witch sells the hamstring, so a swamp item
+        ///     stayed in the chest until the Queen fell. BiomeOverrides is synced, so it is
+        ///     the host's file that decides on a server, as with move 1.
         /// </summary>
-        internal const int Current = 3;
+        internal const int Current = 4;
 
         internal static ConfigEntry<int> Revision;
 
@@ -83,6 +87,17 @@ namespace Grove
                     + "defeated_bonemass:swamp, defeated_bonemass:ocean, "
                     + "defeated_dragon:mountain, defeated_goblinking:plains, "
                     + "defeated_queen:mistlands, defeated_fader:ashlands");
+            }
+
+            if (Revision.Value < 4)
+            {
+                // The default as it stood in 1.6.3 is today's with the pin put back in front of
+                // TurretBoltBone. A list anyone edited reads differently and is left alone,
+                // including one that keeps the pin on purpose.
+                var overrides = Hod.HodConfig.BiomeOverrides;
+                if (overrides != null && overrides.DefaultValue is string)
+                    Moved(overrides, ((string)overrides.DefaultValue).Replace("TurretBoltBone:mistlands",
+                        "CuredSquirrelHamstring:mistlands, TurretBoltBone:mistlands"));
             }
 
             Revision.Value = Current;
