@@ -1,0 +1,164 @@
+# Vaettir: a trader's stock is gated by the trader's own biome. With only the Black Forest boss down, the
+# Bog Witch's Cured squirrel hamstring stays in the chest, and it comes out once Bonemass is down. LHM-63.
+#
+# The bug. A saved BiomeOverrides still pinned CuredSquirrelHamstring:mistlands, a line the default carried
+# from the Hirsla fold until this fix. A pin beats every derived answer, and the Bog Witch (a Swamp NPC) sells
+# the hamstring, so a player who had beaten Bonemass and not the Queen was told by the bench that the
+# chest held none of it. Nothing in the log said why. Now the pin is gone from the default (and moved off
+# files still on the old default), and a trader's stock is filed under the biome of the trader that sells
+# it: Haldor the Black Forest, the Bog Witch the Swamp, Hildir the Plains. HodTraders reads each trader
+# prefab's Trader.m_items when a world loads, so no item is named in code.
+#
+# What it proves.
+#  1. `hod traders` finds stock for all three traders: blackforest=, swamp= and plains= are each a number
+#     other than zero, and scene=ready. If a trader prefab is renamed or the stock moves, a zero here is
+#     the quiet failure this scenario exists for. The names follow on indented lines for the log.
+#  2. With only the Black Forest boss down, the hamstring reads biome=swamp sold=swamp, boss=defeated_bonemass,
+#     all five in reach, none offered, gate=shut. It is held back because Bonemass is alive, not because it
+#     is unplaced.
+#  3. With Bonemass down as well, all five are offered and the gate is open.
+#
+# Haldor's and Hildir's stock is checked by count only. The names of what they sell are asset data this
+# repo cannot read without the game, so no item is written down here that a first run has not shown.
+# Add a line per item from the `hod traders` output once it has been read; the shape is block 2 and 3
+# with the item name and its trader's biome and boss key.
+#
+# WHAT IT CANNOT SEE: that the Bog Witch's prefab is named BogWitch in this build (a zero swamp count would
+# say so), a craft actually taking the hamstring out of the chest (the Mead Ketill's recipe is not asked
+# here; `craftable` has no recipe to name for a bare ingredient), and a world whose saved cfg still pins
+# the hamstring. On such a file block 2 reads biome=mistlands and fails, which is the right answer: delete
+# the pin from BiomeOverrides.
+#
+# HOW TO RUN IT. Singleplayer, in a test world, on own-profile, like vaettir-jib-deep-north-items.txt, whose
+# warning about `stage` taking down everything within thirty metres applies here too.
+#
+# It LEAVES BEHIND the shed, the post, the jib and the chest, god and ghost mode on, and the world with NO
+# boss key set: every vanilla boss key is removed at the start, Black Forest's and Bonemass's are set along
+# the way and removed again at the end. Use a test world.
+
+clear
+give Hammer:1,Hoe:1
+give FineWood:250,BronzeNails:40,IronNails:52,Chain:4,GroveHeartwood:6
+# Wood and LeatherScraps so the bow is in the crafting panel at all: a recipe only appears once the
+# character has carried every material once. Both are stripped again below.
+give Wood:100,LeatherScraps:60,Stone:40
+god
+ghost
+
+# The Meadows, found rather than promised, because a suite run starts wherever the scenario
+# before it left you. On 2026-09-28 that was the Deep North, inside the Queen's entrance
+# utangard-queen-door-stays-sealed spawns, and ten Vaettir files failed on the place and not
+# on the mod: tilling refused as snow too deep, and the entrance's own pieces, cut through by
+# `wipe`, falling and dropping copper scrap. Already in the Meadows, this does not move you.
+biome Meadows
+wait 3
+
+# Cleared and levelled where `biome` left you: every piece, drop, tree and rock within thirty
+# metres taken down, EVERYTHING built and not just what a scenario placed, and the ground levelled
+# to the height under your feet. Devkit's automatic stage before the first step ran where the file
+# before left you, which is not here when `biome` moved you. This replaces the `sweep` and
+# `wipe 14` that stood here and the `flatten 4.4 0` that stood after `mark`: the stage does all
+# three over more ground, to the same height.
+stage
+
+# Down onto the ground, which the stage has already put you on, and remember the spot for the
+# `back` at the end. See vaettir-jib-requirement-line.txt.
+landed
+mark
+
+# The shed goes on the stage's level ground, which reaches well past its back 5.5m out. On
+# 2026-09-28 it was not levelled at all. Devkit's `flatten` then aimed at the camera's look point,
+# and in 1.0 the game cancelled its op every time ("Failed to deserialize TerrainOp settings")
+# while the note said "Levelled", so the shed went up half over a pit a metre deep that the last
+# Furrow scenario's tilling had left (Jafna was holding a height more than 20m below the ground,
+# and the cultivator smooths toward it). Its front beams sat 0.9m lower than its floor a metre
+# behind them, and the bench stood 1.3m above the spot `goto` found and 2.3m from it, past
+# CraftingStation.m_useDistance (2m unless the prefab says otherwise), so `use` was refused, the
+# jib's scope stayed shut, and every count below read 0 for that reason alone. Devkit 1b48353 made
+# `flatten` level for real, and `flatten 4.4 0` levelled ten metres round the shed's middle here
+# until the stage came to level all of it.
+#
+# The shelter and bench, captured from one built by hand. See vaettir-jib-gate.txt.
+place wood_beam 3.2 1.0 5 0.01
+place wood_beam 3.4 -1.0 -174 0.00
+place wood_floor 4.2 1.1 -174 0.02
+place wood_floor 4.4 -0.9 -174 0.03
+place wood_beam 4.1 2.1 -84 0.00
+place wood_beam 4.5 -1.9 -84 0.03
+place wood_beam 5.2 1.2 -174 0.00
+place wood_beam 5.4 -0.8 -174 0.06
+place piece_workbench 4.6 0.1 -174 0.10
+place wood_pole2 3.1 2.0 5 1.04
+place wood_pole2 3.5 -2.0 5 1.00
+place woodwall 4.1 2.1 96 1.00
+place woodwall 4.5 -1.9 -84 1.03
+place woodwall 5.2 1.2 5 1.00
+place woodwall 5.4 -0.8 5 1.06
+place wood_pole2 5.1 2.2 5 1.01
+place wood_pole2 5.5 -1.8 5 1.07
+place wood_roof_ocorner_45 4.2 1.1 5 2.02
+place wood_roof_ocorner_45 4.4 -0.9 -84 2.03
+place wood_beam 4.1 2.1 95 2.00
+place wood_beam 4.5 -1.9 -84 2.03
+place wood_beam 5.2 1.2 5 2.00
+place wood_beam 5.4 -0.8 5 2.06
+place wood_beam_45 3.2 1.0 -174 3.01
+place wood_beam_45 3.4 -1.0 6 3.00
+wait 2
+place stow_post 9 2
+wait 6
+place hod_jib 9 4
+wait 4
+place piece_chest_wood 7 3
+wait 2
+
+stock piece_chest_wood CuredSquirrelHamstring:5
+
+unkey defeated_eikthyr
+unkey defeated_gdking
+unkey defeated_bonemass
+unkey defeated_dragon
+unkey defeated_goblinking
+unkey defeated_queen
+unkey defeated_fader
+wait 2
+key defeated_gdking
+wait 2
+
+goto piece_workbench
+wait 1
+use piece_workbench
+wait 1
+
+# ---- 1. every trader's stock was read.
+
+console hod traders
+printed scene=ready yes
+printed blackforest=0 no
+printed swamp=0 no
+printed plains=0 no
+
+# ---- 2. the Black Forest is open and the Swamp is not, so the Bog Witch's hamstring stays in the chest.
+
+console hod item CuredSquirrelHamstring
+printed item=CuredSquirrelHamstring index=complete scope=open yes
+printed biome=swamp yes
+printed sold=swamp yes
+printed boss=defeated_bonemass yes
+printed reach=5 offered=0 gate=shut yes
+
+# ---- 3. Bonemass down, set by hand as his death would set it, and it comes out.
+
+key defeated_bonemass
+wait 2
+
+console hod item CuredSquirrelHamstring
+printed biome=swamp yes
+printed reach=5 offered=5 gate=open yes
+
+close
+unkey defeated_bonemass
+unkey defeated_gdking
+
+landed
+back

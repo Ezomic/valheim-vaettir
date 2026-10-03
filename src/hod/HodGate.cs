@@ -152,7 +152,7 @@ namespace Hod
             // before a player exists to craft anything.
             if (!BiomeIndex.Complete) return true;
 
-            var biome = BiomeIndex.BiomeOf(prefabName);
+            var biome = BiomeOf(prefabName);
 
             // Fail open, on purpose and with a setting behind it. A false block reads as a
             // broken mod - the material is visibly in the chest and the bench refuses it -
@@ -186,6 +186,26 @@ namespace Hod
             }
 
             return Open().Contains(biome);
+        }
+
+        /// <summary>
+        /// The biome an item is gated by: the index's answer, brought forward to the biome of
+        /// the earliest trader that sells it. An override in BiomeOverrides is the correction
+        /// path and is never second-guessed, and an item no trader sells is the index's answer
+        /// untouched. See HodTraders for why this is not in the index itself.
+        /// </summary>
+        public static string BiomeOf(string prefabName)
+        {
+            var indexed = BiomeIndex.BiomeOf(prefabName);
+            if (HodTraders.Pinned(prefabName)) return indexed;
+
+            var sold = HodTraders.BiomeOf(prefabName);
+            if (sold == BiomeIndex.None) return indexed;
+            if (indexed == BiomeIndex.None) return sold;
+
+            return System.Array.IndexOf(BiomeIndex.All, sold) < System.Array.IndexOf(BiomeIndex.All, indexed)
+                ? sold
+                : indexed;
         }
 
         /// <summary>

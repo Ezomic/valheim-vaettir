@@ -215,6 +215,7 @@ namespace Hod
                 // first world's item database - and the two disagree the moment a mod is
                 // added or removed between them.
                 BiomeIndex.Invalidate();
+                HodTraders.Invalidate();
                 BiomeIndex.Prepare();
             }
             catch (System.Exception e)

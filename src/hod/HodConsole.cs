@@ -33,6 +33,10 @@ namespace Hod
     /// Devkit's `printed` step matches a substring and a scenario pins a count by asserting it
     /// together with its neighbour: "offered=5" alone is also true of "offered=50".
     ///
+    /// sold= is the biome of the earliest trader that sells the item, or none (LHM-63), and biome=
+    /// is the one the gate uses: the earlier of that and the index's own answer. `hod traders`
+    /// prints how many items the traders of each biome sell, as biome=count tokens.
+    ///
     /// boss= is the key the biome's BossBiomes row waits on. It reads boss=none when no row
     /// names the biome, which is why such a biome is open, and boss=unresolved when the row
     /// reads its key off a boss prefab and has not found one in this world, which is why such a
@@ -112,9 +116,16 @@ namespace Hod
             var term = args.Context;
             if (term == null) return;
 
+            if (args.Length >= 2 && args[1].ToLowerInvariant() == "traders")
+            {
+                term.AddString(HodTraders.Describe());
+                return;
+            }
+
             if (args.Length < 3 || args[1].ToLowerInvariant() != "item")
             {
-                term.AddString("hod item <prefab>, for example hod item Wood, standing at a station a hod jib serves.");
+                term.AddString("hod item <prefab>, for example hod item Wood, standing at a station a hod jib serves. "
+                               + "hod traders says how many items each biome's traders sell.");
                 return;
             }
 
@@ -146,7 +157,7 @@ namespace Hod
 
         private static string Describe(string prefabName, string sharedName)
         {
-            var biome = BiomeIndex.BiomeOf(prefabName);
+            var biome = HodGate.BiomeOf(prefabName);
 
             // A key, HodGate.Unresolved, or null for no row. See the class docstring.
             var boss = HodGate.BossOf(biome);
@@ -158,7 +169,8 @@ namespace Hod
                    + " boss=" + (boss ?? "none")
                    + " reach=" + Reach(sharedName)
                    + " offered=" + HodChests.CountAllowed(sharedName, -1, true)
-                   + " gate=" + (HodGate.Allows(prefabName) ? "open" : "shut");
+                   + " gate=" + (HodGate.Allows(prefabName) ? "open" : "shut")
+                   + " sold=" + HodTraders.BiomeOf(prefabName);
         }
 
         /// <summary>
