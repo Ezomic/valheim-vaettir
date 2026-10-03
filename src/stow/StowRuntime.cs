@@ -162,11 +162,23 @@ namespace Stow
         /// The grid is sized and filled here, a frame after Show, so this is the first moment
         /// the button can be placed against real cells. See RulesButton.Place.
         /// </summary>
+        private static bool _placeFailed;
+
         [HarmonyPostfix]
         [HarmonyPatch(typeof(InventoryGui), "UpdateContainer")]
         private static void PlaceRulesButton(InventoryGui __instance)
         {
-            RulesButton.Place(__instance);
+            // Runs inside InventoryGui.Update every frame the window is open, so a failure
+            // here must cost the button and never the inventory.
+            try { RulesButton.Place(__instance); }
+            catch (System.Exception e)
+            {
+                if (!_placeFailed)
+                {
+                    _placeFailed = true;
+                    StowRuntime.Log.LogWarning("Holds button placement failed, leaving it where it is: " + e);
+                }
+            }
         }
 
         // ------------------------------------------------------------------ hover

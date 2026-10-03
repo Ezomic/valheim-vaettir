@@ -23,6 +23,10 @@ and the mod uses [semantic versioning](https://semver.org).
   log names any trader that sells items and is not listed.
 
   A recipe made from a traded item is still placed from its other ingredients, as before.
+
+  A changed `TraderBiomes` or `BiomeOverrides` now takes effect without a world reload. A
+  `BiomeOverrides` entry with a biome that is not one (`Wood:swampp`) is ignored by the index
+  and no longer cancels the trader rule for that item either.
 - **The Holds button covered an inventory slot in a wide chest.** It sat one button-height under
   Place stacks, which is empty space in a narrow chest and the top right slot in a Reinforced
   chest, hiding half of the stack in it. The button now goes in the row Place stacks is in, to its
