@@ -158,6 +158,17 @@ namespace Stow
             RulesButton.Sync(__instance, container);
         }
 
+        /// <summary>
+        /// The grid is sized and filled here, a frame after Show, so this is the first moment
+        /// the button can be placed against real cells. See RulesButton.Place.
+        /// </summary>
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(InventoryGui), "UpdateContainer")]
+        private static void PlaceRulesButton(InventoryGui __instance)
+        {
+            RulesButton.Place(__instance);
+        }
+
         // ------------------------------------------------------------------ hover
 
         /// <summary>
