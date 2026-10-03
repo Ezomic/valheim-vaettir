@@ -291,6 +291,10 @@ and later require Valheim 1.0; 1.4.2 and earlier do not run on it.
 
 ## Configuration
 
+With [Core](https://github.com/Ezomic/valheim-core) installed, the six planting keys (`GridPinKey`,
+`IncreaseKey`, `DecreaseKey`, `ShapeKey`, `GridFreeKey`, `GridTurnKey`) are also on the Settings page of the
+compendium, where a key is rebound by pressing it.
+
 One file, `BepInEx/config/ezomic.valheim.vaettir.cfg`, written on first run. Every entry carries
 its reasoning as a comment in the file.
 
