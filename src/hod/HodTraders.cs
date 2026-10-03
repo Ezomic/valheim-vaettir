@@ -33,11 +33,15 @@ namespace Hod
         private static Dictionary<string, string> _biomeOf = new Dictionary<string, string>();
         private static ZNetScene _scene;
         private static bool _built;
+        private static string _builtFrom;
+        private static string _pinnedFrom;
+        private static HashSet<string> _pinned = new HashSet<string>();
 
         public static void Invalidate()
         {
             _built = false;
             _scene = null;
+            _builtFrom = null;
             _biomeOf = new Dictionary<string, string>();
         }
 
@@ -114,13 +118,30 @@ namespace Hod
         {
             var raw = HodConfig.BiomeOverrides == null ? "" : HodConfig.BiomeOverrides.Value ?? "";
 
-            foreach (var entry in raw.Split(','))
+            // Rebuilt only when the string changes: this is asked per item per frame by the
+            // chest tally, and splitting the whole list every time was the cost.
+            if (_pinnedFrom == null || _pinnedFrom != raw)
             {
-                var parts = entry.Trim().Split(':');
-                if (parts.Length == 2 && parts[0].Trim() == prefabName) return true;
+                var set = new HashSet<string>();
+                foreach (var entry in raw.Split(','))
+                {
+                    var parts = entry.Trim().Split(':');
+                    if (parts.Length != 2) continue;
+
+                    // The same test BiomeIndex.ApplyOverrides applies. An entry it skips
+                    // (Wood:swampp) pins nothing there, so it must not stop the trader rule
+                    // here either, or the item loses its trader biome to a typo.
+                    var biome = parts[1].Trim().ToLowerInvariant();
+                    if (biome == BiomeIndex.None || Array.IndexOf(BiomeIndex.All, biome) < 0) continue;
+
+                    set.Add(parts[0].Trim());
+                }
+
+                _pinned = set;
+                _pinnedFrom = raw;
             }
 
-            return false;
+            return _pinned.Contains(prefabName);
         }
 
         private static void Ensure()
@@ -131,7 +152,8 @@ namespace Hod
             // ObjectDB.Awake, before any ZNetScene exists, and caching an empty map there
             // would leave every trader item unplaced for the rest of the session.
             if (scene == null || scene.m_prefabs == null) return;
-            if (_built && _scene == scene) return;
+            var setting = HodConfig.TraderBiomes == null ? "" : HodConfig.TraderBiomes.Value ?? "";
+            if (_built && _scene == scene && _builtFrom == setting) return;
 
             var found = new Dictionary<string, string>();
             var unmatched = new List<string>();
@@ -164,6 +186,7 @@ namespace Hod
 
             _biomeOf = found;
             _scene = scene;
+            _builtFrom = setting;
             _built = true;
 
             GrovePlugin.Log.LogInfo("Trader stock placed: " + found.Count + " item(s) filed by the "

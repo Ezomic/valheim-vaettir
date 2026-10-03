@@ -197,10 +197,12 @@ namespace Hod
         public static string BiomeOf(string prefabName)
         {
             var indexed = BiomeIndex.BiomeOf(prefabName);
-            if (HodTraders.Pinned(prefabName)) return indexed;
 
+            // The cheap lookup first: nearly every item is sold by no trader, and Pinned is
+            // only worth asking for the few that are.
             var sold = HodTraders.BiomeOf(prefabName);
             if (sold == BiomeIndex.None) return indexed;
+            if (HodTraders.Pinned(prefabName)) return indexed;
             if (indexed == BiomeIndex.None) return sold;
 
             return System.Array.IndexOf(BiomeIndex.All, sold) < System.Array.IndexOf(BiomeIndex.All, indexed)

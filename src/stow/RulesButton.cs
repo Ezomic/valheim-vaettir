@@ -89,6 +89,9 @@ namespace Stow
             var beside = new Rect(row.xMin - gap - size.x, layout.Stack.y, size.x, size.y);
             var below = new Rect(layout.Stack.xMax - size.x, layout.LowestCell - gap - size.y, size.x, size.y);
 
+            if (layout.Panel.width > 0f && below.yMin < layout.Panel.yMin)
+                below.y += layout.Panel.yMin - below.yMin;
+
             var chosen = below;
             if ((layout.Panel.width <= 0f || Inside(layout.Panel, beside)) && layout.Overlaps(beside) == 0)
                 chosen = beside;
@@ -162,7 +165,9 @@ namespace Stow
             for (var i = 0; i < grid.m_gridRoot.childCount; i++)
             {
                 var child = grid.m_gridRoot.GetChild(i) as RectTransform;
-                if (child == null || !child.gameObject.activeInHierarchy) continue;
+                // InventoryGrid destroys its old cells deferred, so for a frame they are still
+                // there and still active; a destroyed one compares equal to null.
+                if (child == null || child.gameObject == null || !child.gameObject.activeInHierarchy) continue;
 
                 var cell = Clip(In(parent, child), viewport);
                 if (cell.width <= 0f || cell.height <= 0f) continue;
