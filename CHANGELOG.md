@@ -23,12 +23,21 @@ and the mod uses [semantic versioning](https://semver.org).
   log names any trader that sells items and is not listed.
 
   A recipe made from a traded item is still placed from its other ingredients, as before.
+- **The Holds button covered an inventory slot in a wide chest.** It sat one button-height under
+  Place stacks, which is empty space in a narrow chest and the top right slot in a Reinforced
+  chest, hiding half of the stack in it. The button now goes in the row Place stacks is in, to its
+  left, which the grid never reaches. It is checked against the slots, Take all, Place stacks, the
+  window's edge and the title's text, and when the row has no room it goes under the lowest row of
+  slots instead. It is placed after the grid is drawn, every frame the window updates.
 
 ### Added
 
 - `hod traders` prints how many items the traders of each biome sell, and what they are. `hod
   item` gained a `sold=` token, the biome of the earliest trader selling that item.
 - Scenario `vaettir-jib-trader-items`. Not yet run in game.
+- `stow holds` in the console prints where the button is and how many slots, buttons and title
+  letters it covers. Scenario `vaettir-holds-button-clear-of-cells` asks it for four chest sizes.
+  Not yet run in game.
 
 ## [1.6.3] - 2026-09-30
 
