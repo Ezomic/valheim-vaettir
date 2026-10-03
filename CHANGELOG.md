@@ -5,6 +5,12 @@ and the mod uses [semantic versioning](https://semver.org).
 
 ## [Unreleased]
 
+### Added
+
+- **The planting grid's six keys are on Core's Settings page (LHM-51)**: pin, seeds up, seeds down,
+  row or circle, grid free and grid turn. It is the page in the compendium that lists a player's own
+  settings and rebinds a key by pressing it. Without Core nothing changes. Built, not run in game.
+
 ### Fixed
 
 - **The hod jib did not serve what a trader sells.** The Cured squirrel hamstring from the Bog

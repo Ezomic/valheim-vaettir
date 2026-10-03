@@ -521,6 +521,29 @@ namespace Grove
             Suite.Local(Thicket.ThicketConfig.Scale,
                         Thicket.ThicketConfig.SayTheLevel,
                         Thicket.ThicketConfig.Verbose);
+
+            try { ListOnSettingsScreen(); }
+            catch (System.Exception e) { Log.LogInfo("Core has no settings screen to list on, so these settings are in the .cfg only: " + e.Message); }
+        }
+
+        /// <summary>
+        /// The settings this mod lists on Core's settings screen (LHM-51). Never inlined and called
+        /// inside a try, so an older Core that has no such screen costs the listing and nothing
+        /// else, and the JIT only meets the type on a machine that has it.
+        /// </summary>
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+        private void ListOnSettingsScreen()
+        {
+            // The planting grid's six keys on Core's settings screen (LHM-51). The four with a
+            // default read as their key names in the list, the two that default to None stay out
+            // of that line so it does not fill with Nones.
+            const string planting = "while planting with the cultivator";
+            SettingsPanel.Add(Furrow.FurrowConfig.GridPinKey, "Grid pin", SettingsGroup.Hotkeys, planting, "{0}");
+            SettingsPanel.Add(Furrow.FurrowConfig.IncreaseKey, "Seeds up", SettingsGroup.Hotkeys, planting, "{0}");
+            SettingsPanel.Add(Furrow.FurrowConfig.DecreaseKey, "Seeds down", SettingsGroup.Hotkeys, planting, "{0}");
+            SettingsPanel.Add(Furrow.FurrowConfig.ShapeKey, "Row or circle", SettingsGroup.Hotkeys, planting, "{0}");
+            SettingsPanel.Add(Furrow.FurrowConfig.GridFreeKey, "Grid free", SettingsGroup.Hotkeys, planting, "");
+            SettingsPanel.Add(Furrow.FurrowConfig.GridTurnKey, "Grid turn", SettingsGroup.Hotkeys, planting, "");
         }
 
 
