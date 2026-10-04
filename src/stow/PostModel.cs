@@ -78,6 +78,34 @@ namespace Stow
             new Dictionary<string, Rect>(StringComparer.OrdinalIgnoreCase);
 
         /// <summary>
+        /// Groups skinned from the workbench's atlas, mapped by position in metres rather
+        /// than from the OBJ's own UVs, and the width of the sheet each one samples.
+        /// </summary>
+        private static readonly HashSet<string> Metric =
+            new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        private static readonly Dictionary<string, int> TexPx =
+            new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+
+        // The workbench's WorkBench_d sheet is 256px of hand-painted islands on black,
+        // measured from the Devkit rip (own-profile rips/piece_workbench). A rect found
+        // by "the biggest triangle" lands on the painted edge of an island or in the
+        // gutter, so these are measured once and inset past each island's worn rim. They
+        // are only used after the texture's name and size confirm it is that sheet.
+        //
+        // The straps and base use the bench's darker plank island, not its flat leather
+        // island. The post's parts overlap coplanar by design, and where two coplanar
+        // faces fight over a pixel a flat dark brown against grained wood reads as black
+        // bars; two woods of different depth read as old boards.
+        private const string WorkbenchSheet = "WorkBench_d";
+        private static readonly Rect WorkbenchPlanks = new Rect(0.06f, 0.15f, 0.84f, 0.31f);
+        private static readonly Rect WorkbenchLashing = new Rect(0.09f, 0.60f, 0.17f, 0.30f);
+
+        // Vanilla furniture measures 40 to 45 texels per metre across the chest, the
+        // workbench and the shelf; the round-log props sit near 28.
+        private const float TexelsPerMetre = 42f;
+
+        /// <summary>
         /// Swaps the donor's visuals for ours. Returns false if the model is missing, in
         /// which case the caller keeps the donor's look rather than shipping an invisible
         /// piece.
@@ -257,12 +285,17 @@ namespace Stow
         {
             Cache.Clear();
             Atlas.Clear();
+            Metric.Clear();
+            TexPx.Clear();
         }
 
         private static Material Borrow(string group)
         {
             Material cached;
             if (Cache.TryGetValue(group, out cached)) return cached;
+
+            var bench = BorrowWorkbench(group);
+            if (bench != null) return bench;
 
             foreach (var raw in DonorsFor(group))
             {
@@ -297,6 +330,62 @@ namespace Stow
             }
 
             Cache[group] = null;
+            return null;
+        }
+
+        /// <summary>
+        /// The workbench's own material for the groups that are timber, straps or base.
+        ///
+        /// Returns null, and the old donors run, when the skin is switched off, the bench
+        /// is not loaded, or the material is not the sheet this was measured on. That last
+        /// check matters: the rects below are only right for WorkBench_d at 256px, and a
+        /// patch or a modded bench that changes it must fall back rather than paint the
+        /// post from the gutters.
+        ///
+        /// The material is borrowed whole and never has its _MainTex swapped, so its
+        /// normal map, smoothness and noise come with it exactly as the bench has them.
+        /// </summary>
+        private static Material BorrowWorkbench(string group)
+        {
+            if (string.Equals(group, GlowGroup, StringComparison.OrdinalIgnoreCase)) return null;
+
+            var skin = StowConfig.PostSkin != null ? StowConfig.PostSkin.Value : "";
+            if (!string.Equals((skin ?? "").Trim(), "workbench", StringComparison.OrdinalIgnoreCase))
+                return null;
+
+            var donor = PropIndex.Find("piece_workbench");
+            if (donor == null) return null;
+
+            foreach (var renderer in donor.GetComponentsInChildren<MeshRenderer>(true))
+            {
+                var material = renderer.sharedMaterial;
+                if (material == null || material.shader == null) continue;
+
+                // The new bench, not Worn or Broken: their names start the same way.
+                if (!material.name.StartsWith("Workbench_mat", StringComparison.Ordinal)) continue;
+
+                var sheet = material.mainTexture;
+                if (sheet == null || sheet.name != WorkbenchSheet || sheet.width != 256) continue;
+
+                var st = material.mainTextureScale;
+                if (Mathf.Abs(st.x - 1f) > 0.001f || Mathf.Abs(st.y - 1f) > 0.001f) continue;
+
+                var lashing = string.Equals(group, "iron", StringComparison.OrdinalIgnoreCase)
+                              || string.Equals(group, "rope", StringComparison.OrdinalIgnoreCase);
+
+                Cache[group] = material;
+                Atlas[group] = lashing ? WorkbenchLashing : WorkbenchPlanks;
+                TexPx[group] = sheet.width;
+                Metric.Add(group);
+
+                StowRuntime.Log.LogInfo(string.Format(
+                    "Group '{0}' skinned with {1} from piece_workbench, {2} rect {3}.",
+                    group, material.name, lashing ? "lashing" : "plank", Atlas[group]));
+                return material;
+            }
+
+            StowRuntime.Log.LogInfo("PostSkin is workbench but the bench material was not "
+                + "the sheet this was measured on; group '" + group + "' keeps the classic donors.");
             return null;
         }
 
@@ -384,6 +473,185 @@ namespace Stow
             return bestArea > 0f ? best : whole;
         }
 
+        private sealed class Island
+        {
+            public readonly List<int> Verts = new List<int>();
+        }
+
+        private static int Find(int[] parent, int i)
+        {
+            while (parent[i] != i)
+            {
+                parent[i] = parent[parent[i]];
+                i = parent[i];
+            }
+            return i;
+        }
+
+        private static long Quantise(Vector3 v)
+        {
+            long x = Mathf.RoundToInt(v.x * 1000f), y = Mathf.RoundToInt(v.y * 1000f),
+                 z = Mathf.RoundToInt(v.z * 1000f);
+            return (x & 0x1FFFFF) | ((y & 0x1FFFFF) << 21) | ((z & 0x1FFFFF) << 42);
+        }
+
+        private static float Hash01(int a, int b)
+        {
+            unchecked
+            {
+                var h = (uint)(a * 73856093) ^ (uint)(b * 19349663);
+                h ^= h >> 13;
+                h *= 0x5bd1e995;
+                h ^= h >> 15;
+                return (h & 0xFFFF) / 65535f;
+            }
+        }
+
+        private static void Project(Vector3 v, int axis, out float p, out float q)
+        {
+            if (axis == 0) { p = v.y; q = v.z; }
+            else if (axis == 1) { p = v.x; q = v.z; }
+            else { p = v.x; q = v.y; }
+        }
+
+        /// <summary>
+        /// Maps the groups skinned from the workbench atlas by where their triangles are,
+        /// ignoring the UVs in the OBJ.
+        ///
+        /// Those UVs are Blender primitive defaults, where a 3cm strap and a 1.2m plank
+        /// claim the same patch of texture. Rather than re-export the meshes, the unwrap is
+        /// done here from positions: parts are found by welding vertices that sit at the
+        /// same point, each part is cube-projected one island per facing, scaled to
+        /// TexelsPerMetre, its longer side laid along the sheet vertical because that is
+        /// the way the bench grain runs, and the island is placed inside the group rect and
+        /// never allowed to leave it (clamped by scaling down, not wrapped). Where in the
+        /// rect an island lands is a hash of which part it is, so neighbouring boards do
+        /// not repeat each other.
+        ///
+        /// Returns how many groups were placed.
+        /// </summary>
+        private static int FitMetric(Mesh mesh, string[] groups, int count, Vector2[] uv, bool[] done)
+        {
+            var any = false;
+            for (var i = 0; i < count; i++) any |= Metric.Contains(groups[i]);
+            if (!any) return 0;
+
+            var verts = mesh.vertices;
+            if (verts == null || verts.Length != uv.Length) return 0;
+
+            var parent = new int[verts.Length];
+            for (var i = 0; i < parent.Length; i++) parent[i] = i;
+
+            var byPoint = new Dictionary<long, int>();
+            for (var i = 0; i < verts.Length; i++)
+            {
+                var key = Quantise(verts[i]);
+                int other;
+                if (byPoint.TryGetValue(key, out other)) parent[Find(parent, i)] = Find(parent, other);
+                else byPoint[key] = i;
+            }
+
+            // A triangle also welds its own corners: bevel vertices can differ in the third
+            // decimal and the part must still come out as one part.
+            for (var g = 0; g < count; g++)
+            {
+                if (!Metric.Contains(groups[g])) continue;
+
+                var tris = mesh.GetTriangles(g);
+                for (var t = 0; t + 2 < tris.Length; t += 3)
+                {
+                    parent[Find(parent, tris[t + 1])] = Find(parent, tris[t]);
+                    parent[Find(parent, tris[t + 2])] = Find(parent, tris[t]);
+                }
+            }
+
+            var placed = 0;
+
+            for (var g = 0; g < count; g++)
+            {
+                if (!Metric.Contains(groups[g])) continue;
+
+                Rect rect;
+                int px;
+                if (!Atlas.TryGetValue(groups[g], out rect) || !TexPx.TryGetValue(groups[g], out px))
+                    continue;
+
+                var tris = mesh.GetTriangles(g);
+                var islands = new Dictionary<long, Island>();
+                var taken = new HashSet<int>();
+
+                for (var t = 0; t + 2 < tris.Length; t += 3)
+                {
+                    var a = tris[t];
+                    var b = tris[t + 1];
+                    var c = tris[t + 2];
+                    if (done[a] && done[b] && done[c]) continue;
+
+                    var n = Vector3.Cross(verts[b] - verts[a], verts[c] - verts[a]);
+                    var ax = Mathf.Abs(n.x) >= Mathf.Abs(n.y) && Mathf.Abs(n.x) >= Mathf.Abs(n.z)
+                        ? 0 : (Mathf.Abs(n.y) >= Mathf.Abs(n.z) ? 1 : 2);
+
+                    var id = ((long)Find(parent, a) << 2) | (long)ax;
+                    Island isl;
+                    if (!islands.TryGetValue(id, out isl)) islands[id] = isl = new Island();
+
+                    var corners = new[] { a, b, c };
+                    foreach (var v in corners)
+                    {
+                        if (done[v] || !taken.Add(v)) continue;
+                        isl.Verts.Add(v);
+                    }
+                }
+
+                var scale = TexelsPerMetre / Mathf.Max(1, px);
+
+                foreach (var pair in islands)
+                {
+                    var isl = pair.Value;
+                    if (isl.Verts.Count == 0) continue;
+                    var ax = (int)(pair.Key & 3);
+
+                    var minA = float.MaxValue; var maxA = float.MinValue;
+                    var minB = float.MaxValue; var maxB = float.MinValue;
+                    foreach (var v in isl.Verts)
+                    {
+                        float p, q;
+                        Project(verts[v], ax, out p, out q);
+                        minA = Mathf.Min(minA, p); maxA = Mathf.Max(maxA, p);
+                        minB = Mathf.Min(minB, q); maxB = Mathf.Max(maxB, q);
+                    }
+
+                    // The longer side runs along the sheet vertical, which is the grain.
+                    var swap = (maxA - minA) > (maxB - minB);
+                    var extS = swap ? maxB - minB : maxA - minA;
+                    var extT = swap ? maxA - minA : maxB - minB;
+
+                    var fit = Mathf.Min(1f, Mathf.Min(
+                        rect.width / Mathf.Max(extS * scale, 1e-5f),
+                        rect.height / Mathf.Max(extT * scale, 1e-5f)));
+                    var k = scale * fit;
+
+                    var seed = (int)(pair.Key & 0x7FFFFFFF);
+                    var ox = rect.x + Hash01(seed, 1) * Mathf.Max(0f, rect.width - extS * k);
+                    var oy = rect.y + Hash01(seed, 2) * Mathf.Max(0f, rect.height - extT * k);
+
+                    foreach (var v in isl.Verts)
+                    {
+                        float p, q;
+                        Project(verts[v], ax, out p, out q);
+                        var sOff = swap ? q - minB : p - minA;
+                        var tOff = swap ? p - minA : q - minB;
+                        uv[v] = new Vector2(ox + sOff * k, oy + tOff * k);
+                        done[v] = true;
+                    }
+                }
+
+                placed++;
+            }
+
+            return placed;
+        }
+
         /// <summary>
         /// Squeezes each submesh's UVs into its material's slice of the atlas.
         ///
@@ -407,9 +675,12 @@ namespace Stow
             // a sliver of a texel, stretched across the face.
             var done = new bool[uv.Length];
 
+            moved += FitMetric(mesh, groups, count, uv, done);
+
             for (var i = 0; i < count; i++)
             {
                 Rect rect;
+                if (Metric.Contains(groups[i])) continue;
                 if (!Atlas.TryGetValue(groups[i], out rect)) continue;
                 if (rect.width >= 0.999f && rect.height >= 0.999f) continue;
 

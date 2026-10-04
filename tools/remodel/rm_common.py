@@ -164,7 +164,7 @@ def stat_line(label, st):
 
 # --------------------------------------------------------------------------- stage
 
-def stage(ground_size=80.0):
+def stage(ground_size=80.0, key_energy=None, fill_energy=None, sky=None):
     bpy.ops.mesh.primitive_plane_add(size=ground_size, location=(0, 0, 0))
     plane = bpy.context.active_object
     gm = bpy.data.materials.new("ground")
@@ -176,20 +176,20 @@ def stage(ground_size=80.0):
     # to Unity +z, the front. Frame-left is therefore +x.
     bpy.ops.object.light_add(type="SUN", location=(3, 4, 6))
     key = bpy.context.active_object
-    key.data.energy = KEY
+    key.data.energy = KEY if key_energy is None else key_energy
     key.data.angle = math.radians(3.0)
     key.rotation_euler = (math.radians(52.0), 0.0, math.radians(200.0))
 
     bpy.ops.object.light_add(type="SUN", location=(-3, 4, 3))
     fill = bpy.context.active_object
-    fill.data.energy = FILL
+    fill.data.energy = FILL if fill_energy is None else fill_energy
     fill.rotation_euler = (math.radians(68.0), 0.0, math.radians(140.0))
 
     world = bpy.data.worlds.new("w")
     bpy.context.scene.world = world
     world.use_nodes = True
     world.node_tree.nodes["Background"].inputs[0].default_value = (0.42, 0.48, 0.44, 1.0)
-    world.node_tree.nodes["Background"].inputs[1].default_value = SKY
+    world.node_tree.nodes["Background"].inputs[1].default_value = SKY if sky is None else sky
 
 
 def ref_cube(at):

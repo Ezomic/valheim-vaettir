@@ -13,6 +13,7 @@ namespace Stow
 
         public static ConfigEntry<string> PostDonor;
         public static ConfigEntry<string> PostModelFile;
+        public static ConfigEntry<string> PostSkin;
         public static ConfigEntry<float> PostScale;
         public static ConfigEntry<string> LookForProps;
 
@@ -88,6 +89,18 @@ namespace Stow
                 + "plain shapes from tools/post_designs.py ship alongside it: "
                 + "stow_post_rack.obj, stow_post_chute.obj, stow_post_table.obj, "
                 + "stow_post_barrow.obj - none of those carry a heartwood.");
+
+            // A new key rather than a changed default for an old one: BepInEx's saved value
+            // beats whatever the code says, so a machine that has run this mod before would
+            // never see a changed default.
+            PostSkin = config.Bind("Post", "PostSkin", "workbench",
+                "Which vanilla wood the post and its upgrades are painted with. workbench "
+                + "borrows the vanilla workbench's own material, so the post and the bench "
+                + "beside it read as one old rough timber: the planks wear the bench's "
+                + "plank field, straps and rope wear its dark lashing leather, and the "
+                + "base is timber instead of a pale stone slab. classic keeps the earlier "
+                + "donors (a wooden wall, a cauldron, a stone wall). Only the surface "
+                + "changes, never the mesh.");
 
             PostScale = config.Bind("Post", "PostScale", 1f,
                 "Scale of the whole piece.");
