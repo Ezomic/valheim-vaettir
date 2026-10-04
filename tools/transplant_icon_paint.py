@@ -96,7 +96,7 @@ class Graph:
         return node.outputs["Result"]
 
 
-def material(name, cols, cfg, seed):
+def material(name, cols, cfg, seed, under_col=UNDER, wear_col=WEAR, sc=1.0):
     base, warm, grey = cols
     mat = bpy.data.materials.new(name)
     mat.use_nodes = True
@@ -114,18 +114,18 @@ def material(name, cols, cfg, seed):
         mp.inputs["Scale"].default_value = stretch
         mp.inputs["Location"].default_value = (seed, seed * 0.7, seed * 1.3)
         g.link(tc.outputs["Object"], mp.inputs["Vector"])
-        nz = g.n("ShaderNodeTexNoise", {"Scale": scale, "Detail": detail, "Roughness": rough})
+        nz = g.n("ShaderNodeTexNoise", {"Scale": scale * sc, "Detail": detail, "Roughness": rough})
         g.link(mp.outputs[0], nz.inputs["Vector"])
         return nz.outputs["Fac"]
 
     blotch = noise(2.6, 4.0, 0.55)
     brush = noise(12.0, 5.0, 0.65, (1.0, 1.0, 0.7))
     grain = noise(38.0, 3.0, 0.6, (1.0, 1.0, 0.5))
-    vor = g.n("ShaderNodeTexVoronoi", {"Scale": 20.0}, feature="F1")
+    vor = g.n("ShaderNodeTexVoronoi", {"Scale": 20.0 * sc}, feature="F1")
     g.link(tc.outputs["Object"], vor.inputs["Vector"])
     dab = g.n("ShaderNodeRGBToBW")
     g.link(vor.outputs["Color"], dab.inputs["Color"])
-    vedge = g.n("ShaderNodeTexVoronoi", {"Scale": 20.0}, feature="DISTANCE_TO_EDGE")
+    vedge = g.n("ShaderNodeTexVoronoi", {"Scale": 20.0 * sc}, feature="DISTANCE_TO_EDGE")
     g.link(tc.outputs["Object"], vedge.inputs["Vector"])
 
     amp = cfg["amp"]
@@ -160,7 +160,7 @@ def material(name, cols, cfg, seed):
     stain = g.m("MULTIPLY", g.m("SUBTRACT", noise(2.0, 5.0, 0.6), 0.42), 2.2, clamp=True)
     dirty = g.m("ADD", dirty, g.m("MULTIPLY", stain, 0.4))
     dirty = g.m("MULTIPLY", dirty, cfg["dirt"], clamp=True)
-    grimed = g.mix(painted.outputs["Result"], UNDER, dirty)
+    grimed = g.mix(painted.outputs["Result"], under_col, dirty)
 
     bev = g.n("ShaderNodeBevel", {"Radius": 0.05}, samples=8)
     dot = g.n("ShaderNodeVectorMath", operation="DOT_PRODUCT")
@@ -169,7 +169,7 @@ def material(name, cols, cfg, seed):
     edge = g.m("MULTIPLY", g.m("SUBTRACT", 1.0, dot.outputs["Value"]), 9.0, clamp=True)
     scratch = g.m("SUBTRACT", 1.0, g.m("MULTIPLY", vedge.outputs["Distance"], 11.0, clamp=True))
     wear = g.m("MULTIPLY", g.m("ADD", edge, g.m("MULTIPLY", scratch, 0.25)), cfg["wear"] * 0.55, clamp=True)
-    g.link(g.mix(grimed, WEAR, wear), bsdf.inputs["Base Color"])
+    g.link(g.mix(grimed, wear_col, wear), bsdf.inputs["Base Color"])
     return mat
 
 
@@ -261,4 +261,5 @@ def main():
         print("rendered", v)
 
 
-main()
+if __name__ == "__main__":
+    main()
