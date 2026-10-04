@@ -10,6 +10,12 @@ and the mod uses [semantic versioning](https://semver.org).
 - **The planting grid's six keys are on Core's Settings page (LHM-51)**: pin, seeds up, seeds down,
   row or circle, grid free and grid turn. It is the page in the compendium that lists a player's own
   settings and rebinds a key by pressing it. Without Core nothing changes. Built, not run in game.
+- `hod traders` prints how many items the traders of each biome sell, and what they are. `hod
+  item` gained a `sold=` token, the biome of the earliest trader selling that item.
+- Scenario `vaettir-jib-trader-items`. Not yet run in game.
+- `stow holds` in the console prints where the button is and how many slots, buttons and title
+  letters it covers. Scenario `vaettir-holds-button-clear-of-cells` asks it for four chest sizes.
+  Not yet run in game.
 
 ### Fixed
 
@@ -39,15 +45,6 @@ and the mod uses [semantic versioning](https://semver.org).
   left, which the grid never reaches. It is checked against the slots, Take all, Place stacks, the
   window's edge and the title's text, and when the row has no room it goes under the lowest row of
   slots instead. It is placed after the grid is drawn, every frame the window updates.
-
-### Added
-
-- `hod traders` prints how many items the traders of each biome sell, and what they are. `hod
-  item` gained a `sold=` token, the biome of the earliest trader selling that item.
-- Scenario `vaettir-jib-trader-items`. Not yet run in game.
-- `stow holds` in the console prints where the button is and how many slots, buttons and title
-  letters it covers. Scenario `vaettir-holds-button-clear-of-cells` asks it for four chest sizes.
-  Not yet run in game.
 
 ## [1.6.3] - 2026-09-30
 
