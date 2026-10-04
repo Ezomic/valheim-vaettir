@@ -35,3 +35,6 @@ dist/
 # Python leaves these beside the build scripts and they are pure derivation.
 __pycache__/
 *.pyc
+
+# LHM-69 design renders, regenerable with tools/remodel/*.py
+renders/
