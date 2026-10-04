@@ -224,7 +224,8 @@ def fit_metric(obj, rects, tex_px=256):
         return co.x, co.y
 
     for (group, root, ax), polys in islands.items():
-        x0, y0, rw, rh = rects[group]
+        choices = rects[group] if isinstance(rects[group], list) else [rects[group]]
+        x0, y0, rw, rh = choices[min(len(choices) - 1, int(_hash01(root, 7) * len(choices)))]
         pts = []
         for poly in polys:
             for li in poly.loop_indices:

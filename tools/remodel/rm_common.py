@@ -43,6 +43,8 @@ KEY, FILL, SKY = 1.4, 0.35, 0.28
 TINTS.setdefault("plank", (0.36, 0.23, 0.12, 1.0))
 TINTS.setdefault("frame", (0.40, 0.27, 0.15, 1.0))
 TINTS["bronze"] = (0.45, 0.30, 0.14, 1.0)
+TINTS.setdefault("hide", (0.52, 0.40, 0.28, 1.0))
+TINTS.setdefault("stone", (0.30, 0.30, 0.31, 1.0))
 
 # --------------------------------------------------------------------------- import
 

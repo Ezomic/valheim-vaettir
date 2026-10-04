@@ -22,9 +22,15 @@ from rm_run import *             # noqa: E402,F401,F403
 from rm_run import _bounds       # noqa: E402,F401
 import skins                     # noqa: E402
 
-PLANKS = (0.06, 0.15, 0.84, 0.31)
-DARK = (0.09, 0.60, 0.17, 0.30)
-MODERN_RECTS = {"wood": PLANKS, "bark": PLANKS, "stone": PLANKS, "iron": DARK, "rope": DARK}
+# Islands of WorkBench_d, inset past the worn rim (mirrors PostModel.cs; measured by
+# bench_parts.py). Wood is a weighted list: a part keeps one island, neighbours differ.
+WOOD = [(0.06, 0.15, 0.84, 0.31)] * 2 + [(0.33, 0.60, 0.25, 0.15), (0.57, 0.78, 0.16, 0.18),
+                                          (0.07, 0.58, 0.15, 0.30)]
+STRAP = (0.835, 0.585, 0.09, 0.16)
+STONE = (0.335, 0.822, 0.075, 0.065)
+HIDE = (0.645, 0.59, 0.12, 0.14)
+MODERN_RECTS = {"wood": WOOD, "bark": WOOD, "frame": WOOD, "iron": [STRAP], "rope": [STRAP],
+                "stone": [STONE], "hide": [HIDE]}
 
 TX_SPAN = {"post": 9.2, "rail": 9.6, "perch": 8.6, "jib": 9.6}
 TILE = (2400, 700)
@@ -114,8 +120,8 @@ def dress_modern(objs):
     bm = _bench_mat()
     for o in objs:
         skins.fit_metric(o, MODERN_RECTS)
-        skins.assign(o, {"wood": bm, "bark": bm, "stone": bm, "iron": bm, "rope": bm,
-                         "core": glow})
+        skins.assign(o, {"wood": bm, "bark": bm, "frame": bm, "stone": bm, "iron": bm, "rope": bm,
+                         "hide": bm, "core": glow})
 
 
 def dress_classic(objs):

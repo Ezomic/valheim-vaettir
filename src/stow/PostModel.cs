@@ -87,19 +87,56 @@ namespace Stow
         private static readonly Dictionary<string, int> TexPx =
             new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
-        // The workbench's WorkBench_d sheet is 256px of hand-painted islands on black,
-        // measured from the Devkit rip (own-profile rips/piece_workbench). A rect found
-        // by "the biggest triangle" lands on the painted edge of an island or in the
-        // gutter, so these are measured once and inset past each island's worn rim. They
-        // are only used after the texture's name and size confirm it is that sheet.
-        //
-        // The straps and base use the bench's darker plank island, not its flat leather
-        // island. The post's parts overlap coplanar by design, and where two coplanar
-        // faces fight over a pixel a flat dark brown against grained wood reads as black
-        // bars; two woods of different depth read as old boards.
+        // The workbench is ONE material, Workbench_mat on the 256px WorkBench_d sheet. Its
+        // hide, stones, straps and posts are not separate materials: they are separate
+        // painted islands of that sheet, and each part of the bench mesh is UV-mapped into
+        // the island that suits it (measured by tools/remodel/bench_parts.py: 16 stones at
+        // 31% of its triangles, 4 draped hides at 13%, 10 leather straps at 11%, the rest
+        // planks of three kinds). So the post is dressed the same way: one borrowed
+        // material, a different island per kind of part. The rects below are inset past each
+        // island's worn rim and are only used after the texture's name and size confirm it
+        // is that sheet.
         private const string WorkbenchSheet = "WorkBench_d";
-        private static readonly Rect WorkbenchPlanks = new Rect(0.06f, 0.15f, 0.84f, 0.31f);
-        private static readonly Rect WorkbenchLashing = new Rect(0.09f, 0.60f, 0.17f, 0.30f);
+
+        private static readonly Rect[] WorkbenchWood =
+        {
+            new Rect(0.06f, 0.15f, 0.84f, 0.31f),   // the big plank field
+            new Rect(0.06f, 0.15f, 0.84f, 0.31f),
+            new Rect(0.33f, 0.60f, 0.25f, 0.15f),   // the plank with horizontal grain
+            new Rect(0.57f, 0.78f, 0.16f, 0.18f),   // the upright plank
+            new Rect(0.07f, 0.58f, 0.15f, 0.30f),   // the darker plank
+        };
+
+        private static readonly Rect WorkbenchStrap = new Rect(0.835f, 0.585f, 0.09f, 0.16f);
+        private static readonly Rect WorkbenchStone = new Rect(0.335f, 0.822f, 0.075f, 0.065f);
+        private static readonly Rect WorkbenchHide = new Rect(0.645f, 0.59f, 0.12f, 0.14f);
+
+        private static readonly Dictionary<string, Rect[]> MetricRects =
+            new Dictionary<string, Rect[]>(StringComparer.OrdinalIgnoreCase);
+
+        /// <summary>
+        /// Which kind of thing a model group is, by name, for the workbench skin. Unknown
+        /// groups are wood: a group the bench has no island for must still be drawn.
+        /// </summary>
+        private static Rect[] BenchIslands(string group)
+        {
+            switch ((group ?? "").ToLowerInvariant())
+            {
+                case "iron":
+                case "rope":
+                case "strap":
+                case "leather":
+                    return new[] { WorkbenchStrap };
+                case "stone":
+                case "rock":
+                    return new[] { WorkbenchStone };
+                case "hide":
+                case "cloth":
+                    return new[] { WorkbenchHide };
+                default:
+                    return WorkbenchWood;
+            }
+        }
 
         // Vanilla furniture measures 40 to 45 texels per metre across the chest, the
         // workbench and the shelf; the round-log props sit near 28.
@@ -286,6 +323,7 @@ namespace Stow
             Cache.Clear();
             Atlas.Clear();
             Metric.Clear();
+            MetricRects.Clear();
             TexPx.Clear();
         }
 
@@ -370,17 +408,17 @@ namespace Stow
                 var st = material.mainTextureScale;
                 if (Mathf.Abs(st.x - 1f) > 0.001f || Mathf.Abs(st.y - 1f) > 0.001f) continue;
 
-                var lashing = string.Equals(group, "iron", StringComparison.OrdinalIgnoreCase)
-                              || string.Equals(group, "rope", StringComparison.OrdinalIgnoreCase);
+                var islands = BenchIslands(group);
 
                 Cache[group] = material;
-                Atlas[group] = lashing ? WorkbenchLashing : WorkbenchPlanks;
+                Atlas[group] = islands[0];
+                MetricRects[group] = islands;
                 TexPx[group] = sheet.width;
                 Metric.Add(group);
 
                 StowRuntime.Log.LogInfo(string.Format(
-                    "Group '{0}' skinned with {1} from piece_workbench, {2} rect {3}.",
-                    group, material.name, lashing ? "lashing" : "plank", Atlas[group]));
+                    "Group '{0}' skinned with {1} from piece_workbench, {2} island(s), first {3}.",
+                    group, material.name, islands.Length, islands[0]));
                 return material;
             }
 
@@ -571,9 +609,9 @@ namespace Stow
             {
                 if (!Metric.Contains(groups[g])) continue;
 
-                Rect rect;
+                Rect[] choices;
                 int px;
-                if (!Atlas.TryGetValue(groups[g], out rect) || !TexPx.TryGetValue(groups[g], out px))
+                if (!MetricRects.TryGetValue(groups[g], out choices) || !TexPx.TryGetValue(groups[g], out px))
                     continue;
 
                 var tris = mesh.GetTriangles(g);
@@ -626,12 +664,18 @@ namespace Stow
                     var extS = swap ? maxB - minB : maxA - minA;
                     var extT = swap ? maxA - minA : maxB - minB;
 
-                    var fit = Mathf.Min(1f, Mathf.Min(
-                        rect.width / Mathf.Max(extS * scale, 1e-5f),
-                        rect.height / Mathf.Max(extT * scale, 1e-5f)));
-                    var k = scale * fit;
+                    float k;
 
                     var seed = (int)(pair.Key & 0x7FFFFFFF);
+
+                    // A part keeps one island for all its faces, and neighbouring parts
+                    // differ: that is the board-to-board variation the bench has.
+                    var rect = choices[Mathf.Min(choices.Length - 1,
+                        (int)(Hash01(seed >> 2, 7) * choices.Length))];
+                    var fit0 = Mathf.Min(1f, Mathf.Min(
+                        rect.width / Mathf.Max(extS * scale, 1e-5f),
+                        rect.height / Mathf.Max(extT * scale, 1e-5f)));
+                    k = scale * fit0;
                     var ox = rect.x + Hash01(seed, 1) * Mathf.Max(0f, rect.width - extS * k);
                     var oy = rect.y + Hash01(seed, 2) * Mathf.Max(0f, rect.height - extT * k);
 

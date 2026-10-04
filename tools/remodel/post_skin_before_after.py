@@ -29,8 +29,7 @@ import skins                     # noqa: E402
 POST = os.path.join(ASSETS, "stow_post_canopy.obj")
 
 # Measured from the WorkBench_d rip, inset past each island's worn rim (see PostModel.cs).
-PLANKS = (0.06, 0.15, 0.84, 0.31)
-LASHING = (0.09, 0.60, 0.17, 0.30)
+from tx_run import MODERN_RECTS  # noqa: E402
 
 
 def bench_material():
@@ -68,7 +67,7 @@ def build_scene(out, width=2400, height=760, close=False):
         "core": glow,
     }
     bm = bench_material()
-    modern = {"wood": bm, "stone": bm, "iron": bm, "rope": bm, "bark": bm, "core": glow}
+    modern = {"wood": bm, "stone": bm, "iron": bm, "rope": bm, "bark": bm, "hide": bm, "core": glow}
 
     # Fit BEFORE assigning: both fits find a part's group by its material slot name, and
     # assigning replaces the slot's material, so fitting afterwards matches nothing and
@@ -77,8 +76,7 @@ def build_scene(out, width=2400, height=760, close=False):
         skins.fit_classic(o, {"wood": wood_rect, "stone": stone_rect, "iron": iron_rect}, None)
         skins.assign(o, classic)
     for o in after:
-        skins.fit_metric(o, {"wood": PLANKS, "stone": PLANKS, "iron": LASHING, "rope": LASHING,
-                             "bark": PLANKS})
+        skins.fit_metric(o, MODERN_RECTS)
         skins.assign(o, modern)
     for o in bench:
         skins.assign(o, {}, default=bm)
