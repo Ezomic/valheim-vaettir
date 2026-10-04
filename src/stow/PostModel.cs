@@ -87,18 +87,30 @@ namespace Stow
         private static readonly Dictionary<string, int> TexPx =
             new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
-        // The workbench is ONE material, Workbench_mat on the 256px WorkBench_d sheet. Its
-        // hide, stones, straps and posts are not separate materials: they are separate
-        // painted islands of that sheet, and each part of the bench mesh is UV-mapped into
-        // the island that suits it (measured by tools/remodel/bench_parts.py: 16 stones at
-        // 31% of its triangles, 4 draped hides at 13%, 10 leather straps at 11%, the rest
-        // planks of three kinds). So the post is dressed the same way: one borrowed
-        // material, a different island per kind of part. The rects below are inset past each
-        // island's worn rim and are only used after the texture's name and size confirm it
-        // is that sheet.
-        private const string WorkbenchSheet = "WorkBench_d";
+        // Each kind of part wears a vanilla material that suits what it IS, borrowed whole and
+        // never with its _MainTex swapped, and is placed inside a rect of that donor's sheet.
+        // The rects were measured from the Devkit rips in own-profile/BepInEx/rips and are inset
+        // past each painted island's worn rim; a skin is used only if the donor's material name,
+        // sheet name and sheet width match what was measured, otherwise the group keeps the
+        // classic donors.
+        //
+        //   wood            the workbench's own planks, a weighted pick of four plank islands
+        //   iron            the stonecutter bench's grey metal, its darkest patch: forged hardware
+        //   stone, clay     stone_wall_2x1's dark rubble (there is no clay donor on disk)
+        //   wicker, cord    the village container sheet's golden strand weave
+        //   frond           the fiddlehead fern's leaf, stretched to fill the part
+        //
+        // Deliberately NOT the workbench's hide, stones or leather straps: those are the bench's
+        // own details, and the Vaettir pieces carry details of their own.
+        private sealed class DonorSkin
+        {
+            public string Prefab, Material, Sheet;
+            public int Px;
+            public Rect[] Rects;
+            public bool Stretch;
+        }
 
-        private static readonly Rect[] WorkbenchWood =
+        private static readonly Rect[] BenchPlanks =
         {
             new Rect(0.06f, 0.15f, 0.84f, 0.31f),   // the big plank field
             new Rect(0.06f, 0.15f, 0.84f, 0.31f),
@@ -107,34 +119,56 @@ namespace Stow
             new Rect(0.07f, 0.58f, 0.15f, 0.30f),   // the darker plank
         };
 
-        private static readonly Rect WorkbenchStrap = new Rect(0.835f, 0.585f, 0.09f, 0.16f);
-        private static readonly Rect WorkbenchStone = new Rect(0.335f, 0.822f, 0.075f, 0.065f);
-        private static readonly Rect WorkbenchHide = new Rect(0.645f, 0.59f, 0.12f, 0.14f);
+        private static readonly DonorSkin WoodSkin = new DonorSkin
+            { Prefab = "piece_workbench", Material = "Workbench_mat", Sheet = "WorkBench_d", Px = 256, Rects = BenchPlanks };
+
+        private static readonly DonorSkin IronSkin = new DonorSkin
+            { Prefab = "piece_stonecutter", Material = "StoneCutterBench_mat", Sheet = "StoneCutterBench_d", Px = 256,
+              Rects = new[] { new Rect(0.00f, 0.70f, 0.12f, 0.14f) } };
+
+        private static readonly DonorSkin StoneSkin = new DonorSkin
+            { Prefab = "stone_wall_2x1", Material = "stone_mat", Sheet = "stone", Px = 128,
+              Rects = new[] { new Rect(0.00f, 0.10f, 0.55f, 0.30f) } };
+
+        private static readonly DonorSkin WeaveSkin = new DonorSkin
+            { Prefab = "fi_vil_container_basket02_closed", Material = "fi_village_containers",
+              Sheet = "fi_village_containers_hd", Px = 256,
+              Rects = new[] { new Rect(0.62f, 0.86f, 0.36f, 0.12f) } };
+
+        private static readonly DonorSkin FrondSkin = new DonorSkin
+            { Prefab = "Pickable_Fiddlehead", Material = "FernAshlands_mat", Sheet = "Ashlandsvegetation_d", Px = 64,
+              Rects = new[] { new Rect(0.02f, 0.05f, 0.30f, 0.90f) }, Stretch = true };
+
+        private static readonly HashSet<string> Stretch =
+            new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         private static readonly Dictionary<string, Rect[]> MetricRects =
             new Dictionary<string, Rect[]>(StringComparer.OrdinalIgnoreCase);
 
         /// <summary>
-        /// Which kind of thing a model group is, by name, for the workbench skin. Unknown
-        /// groups are wood: a group the bench has no island for must still be drawn.
+        /// Which donor a model group is skinned from, by the group's name. Unknown groups are
+        /// wood: a group with no suitable donor must still be drawn.
         /// </summary>
-        private static Rect[] BenchIslands(string group)
+        private static DonorSkin SkinFor(string group)
         {
             switch ((group ?? "").ToLowerInvariant())
             {
                 case "iron":
-                case "rope":
                 case "strap":
-                case "leather":
-                    return new[] { WorkbenchStrap };
+                case "band":
+                    return IronSkin;
                 case "stone":
+                case "clay":
                 case "rock":
-                    return new[] { WorkbenchStone };
-                case "hide":
-                case "cloth":
-                    return new[] { WorkbenchHide };
+                    return StoneSkin;
+                case "wicker":
+                case "cord":
+                case "rope":
+                    return WeaveSkin;
+                case "frond":
+                    return FrondSkin;
                 default:
-                    return WorkbenchWood;
+                    return WoodSkin;
             }
         }
 
@@ -324,6 +358,7 @@ namespace Stow
             Atlas.Clear();
             Metric.Clear();
             MetricRects.Clear();
+            Stretch.Clear();
             TexPx.Clear();
         }
 
@@ -332,8 +367,8 @@ namespace Stow
             Material cached;
             if (Cache.TryGetValue(group, out cached)) return cached;
 
-            var bench = BorrowWorkbench(group);
-            if (bench != null) return bench;
+            var skinned = BorrowSkin(group);
+            if (skinned != null) return skinned;
 
             foreach (var raw in DonorsFor(group))
             {
@@ -372,58 +407,57 @@ namespace Stow
         }
 
         /// <summary>
-        /// The workbench's own material for the groups that are timber, straps or base.
+        /// The role-appropriate vanilla material for a group (see SkinFor), or null so the
+        /// classic donors run: when the skin is switched off, the donor is not loaded, or its
+        /// material is not the sheet the rects were measured on. That last check matters, since
+        /// the rects are only right for that exact sheet and a patch that changes it must fall
+        /// back rather than paint from the gutters. The glow group is never touched.
         ///
-        /// Returns null, and the old donors run, when the skin is switched off, the bench
-        /// is not loaded, or the material is not the sheet this was measured on. That last
-        /// check matters: the rects below are only right for WorkBench_d at 256px, and a
-        /// patch or a modded bench that changes it must fall back rather than paint the
-        /// post from the gutters.
-        ///
-        /// The material is borrowed whole and never has its _MainTex swapped, so its
-        /// normal map, smoothness and noise come with it exactly as the bench has them.
+        /// The material is borrowed whole and never has its _MainTex swapped, so its normal map,
+        /// smoothness and noise come with it exactly as the donor has them.
         /// </summary>
-        private static Material BorrowWorkbench(string group)
+        private static Material BorrowSkin(string group)
         {
             if (string.Equals(group, GlowGroup, StringComparison.OrdinalIgnoreCase)) return null;
 
-            var skin = StowConfig.PostSkin != null ? StowConfig.PostSkin.Value : "";
-            if (!string.Equals((skin ?? "").Trim(), "workbench", StringComparison.OrdinalIgnoreCase))
+            var mode = StowConfig.PostSkin != null ? StowConfig.PostSkin.Value : "";
+            if (!string.Equals((mode ?? "").Trim(), "workbench", StringComparison.OrdinalIgnoreCase))
                 return null;
 
-            var donor = PropIndex.Find("piece_workbench");
+            var skin = SkinFor(group);
+            var donor = PropIndex.Find(skin.Prefab);
             if (donor == null) return null;
 
-            foreach (var renderer in donor.GetComponentsInChildren<MeshRenderer>(true))
+            foreach (var renderer in donor.GetComponentsInChildren<Renderer>(true))
             {
                 var material = renderer.sharedMaterial;
                 if (material == null || material.shader == null) continue;
 
-                // The new bench, not Worn or Broken: their names start the same way.
-                if (!material.name.StartsWith("Workbench_mat", StringComparison.Ordinal)) continue;
+                // Exact name, so the worn and broken variants that share a prefix are skipped.
+                var name = material.name.Replace(" (Instance)", "");
+                if (!string.Equals(name, skin.Material, StringComparison.Ordinal)) continue;
 
                 var sheet = material.mainTexture;
-                if (sheet == null || sheet.name != WorkbenchSheet || sheet.width != 256) continue;
+                if (sheet == null || sheet.name != skin.Sheet || sheet.width != skin.Px) continue;
 
                 var st = material.mainTextureScale;
                 if (Mathf.Abs(st.x - 1f) > 0.001f || Mathf.Abs(st.y - 1f) > 0.001f) continue;
 
-                var islands = BenchIslands(group);
-
                 Cache[group] = material;
-                Atlas[group] = islands[0];
-                MetricRects[group] = islands;
+                Atlas[group] = skin.Rects[0];
+                MetricRects[group] = skin.Rects;
                 TexPx[group] = sheet.width;
                 Metric.Add(group);
+                if (skin.Stretch) Stretch.Add(group);
 
                 StowRuntime.Log.LogInfo(string.Format(
-                    "Group '{0}' skinned with {1} from piece_workbench, {2} island(s), first {3}.",
-                    group, material.name, islands.Length, islands[0]));
+                    "Group '{0}' skinned with {1} from {2}, {3} rect(s), first {4}.",
+                    group, material.name, skin.Prefab, skin.Rects.Length, skin.Rects[0]));
                 return material;
             }
 
-            StowRuntime.Log.LogInfo("PostSkin is workbench but the bench material was not "
-                + "the sheet this was measured on; group '" + group + "' keeps the classic donors.");
+            StowRuntime.Log.LogInfo("PostSkin is workbench but " + skin.Prefab + " did not offer "
+                + skin.Material + " on " + skin.Sheet + "; group '" + group + "' keeps the classic donors.");
             return null;
         }
 
@@ -672,6 +706,23 @@ namespace Stow
                     // differ: that is the board-to-board variation the bench has.
                     var rect = choices[Mathf.Min(choices.Length - 1,
                         (int)(Hash01(seed >> 2, 7) * choices.Length))];
+                    if (Stretch.Contains(groups[g]))
+                    {
+                        // A cutout leaf: the sheet's silhouette must fill the part, so the
+                        // island is stretched to the rect with its long side up.
+                        foreach (var v in isl.Verts)
+                        {
+                            float p0, q0;
+                            Project(verts[v], ax, out p0, out q0);
+                            var sOff0 = swap ? q0 - minB : p0 - minA;
+                            var tOff0 = swap ? p0 - minA : q0 - minB;
+                            uv[v] = new Vector2(rect.x + sOff0 / Mathf.Max(extS, 1e-5f) * rect.width,
+                                                rect.y + tOff0 / Mathf.Max(extT, 1e-5f) * rect.height);
+                            done[v] = true;
+                        }
+                        continue;
+                    }
+
                     var fit0 = Mathf.Min(1f, Mathf.Min(
                         rect.width / Mathf.Max(extS * scale, 1e-5f),
                         rect.height / Mathf.Max(extT * scale, 1e-5f)));

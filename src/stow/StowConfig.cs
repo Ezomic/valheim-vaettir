@@ -94,12 +94,11 @@ namespace Stow
             // beats whatever the code says, so a machine that has run this mod before would
             // never see a changed default.
             PostSkin = config.Bind("Post", "PostSkin", "workbench",
-                "Which vanilla wood the post and its upgrades are painted with. workbench "
-                + "borrows the vanilla workbench's own material, so the post and the bench "
-                + "beside it read as one old rough timber: the planks wear the bench's "
-                + "plank field, straps and rope wear its dark lashing leather, and the "
-                + "base is timber instead of a pale stone slab. classic keeps the earlier "
-                + "donors (a wooden wall, a cauldron, a stone wall). Only the surface "
+                "Which vanilla materials the post and its upgrades wear. workbench: planks from the "
+                + "workbench's own wood, iron from the stonecutter bench's metal, stone and clay "
+                + "from a stone wall, wicker and cord from the village container weave, and the "
+                + "fern fronds from the fiddlehead sheet, each placed inside the donor's atlas. "
+                + "classic keeps the earlier donors (a wooden wall, a cauldron, a stone wall). Only the surface "
                 + "changes, never the mesh.");
 
             PostScale = config.Bind("Post", "PostScale", 1f,

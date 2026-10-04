@@ -61,7 +61,7 @@ def unpacked_normal(path):
     return img
 
 
-def piece_material(name, diffuse, normal, bump=1.0, gloss=0.0, st=None):
+def piece_material(name, diffuse, normal, bump=1.0, gloss=0.0, st=None, cutout=False):
     """diffuse and normal are absolute paths. st is Unity's (scale_x, scale_y, off_x, off_y)."""
     mat = bpy.data.materials.new(name)
     mat.use_nodes = True
@@ -92,7 +92,17 @@ def piece_material(name, diffuse, normal, bump=1.0, gloss=0.0, st=None):
     tex.extension = "REPEAT"
     nt.links.new(coord, tex.inputs["Vector"])
     nt.links.new(tex.outputs["Color"], bsdf.inputs["Base Color"])
+    if cutout:
+        # Custom/Vegetation is an alpha cutout (_Cutoff 0.54) drawn two-sided.
+        nt.links.new(tex.outputs["Alpha"], bsdf.inputs["Alpha"])
+        try:
+            mat.surface_render_method = "DITHERED"
+        except Exception:
+            pass
+        mat.use_backface_culling = False
 
+    if not normal or not os.path.exists(normal):
+        return mat
     nrm = nt.nodes.new("ShaderNodeTexImage")
     nrm.image = unpacked_normal(normal)
     nrm.interpolation = "Closest"
@@ -177,7 +187,7 @@ def _hash01(a, b):
     return (h & 0xFFFF) / 65535.0
 
 
-def fit_metric(obj, rects, tex_px=256):
+def fit_metric(obj, rects, tex_px=256, px=None, stretch=()):
     """Port of PostModel.FitMetric over Blender loops."""
     me = obj.data
     me.calc_loop_triangles()
@@ -203,7 +213,7 @@ def fit_metric(obj, rects, tex_px=256):
         for i in range(1, len(vs)):
             parent[find(vs[i])] = find(vs[0])
 
-    scale = TEXELS_PER_METRE / tex_px
+    px = px or {}
     islands = {}
     for poly in me.polygons:
         group = obj.material_slots[poly.material_index].name.split(".")[0].lower()
@@ -235,6 +245,14 @@ def fit_metric(obj, rects, tex_px=256):
         swap = (maxA - minA) > (maxB - minB)
         extS = (maxB - minB) if swap else (maxA - minA)
         extT = (maxA - minA) if swap else (maxB - minB)
+        if group in stretch:
+            # A cutout leaf: the sheet's silhouette must fill the part, so stretch, long side up.
+            for li, (p, q) in pts:
+                s2 = (q - minB) if swap else (p - minA)
+                t2 = (p - minA) if swap else (q - minB)
+                uv[li].uv = (x0 + s2 / max(extS, 1e-5) * rw, y0 + t2 / max(extT, 1e-5) * rh)
+            continue
+        scale = TEXELS_PER_METRE / px.get(group, tex_px)
         fit = min(1.0, rw / max(extS * scale, 1e-5), rh / max(extT * scale, 1e-5))
         k = scale * fit
         seed = (root * 4 + ax) & 0x7FFFFFFF

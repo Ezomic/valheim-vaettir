@@ -117,7 +117,7 @@ def band(centre, axis, radius, width, mat="rope", sides=9):
                sides=sides, tilt=0.6)
 
 
-def creel(centre, r0, r1, height, mat="bark", wall=0.024, sides=9):
+def creel(centre, r0, r1, height, mat="bark", wall=0.024, sides=9, rim="rope"):
     """
     A basket, open at the top, with a real wall.
 
@@ -129,7 +129,7 @@ def creel(centre, r0, r1, height, mat="bark", wall=0.024, sides=9):
     # A wicker rim: a thin tube hugging the top outside, so a basket does not read as a
     # wooden pail. A tube rather than a disc, because a disc across the mouth is a lid.
     _skin_nobevel(shell(r1 + 0.012, r1 + 0.012, 0.05, (cx, cy, cz + height / 2.0 - 0.02),
-                        "rope", sides=sides, thickness=0.02))
+                        rim, sides=sides, thickness=0.02))
     return body
 
 

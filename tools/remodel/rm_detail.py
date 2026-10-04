@@ -58,8 +58,8 @@ def planks_flat(centre, length, span, n, thick, axis="x", mat="wood"):
     return out
 
 
-def collar(centre, size, mat="rope"):
-    """A thin strap wrapped round a joint: a flat block 1.5 cm proud of what it ties."""
+def collar(centre, size, mat="iron"):
+    """A thin band wrapped round a joint: iron by default (a forged band), cord on the rail."""
     dims = list(size)
     k = dims.index(min(dims))
     dims[k] = min(dims[k], 0.034)        # a strap, not a block: vanilla's are under 4 cm
@@ -79,61 +79,93 @@ def leg(p0, p1, wide, thick, across=(1.0, 0.0, 0.0)):
         strut(p0 + o, p1 + o + d.normalized() * extra, wide, thick * 0.52, across=across)
 
 
-# ----------------------------------------------------------------------------- non-wood
+# ----------------------------------------------------------------------------- Vaettir's own
 
-def stone(at, size=0.18, flat=0.7, spin=0.0):
-    """
-    A weight stone: a faceted lump, 80 triangles. The bench carries 16 of these (13 to 28 cm,
-    40 triangles each, 31% of its triangles); they are the 'stone' group, which the runtime
-    paints with the bench's own grey island.
-    """
-    obj = orb(size / 2.0, at, "stone", subdivisions=1, stretch=flat, tilt=6.0)
-    obj.scale = (1.0 + random.uniform(-0.15, 0.15), 1.0 + random.uniform(-0.15, 0.15), obj.scale.z)
-    obj.rotation_euler.z = math.radians(spin or random.uniform(0, 360))
+def _links(obj):
     obj["nobevel"] = True
     return obj
 
 
-def hide(edge, width, top=0.30, drop=0.34, thick=0.014, turn=0.0):
-    """
-    A hide draped over an edge: lies flat for `top` metres, rolls over the edge at `edge`
-    (the top outer corner) and hangs `drop` metres, with a ragged lower rim. Width runs along
-    x, the drape along y; `turn` rotates the whole thing about z for an edge that runs along
-    y. A real sheet of two skins (solidified inward), so it has no open edge.
+def plate(centre, size, mat="iron"):
+    """A sheet-metal plate standing 1.5 to 2 cm proud of what it is nailed to."""
+    return slab(size, centre, mat, tilt=0.4)
 
-    The bench has four of these (23 to 27 cm by 44 to 69 cm, 12% of its triangles); the
-    runtime paints them with the bench's hide island.
+
+def tag(at):
     """
-    n_w, prof = 6, [(-top, 0.0), (-top * 0.5, 0.004), (-0.04, 0.012), (0.0, 0.0), (0.035, -0.045),
-                    (0.06, -0.12), (0.075, -0.22), (0.085, -1.0)]
-    verts, faces = [], []
-    for i in range(n_w):
-        x = -width / 2.0 + width * i / (n_w - 1)
-        ragged = 0.84 + 0.30 * random.random()
-        for j, (y, z) in enumerate(prof):
-            if z <= -1.0:
-                z = -drop * ragged
-            elif z < -0.2:
-                z = z * (drop / 0.34)
-            verts.append((x, y, z))
-    for i in range(n_w - 1):
-        for j in range(len(prof) - 1):
-            a = i * len(prof) + j
-            faces.append((a, a + len(prof), a + len(prof) + 1, a + 1))
-    mesh = bpy.data.meshes.new("hide")
-    mesh.from_pydata(verts, [], faces)
-    mesh.update()
-    obj = bpy.data.objects.new("hide", mesh)
-    bpy.context.collection.objects.link(obj)
-    bpy.context.view_layer.objects.active = obj
-    obj.select_set(True)
-    wall = obj.modifiers.new("skin", "SOLIDIFY")
-    wall.thickness = thick
-    wall.offset = -1.0
-    wall.use_rim = True
-    bpy.ops.object.modifier_apply(modifier=wall.name)
-    obj.location = edge
-    obj.rotation_euler.z = math.radians(turn)
-    obj.data.materials.append(vhbuild.material("hide"))
-    obj["nobevel"] = True
-    return obj
+    The post's label: an iron plate hanging on two links from the front, the sign of the chest
+    its contents are bound for. Distinct from anything on a vanilla chest or bench.
+    """
+    x, y, z = at
+    for s in (-1, 1):
+        r = vhbuild.ring(0.016, 0.005, (x + s * 0.035, y, z + 0.06), "iron", major=7, minor=4)
+        _links(r)
+    slab((0.13, 0.014, 0.15), (x, y, z - 0.03), "iron", tilt=0.5)
+    slab((0.055, 0.016, 0.055), (x, y + 0.004, z - 0.03), "iron", tilt=0.2)
+
+
+def chain(top, bottom, radius=0.024):
+    """A real chain of alternating linked rings (the jib's recipe asks for two chain)."""
+    top, bottom = Vector(top), Vector(bottom)
+    n = max(2, int((top - bottom).length / (radius * 1.45)))
+    for i in range(n):
+        p = top + (bottom - top) * ((i + 0.5) / n)
+        r = vhbuild.ring(radius, 0.0065, tuple(p), "iron", major=7, minor=4)
+        if i % 2:
+            r.rotation_euler.z += math.radians(90.0)
+        _links(r)
+
+
+def pulley(at):
+    """An iron sheave in two wooden cheeks: the jib lifts, and this is how."""
+    x, y, z = at
+    for s in (-1, 1):
+        slab((0.045, 0.02, 0.15), (x, y + s * 0.045, z), "wood", tilt=0.6)
+    wheel = taper(0.07, 0.07, 0.04, (x, y, z - 0.01), "iron", sides=11, rot_x=90.0, tilt=0.5)
+    wheel["nobevel"] = True
+    pin = taper(0.012, 0.012, 0.14, (x, y, z - 0.01), "iron", sides=5, rot_x=90.0, tilt=0.3)
+    pin["nobevel"] = True
+
+
+def sprig(at, scale=1.0, turn=0.0):
+    """
+    The family trait: a fan of three fern fronds growing from the piece, each a 1.2 cm closed
+    slab whose outline comes from the fiddlehead sheet's alpha. Three, at 120 degrees, leaning
+    out 22 degrees.
+    """
+    x, y, z = at
+    for k in range(3):
+        a = math.radians(turn + 90.0 + k * 120.0)
+        tilt = math.radians(22.0 + 4.0 * k)
+        d = Vector((math.sin(tilt) * math.cos(a), math.sin(tilt) * math.sin(a), math.cos(tilt)))
+        tip = Vector((x, y, z)) + d * 0.36 * scale
+        strut((x, y, z), tip, 0.16 * scale, 0.012, "frond", across=(-math.sin(a), math.cos(a), 0.0),
+              tilt=0.3)
+
+
+def jar(at, height=0.20):
+    """A fired-clay water jar: belly and neck, two closed frustums."""
+    x, y, z = at
+    h1, h2 = height * 0.58, height * 0.42
+    taper(0.07, 0.105, h1, (x, y, z + h1 / 2.0), "clay", sides=9, tilt=0.8)
+    taper(0.105, 0.06, h2, (x, y, z + h1 + h2 / 2.0 - 0.01), "clay", sides=9, tilt=0.8)
+    lip = taper(0.07, 0.07, 0.025, (x, y, z + height - 0.005), "clay", sides=9, tilt=0.5)
+    lip["nobevel"] = True
+
+
+def bowl(at, radius=0.12, height=0.055):
+    """A fired-clay seed bowl: a wide shallow frustum with a lip."""
+    x, y, z = at
+    taper(radius * 0.62, radius, height, (x, y, z + height / 2.0), "clay", sides=11, tilt=0.6)
+    lip = taper(radius * 1.04, radius * 1.04, 0.015, (x, y, z + height), "clay", sides=11, tilt=0.4)
+    lip["nobevel"] = True
+
+
+def chain_seat(x, y, hang_z, z):
+    """The heartwood seat on a chain from a pulley: replaces the rope V."""
+    pulley((x, y, hang_z))
+    chain((x, y, hang_z - 0.10), (x, y, z + 0.07))
+    hook = vhbuild.ring(0.03, 0.008, (x, y, z + 0.075), "iron", major=8, minor=4)
+    _links(hook)
+    planks_flat((x, y, z), 0.28, 0.22, 2, 0.04)
+    heartwood((x, y, z + 0.12))

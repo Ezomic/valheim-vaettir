@@ -26,11 +26,17 @@ import skins                     # noqa: E402
 # bench_parts.py). Wood is a weighted list: a part keeps one island, neighbours differ.
 WOOD = [(0.06, 0.15, 0.84, 0.31)] * 2 + [(0.33, 0.60, 0.25, 0.15), (0.57, 0.78, 0.16, 0.18),
                                           (0.07, 0.58, 0.15, 0.30)]
-STRAP = (0.835, 0.585, 0.09, 0.16)
-STONE = (0.335, 0.822, 0.075, 0.065)
-HIDE = (0.645, 0.59, 0.12, 0.14)
-MODERN_RECTS = {"wood": WOOD, "bark": WOOD, "frame": WOOD, "iron": [STRAP], "rope": [STRAP],
-                "stone": [STONE], "hide": [HIDE]}
+# Vaettir's own non-wood groups and where their material comes from (see PICKS.txt).
+IRON = (0.0, 0.70, 0.12, 0.14)         # piece_stonecutter, the darkest patch of its grey metal cloud
+CLAY = (0.0, 0.10, 0.55, 0.30)        # stone_wall_2x1's dark rubble field (no clay donor exists)
+WEAVE = (0.62, 0.86, 0.36, 0.12)      # the village container sheet's golden strand weave
+FROND = (0.02, 0.05, 0.30, 0.90)      # Pickable_Fiddlehead's fern frond
+MODERN_RECTS = {"wood": WOOD, "bark": WOOD, "frame": WOOD, "iron": [IRON], "clay": [CLAY],
+                "stone": [CLAY], "wicker": [WEAVE], "cord": [WEAVE], "rope": [WEAVE],
+                "frond": [FROND]}
+MODERN_PX = {"iron": 256, "clay": 128, "stone": 128, "wicker": 256, "cord": 256, "rope": 256,
+             "frond": 64}
+STRETCH = ("frond",)
 
 TX_SPAN = {"post": 9.2, "rail": 9.6, "perch": 8.6, "jib": 9.6}
 TILE = (2400, 700)
@@ -115,13 +121,31 @@ def thin_share(objs):
     return thin / float(max(total, 1))
 
 
+def _donor_mats():
+    if "donors" not in _cache:
+        r = skins.rip_path
+        iron = skins.piece_material("d_iron", r("piece_stonecutter", "textures", "StoneCutterBench_d.png"),
+                                    r("piece_stonecutter", "textures", "StoneCutterBench_n.png"), 1.0, 0.107)
+        clay = skins.piece_material("d_clay", r("stone_wall_2x1", "textures", "stone.png"),
+                                    r("stone_wall_2x1", "textures", "stone_n.png"), 1.0, 0.15)
+        weave = skins.piece_material("d_weave", r("fi_vil_container_basket02_closed", "textures", "fi_village_containers_hd.png"),
+                                     r("fi_vil_container_basket02_closed", "textures", "fi_village_containers_hd_n.png"), 1.0, 0.0)
+        frond = skins.piece_material("d_frond", r("Pickable_Fiddlehead", "textures", "Ashlandsvegetation_d.png"),
+                                     r("Pickable_Fiddlehead", "textures", "Ashlandsvegetation_n.png"), 1.0, 0.03,
+                                     cutout=True)
+        _cache["donors"] = {"iron": iron, "clay": clay, "stone": clay, "wicker": weave, "cord": weave,
+                            "rope": weave, "frond": frond}
+    return _cache["donors"]
+
+
 def dress_modern(objs):
     glow = skins.glow_material()
     bm = _bench_mat()
+    mats = dict(_donor_mats())
+    mats.update({"wood": bm, "bark": bm, "frame": bm, "core": glow})
     for o in objs:
-        skins.fit_metric(o, MODERN_RECTS)
-        skins.assign(o, {"wood": bm, "bark": bm, "frame": bm, "stone": bm, "iron": bm, "rope": bm,
-                         "hide": bm, "core": glow})
+        skins.fit_metric(o, MODERN_RECTS, px=MODERN_PX, stretch=STRETCH)
+        skins.assign(o, mats)
 
 
 def dress_classic(objs):

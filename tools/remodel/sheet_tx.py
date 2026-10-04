@@ -14,6 +14,8 @@ from PIL import Image, ImageDraw, ImageFont
 OUT = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
                    "renders", "lhm-69")
 TITLES = {"post": "Stowing post", "rail": "Creel rail", "perch": "Spirit perch", "jib": "Hod jib"}
+DETAIL = {"post": "forged iron hardware + tag plate + fern sprig", "rail": "woven wicker + cord + fern sprig",
+          "perch": "fired clay bowl and jar + fern sprig", "jib": "iron pulley and chain + fern sprig"}
 W = 1800
 ROW_H = 525
 BAR = 44
@@ -39,11 +41,9 @@ def row_label(draw, y, text, info):
 
 
 def piece_sheet(piece):
-    r1 = json.load(open(os.path.join(OUT, "r1_results_%s.json" % piece)))
     r2 = json.load(open(os.path.join(OUT, "r2_results_%s.json" % piece)))
-    rows = [("r1", "current", "SHIPPING (as the runtime skins it today)", r1["current"])]
-    rows += [("r1", k, "ROUND 1  %s  (workbench skin)" % k.upper(), r1[k]) for k in "abc"]
-    rows += [("r2", k, "ROUND 2  %s  (measured rules + hide, stones, straps)" % k.upper(), r2[k]) for k in "abc"]
+    rows = [("r2", "current", "SHIPPING (as the runtime skins it today)", r2["current"])]
+    rows += [("r2", k, "%s  %s" % (k.upper(), DETAIL[piece]), r2[k]) for k in "abc"]
     head = 60
     sheet = Image.new("RGB", (W, head + len(rows) * (ROW_H + BAR)), (14, 16, 14))
     d = ImageDraw.Draw(sheet)
@@ -68,7 +68,7 @@ def overview():
     d.text((14, 12), "LHM-69  every piece beside the vanilla chest and workbench (post, rail, perch, jib "
            "left to right)", font=font(32), fill=(255, 255, 255))
     for i, (im, text) in enumerate(((a, "SHIPPING, as the runtime skins it today"),
-                                    (b, "ROUND 2 PICKS (post B, rail A, perch C, jib C) with bench islands: planks, straps, stones, hide"))):
+                                    (b, "PICKS (post B, rail A, perch C, jib C): each piece with its own details and the fern sprig"))):
         y = 60 + i * (640 + BAR)
         d.rectangle((0, y, w, y + BAR), fill=(22, 24, 22))
         d.text((12, y + 7), text, font=font(28), fill=(255, 224, 140))
