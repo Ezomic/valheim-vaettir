@@ -3,6 +3,12 @@
 Notable changes to Vaettir. Format follows [Keep a Changelog](https://keepachangelog.com),
 and the mod uses [semantic versioning](https://semver.org).
 
+## [Unreleased]
+
+### Fixed
+
+- **The Holds button no longer lands on a chest slot in a wide chest.** In a six column chest with a long name the room beside Place stacks is taken by the title, and the fallback under the last row did not fit inside the window, so the button was pushed back up onto the bottom right cell. It now hangs just under the window's bottom edge instead, or over the top edge if that would leave the screen. LHM-75.
+
 ## [1.6.4] - 2026-10-05
 
 ### Fixed
