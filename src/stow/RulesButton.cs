@@ -89,8 +89,17 @@ namespace Stow
             var beside = new Rect(row.xMin - gap - size.x, layout.Stack.y, size.x, size.y);
             var below = new Rect(layout.Stack.xMax - size.x, layout.LowestCell - gap - size.y, size.x, size.y);
 
+            // Not clamped back up into the frame. That is what put the button on the bottom right
+            // cell of a four row chest (LHM-75): the room under the last row was too small, the
+            // button was pushed up to fit, and up is where the cells are. Outside the frame is
+            // always free, so it hangs under the bottom edge, or over the top edge when that
+            // would leave the screen.
             if (layout.Panel.width > 0f && below.yMin < layout.Panel.yMin)
-                below.y += layout.Panel.yMin - below.yMin;
+            {
+                below.y = layout.Panel.yMin - gap - size.y;
+                if (LeavesScreen(gui, below))
+                    below.y = layout.Panel.yMax + gap;
+            }
 
             var chosen = below;
             if ((layout.Panel.width <= 0f || Inside(layout.Panel, beside)) && layout.Overlaps(beside) == 0)
@@ -100,6 +109,15 @@ namespace Stow
             if (delta.sqrMagnitude < 0.0001f) return;
 
             rect.anchoredPosition += delta;
+        }
+
+        private static bool LeavesScreen(InventoryGui gui, Rect spot)
+        {
+            var parent = _button.transform.parent as RectTransform;
+            if (parent == null) return false;
+
+            var low = parent.TransformPoint(new Vector3(spot.xMin, spot.yMin, 0f));
+            return low.y < 0f;
         }
 
         /// <summary>
