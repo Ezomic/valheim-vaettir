@@ -33,24 +33,19 @@ namespace Hod
     /// in the chest un-greys in the list and still flashes red on its own requirement line,
     /// which reads as two parts of the panel disagreeing.
     ///
-    /// <b>Player.HaveRequirements(Piece, RequirementMode) was a fourth and is deliberately
-    /// gone.</b> It is the gate for every buildable piece, and building was cut out of this
-    /// feature on 2026-09-06 - the crafting panel is the only seam. Nothing subtle happens as
-    /// a result: it is a separate method from the Recipe overload the panel uses
-    /// (assembly_valheim 0.221.12, Player.cs:2623 against 2517), neither calls the other, and
-    /// the Recipe path reaches CountItems only through the private HaveRequirementItems still
-    /// bracketed above. So the hammer counts and spends exactly what vanilla counts and spends.
+    /// <b>The hammer is bracketed too, by <see cref="HodBuilding"/>, and that file is where the
+    /// reasoning lives.</b> It was cut out of this feature on 2026-09-06 because a placement
+    /// asks, builds and spends inside one frame, which leaves no room to fetch from a chest this
+    /// client does not own. LHM-76 brought it back with the one thing that cut lacked: the
+    /// click that cannot be paid for yet is refused and sends the fetch, so the second click
+    /// is paid from the pack. It reuses the three Inventory patches below unchanged, and
+    /// opens the same depth counter through <see cref="OpenScope"/>.
     ///
-    /// ConsumeResources is the one bracket that still spans a building call - it is one method
-    /// serving both the craft and the placement, Player.cs:1167 and InventoryGui.cs:1564 - and
-    /// it is inert on that side in ordinary play plus one explicit check. Ordinary play:
-    /// UpdatePlacement asks HaveRequirements(piece, CanBuild) and calls ConsumeResources in
-    /// the same frame, so a placement that happens at all is one the pack could already pay
-    /// for and TakeFromChests computes a shortfall of zero. The check is for the exception
-    /// that argument used to miss - the real line is
-    /// <c>if (m_noPlacementCost || HaveRequirements(...))</c>, so the noplacementcost cheat
-    /// skips the gate and still reaches the spend. TakeFromChests refuses on NoCostCheat for
-    /// that reason and no other.
+    /// ConsumeResources serves both the craft and the placement (Player.cs 1167 and
+    /// InventoryGui.cs 1564). Under a placement HodScope.Building is above zero, so the scope
+    /// resolves from the player instead of the station, and TakeFromChests pays exactly as it
+    /// does for a craft. TakeFromChests still refuses on NoCostCheat: the noplacementcost cheat
+    /// skips the gate and still reaches the spend.
     ///
     /// <b>And SetupRequirementList rather than SetupRequirement.</b> SetupRequirement is the
     /// single draw method for BOTH panels, so bracketing it would put chest stock into the
@@ -76,8 +71,8 @@ namespace Hod
     /// happened to pass the same point - an invariant maintained by eye, whose failure is the
     /// worst one this feature has. Every one of those nine now asks <see cref="HodChests"/>
     /// with no point at all, and HodChests asks <see cref="HodScope"/>, which resolves the
-    /// post once a frame. A new caller cannot pass the wrong centre because there is nowhere
-    /// to pass one. The centre is the stowing post carrying the hod jib, not the player; see
+    /// jib network once a frame. A new caller cannot pass the wrong centre because there is nowhere
+    /// to pass one. The centre is the jib network (LHM-77), not the player; see
     /// HodScope for why a fixed thing in the world is the right origin for a service that was
     /// bought with a piece.
     ///
@@ -109,10 +104,10 @@ namespace Hod
     /// prefetch is fired on the press and the material is really in the pack before
     /// ConsumeResources is reached, which leaves that method untouched and honest.
     ///
-    /// Building had no such timer: Player.UpdatePlacement asks HaveRequirements, calls
-    /// TryPlacePiece and calls ConsumeResources in ONE frame on a click, so paying for a wall
-    /// out of somebody else's chest meant refusing the first click. That path was removed
-    /// rather than fixed, and the stutter went with it.
+    /// Building has no such timer: Player.UpdatePlacement asks HaveRequirements, calls
+    /// TryPlacePiece and calls ConsumeResources in ONE frame on a click. HodBuilding therefore
+    /// refuses the click that would be paid for from somebody else's chest and sends the
+    /// fetch, so the next click finds the material in the pack.
     ///
     /// The spend is still verified, in CraftStart, because a prefetch can come back short and
     /// a chest can be emptied by somebody else during the craft timer. A craft that has been
@@ -166,6 +161,14 @@ namespace Hod
         {
             get { return _depth > 0 && _suspend == 0 && HodConfig.Enabled.Value; }
         }
+
+        /// <summary>
+        /// Opens and closes the crafting scope for <see cref="HodBuilding"/>. Always paired,
+        /// closed from a finalizer.
+        /// </summary>
+        internal static void OpenScope() { _depth++; }
+
+        internal static void CloseScope() { if (_depth > 0) _depth--; }
 
         private static bool IsPlayerInventory(Inventory inventory)
         {
@@ -595,7 +598,7 @@ namespace Hod
         /// design in one line. See the class docstring - display is optimistic, payment is
         /// authoritative, and this is the authoritative half.
         /// </summary>
-        private static int Spendable(Player player, string name, int quality)
+        internal static int Spendable(Player player, string name, int quality)
         {
             return CarriedOnly(player.GetInventory(), name, quality, true)
                    + HodChests.CountSpendable(name, quality, true);
@@ -613,7 +616,7 @@ namespace Hod
         /// HodWithdraw.Ask refuses a duplicate of a request already in flight, so calling this
         /// again on the next frame's press does not drain a chest twice for one craft.
         /// </summary>
-        private static bool Ask(Player player, string name, int quality, int shortfall)
+        internal static bool Ask(Player player, string name, int quality, int shortfall)
         {
             if (shortfall <= 0) return false;
 

@@ -38,6 +38,9 @@ namespace Hod
         public static ConfigEntry<string> BiomeOverrides;
         public static ConfigEntry<string> TraderBiomes;
 
+        public static ConfigEntry<bool> BuildFromChests;
+        public static ConfigEntry<string> BuildFetchMessage;
+
         public static ConfigEntry<bool> ShowChestTotals;
         public static ConfigEntry<string> ChestTotalFormat;
         public static ConfigEntry<string> ShortMessage;
@@ -65,34 +68,60 @@ namespace Hod
                 + "and does nothing, which is the safe direction: the piece is not "
                 + "un-declared, so no ZDO is at risk.");
 
-            // Twenty metres, and measured from the POST rather than from the player. That
-            // is the one substantive change the fold made to Hirsla's rules, and it is not
-            // a tuning choice - it is what makes the jib a piece rather than a passive mod.
-            //
-            // Hirsla measured from the player because there was nothing else to measure
-            // from: it was a mod you installed, and the sphere had to hang off the only
-            // thing that moves. Here there is a fixed object in the world that paid a
-            // heartwood for the privilege, so the sphere hangs off that - which also means
-            // the set of chests being counted does not change as the player shuffles at the
-            // bench, and a bench that worked a moment ago cannot stop working because
-            // somebody took half a step.
+            // Twenty metres, and measured from each JIB (LHM-77). The jib is a free-standing piece
+            // with a reach circle of its own; it used to look up the nearest stowing post and
+            // hang the sphere off that. Hanging it off the jib means no post is needed and a
+            // jib built on the edge of another's circle extends the reach, which is the whole
+            // of how a base bigger than one circle is covered.
             Range = config.Bind("Hod", "HodRange", 20f,
-                "How far the bench service reaches, in metres, measured FROM THE STOWING "
-                + "POST that carries the hod jib. It is one number doing two jobs, and they "
-                + "are the same sphere by design: the crafting station you are standing at "
-                + "must be within this of such a post, and the chests that serve it are the "
-                + "ones within this of that same post.\n"
-                + "Not measured from you. The post is the fixed thing - it is what was built "
-                + "and what was paid for - so a bench either is in range of it or is not, "
-                + "and that answer does not change while you stand there deciding what to "
-                + "make. It also means a jib serves the room it was built in rather than "
-                + "following whoever walks through.\n"
-                + "Bigger is not free: every chest inside this sphere is read on every "
+                "How far one hod jib reaches, in metres: the radius of the circle drawn round "
+                + "it. A crafting station (or, with BuildFromChests, you) inside a jib's circle "
+                + "is served, and the chests that serve it are the ones inside the circles of "
+                + "the SAME network.\n"
+                + "Two jibs are one network when one stands inside the other's circle, and that "
+                + "chains: build a jib on the edge of the last and the reach grows by another "
+                + "circle. A network covers the union of its circles. Separate networks never "
+                + "mix, so a bench between two unconnected jibs is served by the nearer one "
+                + "alone.\n"
+                + "A jib needs no stowing post. One already built beside a post works as it "
+                + "always did, with its circle centred on itself rather than on the post.\n"
+                + "Bigger is not free: every chest inside a network is read on every "
                 + "requirement check, and the crafting panel checks every recipe in the game "
-                + "once a frame.\n"
+                + "once a frame. Changing it moves which jibs are linked, in every world.\n"
                 + "Deliberately separate from Sorting/Range, which is how far a spirit will "
-                + "fly to put something away, and from Upgrades/UpgradeRange, which is what "
-                + "counts as \"beside\" for the piece itself.");
+                + "fly to put something away.");
+
+            // Default on: this is the other half of what the jib was built for, and a rule that
+            // is off by default is a rule most hosts never learn they own. A new key, so no file
+            // that has run Vaettir before is carrying a saved value for it.
+            BuildFromChests = config.Bind("Hod", "BuildFromChests", true,
+                "Whether the hammer draws on the chests round a hod jib the way a "
+                + "workbench does. Off, building spends only what you are carrying, exactly as "
+                + "vanilla does.\n"
+                + "The rule is the bench's, with you standing in for the bench: you must be "
+                + "inside a hod jib's circle (HodRange), and the chests that serve you are the "
+                + "ones inside the circles of that jib's network. The same boss and biome gate "
+                + "(BossBiomes) decides which materials count, and what the build menu shows, "
+                + "greys and spends follows from that one rule.\n"
+                + "A server rule: the host's value is the one every client uses, because the "
+                + "client that places a piece and the client that owns the chest have to agree "
+                + "about whether the chest is in play.\n"
+                + "It switches itself off for a session when another mod that builds from "
+                + "chests is installed (AzuCraftyBoxes, CraftFromContainers, Storage Core), "
+                + "because two mods adding the same chest to the same count would pay a piece "
+                + "twice. The log says so when it happens.");
+
+            BuildFetchMessage = config.Bind("Hod", "BuildFetchMessage",
+                "Fetching it from the chests, place it again",
+                "Shown on a placement that was refused because part of its cost sits in a chest "
+                + "somebody else's machine owns. A placement cannot wait for the owner to answer, "
+                + "so the click that cannot be paid for yet asks for the material instead and is "
+                + "refused; the material is in your pack a moment later and the next click "
+                + "builds. In singleplayer, on a listen host and at any chest you own there is "
+                + "nothing to fetch and the first click builds.\n"
+                + "Empty for silence. The refusal stands either way. When nothing could be asked "
+                + "for at all (the chest has no owner yet, or its owner is out of reach) the "
+                + "ShortMessage line is shown instead.");
 
             // ---------------------------------------------------------------- the gate
 
@@ -248,12 +277,11 @@ namespace Hod
 
             // ---------------------------------------------------------------- interface
 
-            // The build menu is deliberately absent from this, and from the feature. Both
-            // panels draw their requirement lines through one method,
-            // InventoryGui.SetupRequirement, so an earlier version of Hirsla changed the
-            // numbers in both for free - and free was the problem. The build HUD's numbers
-            // say exactly what vanilla says, because building does not draw on a chest and a
-            // line promising material the hammer will not spend is worse than no line at all.
+            // The build menu is part of the feature since LHM-76, and both panels still draw
+            // their requirement lines through one method, InventoryGui.SetupRequirement. That
+            // is what makes this one switch cover the hammer's panel as well: HodBuilding
+            // brackets the build HUD's own entry point, so its numbers say what the hammer
+            // will actually spend.
             ShowChestTotals = config.Bind("Hod", "ShowChestTotals", true,
                 "Add what the post's chests hold to the amount shown beside each requirement "
                 + "in the crafting panel. The build menu is untouched - the hammer does not "

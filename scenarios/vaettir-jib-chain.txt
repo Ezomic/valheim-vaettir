@@ -1,0 +1,143 @@
+# Vaettir: jibs chain, and a jib network serves only what is inside it (LHM-77).
+#
+# Range is the default 20m. Forward is the line through everything:
+#   chest A    at -20, inside jib A's circle only (A is 10m away, B is 28m away)
+#   jib A      at -10
+#   jib B      at   8, 18m from A, so A's circle holds B's centre: one network
+#   bench      at  24, 16m from B and 34m from A: in the network only because of B
+#   jib C      at right 28, 29m or more from both: a network of its own, with chest C
+# Eikthyr is dead throughout, so every refusal here is the network declining, not the gate.
+# There is no stowing post anywhere: the jib stands on its own.
+# Each placing is done from the mark (`back`), because `place` measures from the player.
+# Not yet run in game.
+
+clear
+give Hammer:1,Hoe:1
+give FineWood:250,BronzeNails:40,IronNails:52,Chain:4,GroveHeartwood:6
+give Wood:100,LeatherScraps:60,Stone:40
+god
+ghost
+
+# The Meadows, found rather than promised, because a suite run starts wherever the scenario
+# before it left you. On 2026-09-28 that was the Deep North, inside the Queen's entrance
+# utangard-queen-door-stays-sealed spawns, and ten Vaettir files failed on the place and not
+# on the mod: tilling refused as snow too deep, and the entrance's own pieces, cut through by
+# `wipe`, falling and dropping copper scrap. Already in the Meadows, this does not move you.
+biome Meadows
+wait 3
+
+# Take down whatever the last run left standing, so this spot can be used again instead of
+# walking to fresh ground every time, and level the ground. The stage removes EVERYTHING built
+# within thirty metres, not just what a scenario placed, and the world's own trees and rocks. It
+# runs here as well as before the first step, because that one ran where the file before left you,
+# which is not here when `biome` moved you.
+#
+# Level ground because `place` raycasts each piece to its own height, so on a slope a captured
+# build lands in pieces and anything unsupported is gone within a second. The stage levels to your
+# feet for thirty metres, which covers the shed's back. It replaces the `sweep`, `wipe 14` and
+# `flatten 4.4 0` that did this here before: it does all three over more ground, to the same height.
+stage
+
+# Down onto the ground, which the stage has already put you on, and remember the spot for the
+# `back` at the end. See vaettir-jib-requirement-line.txt.
+landed
+mark
+
+key defeated_eikthyr
+
+place wood_beam 23.2 1.0 5 0.01
+place wood_beam 23.4 -1.0 -174 0.00
+place wood_floor 24.2 1.1 -174 0.02
+place wood_floor 24.4 -0.9 -174 0.03
+place wood_beam 24.1 2.1 -84 0.00
+place wood_beam 24.5 -1.9 -84 0.03
+place wood_beam 25.2 1.2 -174 0.00
+place wood_beam 25.4 -0.8 -174 0.06
+place piece_workbench 24.6 0.1 -174 0.10
+place wood_pole2 23.1 2.0 5 1.04
+place wood_pole2 23.5 -2.0 5 1.00
+place woodwall 24.1 2.1 96 1.00
+place woodwall 24.5 -1.9 -84 1.03
+place woodwall 25.2 1.2 5 1.00
+place woodwall 25.4 -0.8 5 1.06
+place wood_pole2 25.1 2.2 5 1.01
+place wood_pole2 25.5 -1.8 5 1.07
+place wood_roof_ocorner_45 24.2 1.1 5 2.02
+place wood_roof_ocorner_45 24.4 -0.9 -84 2.03
+place wood_beam 24.1 2.1 95 2.00
+place wood_beam 24.5 -1.9 -84 2.03
+place wood_beam 25.2 1.2 5 2.00
+place wood_beam 25.4 -0.8 5 2.06
+place wood_beam_45 23.2 1.0 -174 3.01
+place wood_beam_45 23.4 -1.0 6 3.00
+wait 2
+
+# C and its chest first, and stocked while it is the only chest, so `stock` cannot pick another.
+place hod_jib 0 28
+wait 4
+place piece_chest_wood 0 30
+wait 2
+claim piece_chest_wood
+wait 2
+stock piece_chest_wood Wood:100,LeatherScraps:50 40
+
+# Then A and its chest, which stays empty for now.
+place hod_jib -10 0
+wait 4
+place piece_chest_wood -20 0
+wait 2
+claim piece_chest_wood 22
+wait 2
+strip Wood,LeatherScraps
+wait 1
+goto piece_workbench
+wait 1
+use piece_workbench
+wait 1
+
+# No jib reaches the bench yet (34m from A, 42m from C), and only C's chest is stocked anyway.
+craftable Bow no
+close
+back
+wait 1
+
+# B on the edge of A. The bench is now inside the network, but the network's chest is empty and
+# the stocked one belongs to C: separate networks never mix.
+place hod_jib 8 0
+wait 4
+goto piece_workbench
+wait 1
+use piece_workbench
+wait 1
+craftable Bow no
+close
+back
+wait 1
+
+# Stock the chest only jib A reaches. The bench is served by B and the chest by A.
+stock piece_chest_wood Wood:20,LeatherScraps:16 22
+wait 1
+goto piece_workbench
+wait 1
+use piece_workbench
+wait 1
+craftable Bow yes
+craft Bow
+wait 6
+holds piece_chest_wood Wood 10 22
+carrying Bow 1
+close
+back
+wait 1
+
+# Take B down: the chain is broken and A's chest is out of the bench's reach again.
+break hod_jib 12
+wait 3
+goto piece_workbench
+wait 1
+use piece_workbench
+wait 1
+craftable Bow no
+close
+landed
+back
