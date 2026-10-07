@@ -1,32 +1,43 @@
-# Vaettir: the jib's collision stands on the ground and reaches the top of its model (LHM-77).
+# Vaettir: the jib's collision follows its mesh part by part (LHM-77).
 #
-# `hod bounds` reads the nearest standing jib: the union of its solid colliders against the ground
-# under it, and its mesh against the same ground, in metres.
+# The collider is fifteen oriented boxes fitted by tools/jib/fit_col.py, one per physical part (two
+# mast timbers, two buttress timbers, two deck braces, the deck, the hoist boom and its brace, the
+# basket, two tiers of cage as an octagon, the prong crown). The first collider was six axis-aligned
+# boxes measured off height bands; the mast leans, so its box bloated into invisible walls. Cords,
+# cleats, rails and the prong tines carry no box on purpose.
 #
-#   gap     collider bottom minus ground       top     collider top minus ground
-#   meshtop mesh top minus ground              floating, buried, grounded, tops, tall   yes/no flags
+# `hod bounds` reads the nearest standing jib and prints one summary line, then one `hod box` line
+# per box with its part, centre, size and rotation in the jib's own space.
 #
-# floating is a collider that starts more than 5cm ABOVE the ground, which lets a player walk under
-# the footing. buried is one that starts more than 20cm below it. tops=match is the collider's top
-# within 15cm of the mesh's, so a collider that stops short of the cage (the old single arm box did)
-# or runs past it is caught. tall is a top between 2.5m and 4.5m, so a model scaled to a toy or to a
-# tower is caught.
+#   gap        lowest collider point minus the ground      top   highest point, minus the ground
+#   meshtop    the mesh's highest point, minus the ground  topdiff   their difference
+#   centreout  how far the farthest box centre lies outside the mesh's bounding box
+#   footprint  the boxes' shadow on the ground, m2, against meshfootprint (measured off the mesh by
+#              fit_col.py and written into hod_jib.col), as footratio
 #
-# THE FOOTING IS SUNK 13cm ON PURPOSE. The mesh and the footing box both reach -0.13 below the
-# origin, so a jib on a slope has no gap under its downhill foot. That makes the strict reading,
-# grounded (within 5cm either way), read no, and it is printed but NOT asserted: asserting it would
-# fail on a deliberate design. If the jib should sit exactly on the ground the model and its .col
-# move, not this file. What is asserted is the half that matters: nothing floats, nothing is buried
-# deeper than the footing, and the top is where the model's top is.
+# What is asserted, each as its own flag so a failure names itself:
+#   colliders=15            the box count, so a stray extra or a lost box is seen
+#   floating=no buried=no   nothing starts more than 5cm above or below the ground
+#   grounded=yes            the lowest point is within 5cm of the ground. The model is cut flat at
+#                           the ground now (the old one was sunk 13cm on purpose, and there is no
+#                           stone footing any more), so this holds and is asserted
+#   tops=match              the collider top within 5cm of the mesh top (the prong crown)
+#   tall=yes                a top between 2.5m and 4.5m, so a toy or a tower is caught
+#   centres=inside          no box centre more than 5cm outside the mesh bounds: a box hanging in
+#                           the air by itself is the thing this catches
+#   footprint_ok=yes        the boxes' shadow at most 15 percent larger than the mesh's
 #
 # On flat ground only. The stage levels thirty metres, which is what makes `gap` the model's own and
-# not a slope's. A slope is a hand check.
+# not a slope's. A slope is a hand check, and on one the flat-cut feet leave a gap on the downhill
+# side, which is the price of sitting flush on level ground.
 #
 # MANUAL CHECKS, which this cannot do:
-#  1. Walk up to a jib and round it. Want: you are stopped at the footing, the mast and the basket,
-#     and not by empty air beside them.
-#  2. Jump onto the footing. Want: you stand on it, you do not sink.
-#  3. Build one on a slope. Want: no gap under the downhill foot.
+#  1. Walk up to a jib and round it. Want: you are stopped by the mast, the legs and the basket, and
+#     not by empty air beside them.
+#  2. Walk under the hoist boom, from the mast to the basket. Want: nothing stops you above 2.2m; the
+#     basket stops you at its own width.
+#  3. Stand a chest or a workbench against a leg. Want: it can touch the timber, not float away from
+#     it.
 #  4. Look at the hover and the placement ghost. Want: the ghost sits on the ground, not above it.
 
 clear
@@ -44,9 +55,15 @@ mark
 place hod_jib 6 0
 wait 4
 console hod bounds
-printed standing=yes colliders=6 yes
+printed standing=yes colliders=15 yes
 printed floating=no buried=no yes
+printed grounded=yes yes
 printed tops=match tall=yes yes
+printed centres=inside yes
+printed footprint_ok=yes yes
+printed hod box 0 part=mast_timber yes
+printed hod box 14 part=prong_crown yes
+printed hod box 15 no
 
 landed
 back

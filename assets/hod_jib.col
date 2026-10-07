@@ -1,16 +1,39 @@
-# box  centre x y z  size x y z  qx qy qz qw
-# Measured off hod_jib.obj by connected part (LHM-77). The mast leans, so its box is the
-# bounds of both timbers; the arm is the hoist boom and the basket, not the empty air
-# between them, which the old single arm box wrapped.
-# footing and buttress feet
-box 0.000 0.060 0.140 1.400 0.380 0.680 0 0 0 1
-# mast, both timbers
-box -0.040 1.400 0.000 0.380 2.400 0.400 0 0 0 1
-# platform deck
-box -0.030 1.620 0.000 1.260 0.100 1.220 0 0 0 1
+# box  centre x y z  size x y z  qx qy qz qw   (Unity space, as the mesh)
+# Fitted by tools/jib/fit_col.py: one oriented box per physical part of hod_jib.obj, not
+# axis-aligned height bands. A rotated box becomes its own child object in the loader.
+# Cords, cleats, rails and prong tines carry no box on purpose: they are thinner than a hand or
+# out of reach, and a box round them is air a player bumps into. The basket hangs at 0.98 m,
+# below head height, so it is solid; the cords it hangs on are not.
+layer root
+meta footprint 1.898
+meta meshtop 3.269
+# mast timber
+box -0.103 1.280 0.003 2.552 0.360 0.156 0.49473 0.50521 0.50995 0.48985
+# mast timber
+box 0.047 1.293 -0.003 2.584 0.361 0.158 0.49899 0.50101 0.50251 0.49748
+# buttress left
+box -0.314 0.547 0.190 1.106 0.147 0.168 0.55476 0.43845 0.34331 0.61817
+# buttress right
+box 0.309 0.545 0.190 1.106 0.147 0.168 0.34244 0.61866 0.56058 0.43099
+# deck brace
+box 0.238 1.398 -0.002 0.683 0.101 0.120 0.67275 0.21774 0.21944 0.67220
+# deck brace
+box -0.318 1.402 -0.004 0.690 0.100 0.120 0.21486 0.67367 0.67507 0.21042
+# deck
+box -0.039 1.613 -0.008 1.229 0.081 1.199 0.00000 0.00000 0.00000 1.00000
 # hoist boom
-box -0.550 2.390 0.000 1.340 0.380 0.160 0 0 0 1
-# basket on its cord
-box -1.180 1.140 0.000 0.500 0.340 0.500 0 0 0 1
-# the nest cage
-box -0.055 2.810 0.000 1.020 0.920 1.000 0 0 0 1
+box -0.552 2.390 0.001 1.306 0.110 0.130 0.05522 0.70495 0.70418 0.06425
+# boom brace
+box -0.489 2.164 0.000 0.854 0.080 0.090 0.17922 0.68402 0.68297 0.18318
+# basket
+box -1.122 1.143 -0.000 0.477 0.325 0.469 0.00000 0.00000 0.00000 1.00000
+# cage lower
+box -0.061 2.545 0.003 0.811 0.399 0.811 0.00000 0.00000 0.00000 1.00000
+# cage lower
+box -0.061 2.545 0.003 0.811 0.399 0.811 0.00000 0.38268 0.00000 0.92388
+# cage upper
+box -0.061 2.866 0.003 0.568 0.244 0.568 0.00000 0.00000 0.00000 1.00000
+# cage upper
+box -0.061 2.866 0.003 0.568 0.244 0.568 0.00000 0.38268 0.00000 0.92388
+# prong crown
+box -0.061 3.129 0.021 0.751 0.281 0.751 0.00000 0.00000 0.00000 1.00000
