@@ -9,14 +9,22 @@ and the mod uses [semantic versioning](https://semver.org).
 
 - **The hod jib is now the roost cage (LHM-77).** A tall mast with a railed platform, a hoist boom
   and basket on a cord, and a woven cage on top that shows the heartwood through its weave and is
-  crowned with prongs and a fern fan. About 3.3 m high, where the old jib was 1.56 m. The prefab
+  crowned with prongs. About 3.3 m high, where the old jib was 1.56 m. The prefab
   name `hod_jib` is unchanged, so a jib already standing keeps working and only changes look. Its
-  collision is six boxes measured off the mesh (footing, mast, deck, boom, basket, cage) instead of
-  one box wrapped round the arm. The build menu icon is re-rendered.
+  collision is fifteen oriented boxes, one per physical part (the leaning mast timbers and
+  buttresses are turned boxes, the cage an octagon of two tiers), instead of one box wrapped round
+  the arm; cords, rails and prong tines are not solid, and the basket is, since it hangs at 0.98 m.
+  The build menu icon is re-rendered.
+- **The jib has no fern, no stone feet and no iron plates.** The fern fan on the cage is gone. The
+  legs end on the ground by themselves, cut flat so each foot sits flush on level ground (the old
+  model was sunk 13 cm into it), and the flat iron plates on the mast are replaced by cord lashings.
+  The pulley is built into the end of the hoist boom: two wooden cheeks run up the beam's sides, the
+  iron wheel turns between them on an axle on the beam's centreline, and the rope hangs exactly
+  vertical from its lowest point to a knot over the basket, which is centred under the wheel. Iron is
+  now only the wheel and its axle. On a slope the flat feet leave a gap under the downhill side.
 - **Workbench skins for the jib.** Its wood is the workbench's own planks (`Workbench_mat`), placed
-  per part at the bench's density of about 40 texels a metre; iron is the stonecutter bench's metal,
-  stone is the dark rubble of a stone wall, wicker and cord are the village container weave, moss and
-  fronds are patches of the fiddlehead sheet. Each material is borrowed whole, never with its texture
+  per part at the bench's density of about 40 texels a metre; iron (the pulley) is the stonecutter bench's metal,
+  wicker and cord are the village container weave. Each material is borrowed whole, never with its texture
   swapped. A group whose donor is missing falls back to the workbench planks and says so once in the
   log. The materials are borrowed again in every world, because Valheim 1.0 destroys them at logout.
   The post, rail and perch are unchanged.
@@ -53,11 +61,12 @@ and the mod uses [semantic versioning](https://semver.org).
   in the third jib's circle), `vaettir-jib-hammer` (the chest pays, pack first, out of reach, gate
   closed, `BuildFromChests` off), `vaettir-jib-limits` (a chest outside the circle, the jib gone),
   `vaettir-jib-ring` (the ghost ring is green joining and blue alone), `vaettir-jib-skin` (every
-  material group found its donor, none fell back) and `vaettir-jib-collider` (the collision stands
-  on the ground and reaches the top of the model). `scenarios/jib.playlist` lists them in the order
+  material group found its donor, none fell back) and `vaettir-jib-collider` (fifteen boxes, grounded
+  within 5 cm, the top within 5 cm of the mesh's, no box centre outside the mesh, a footprint at most
+  15 percent over the mesh's). `scenarios/jib.playlist` lists them in the order
   to run them.
-- Console readouts for those scenarios, all read-only: `hod ring`, `hod skin`, `hod bounds`,
-  `hod cost <piece>` and `hod build`. `hodbuild on|off` is the one command that writes anything
+- Console readouts for those scenarios, all read-only: `hod ring`, `hod skin`, `hod bounds` (one line a collision box, with its part, centre, size and
+  rotation), `hod cost <piece>` and `hod build`. `hodbuild on|off` is the one command that writes anything
   (`BuildFromChests`), a cheat command like `hodkey`, reached by Devkit's `mod` step.
 - **The planting grid's six keys are on Core's Settings page (LHM-51)**: pin, seeds up, seeds down,
   row or circle, grid free and grid turn. It is the page in the compendium that lists a player's own

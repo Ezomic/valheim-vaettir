@@ -98,7 +98,7 @@ namespace Stow
         //   iron            the stonecutter bench's grey metal, its darkest patch: forged hardware
         //   stone, clay     stone_wall_2x1's dark rubble (there is no clay donor on disk)
         //   wicker, cord    the village container sheet's golden strand weave
-        //   frond           the fiddlehead fern's leaf, stretched to fill the part
+        //   moss            a patch of the fiddlehead sheet's green leaf island
         //
         // Deliberately NOT the workbench's hide, stones or leather straps: those are the bench's
         // own details, and the Vaettir pieces carry details of their own.
@@ -142,10 +142,6 @@ namespace Stow
               Asset = "fi_village_containers", Sheet = "fi_village_containers_hd", Px = 256,
               Rects = new[] { new Rect(0.62f, 0.86f, 0.36f, 0.12f) } };
 
-        private static readonly DonorSkin FrondSkin = new DonorSkin
-            { Prefab = "Pickable_Fiddlehead", Material = "FernAshlands_mat", Sheet = "Ashlandsvegetation_d", Px = 64,
-              Rects = new[] { new Rect(0.02f, 0.05f, 0.30f, 0.90f) }, Stretch = true };
-
         // A patch of the same fern sheet for the moss tufts on the roost cage: the sheet has no
         // moss, and the leaf's green island is the nearest thing in the game that is not a plank.
         private static readonly DonorSkin MossSkin = new DonorSkin
@@ -178,8 +174,6 @@ namespace Stow
                 case "cord":
                 case "rope":
                     return WeaveSkin;
-                case "frond":
-                    return FrondSkin;
                 case "moss":
                     return MossSkin;
                 default:
@@ -1099,9 +1093,29 @@ namespace Stow
             StowRuntime.Log.LogInfo("Remapped UVs into the atlas for " + moved + " group(s).");
         }
 
+        private static readonly Dictionary<string, Dictionary<string, float>> Meta =
+            new Dictionary<string, Dictionary<string, float>>(StringComparer.OrdinalIgnoreCase);
+
+        /// <summary>A `meta name value` number from a collider file already read, or NaN.</summary>
+        public static float MetaOf(string file, string name)
+        {
+            Dictionary<string, float> values;
+            float value;
+            return Meta.TryGetValue(file, out values) && values.TryGetValue(name, out value) ? value : float.NaN;
+        }
+
         /// <summary>
         /// Boxes from the sidecar, replacing whatever shape the donor had. A barrel's
         /// capsule around a square bin leaves you bumping into air at the corners.
+        ///
+        /// Format, one entry a line: `box cx cy cz sx sy sz [qx qy qz qw]` in the piece's space,
+        /// `layer root` to put the boxes on the piece's own layer, `meta name value` for numbers
+        /// a scenario reads back (see <see cref="MetaOf"/>). A comment line right above a box
+        /// names the part it stands for.
+        ///
+        /// A file that says `layer root` is the newer format: every box gets an object of its own
+        /// (a BoxCollider cannot be turned, so a leaning timber needs one) named for its part, which
+        /// is what `hod bounds` lists. A file that does not keeps one host object and no rotation.
         /// </summary>
         private static void ReplaceColliders(GameObject prefab, string path)
         {
@@ -1112,36 +1126,76 @@ namespace Stow
                 return;
             }
 
+            var culture = CultureInfo.InvariantCulture;
             var boxes = new List<string[]>();
+            var names = new List<string>();
+            var meta = new Dictionary<string, float>();
+            var onRootLayer = false;
+            var comment = "";
             foreach (var line in File.ReadAllLines(path))
             {
                 var trimmed = line.Trim();
-                if (trimmed.Length == 0 || trimmed.StartsWith("#")) continue;
+                if (trimmed.Length == 0) { comment = ""; continue; }
+                if (trimmed.StartsWith("#")) { comment = trimmed.TrimStart('#', ' '); continue; }
 
                 var parts = trimmed.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-                if (parts.Length >= 7 && parts[0] == "box") boxes.Add(parts);
+                if (parts.Length >= 7 && parts[0] == "box") { boxes.Add(parts); names.Add(comment); }
+                else if (parts.Length >= 2 && parts[0] == "layer" && parts[1] == "root") onRootLayer = true;
+                else if (parts.Length >= 3 && parts[0] == "meta")
+                {
+                    float value;
+                    if (float.TryParse(parts[2], NumberStyles.Float, culture, out value)) meta[parts[1]] = value;
+                }
+
+                comment = "";
             }
 
             if (boxes.Count == 0) return;
 
+            Meta[Path.GetFileName(path)] = meta;
+
             foreach (var collider in prefab.GetComponentsInChildren<Collider>(true))
                 UnityEngine.Object.DestroyImmediate(collider);
 
-            var culture = CultureInfo.InvariantCulture;
             var host = new GameObject("post_collision");
             host.transform.SetParent(prefab.transform, false);
 
-            foreach (var parts in boxes)
+            // The piece's own layer is the one vanilla's colliders are on. Older files do not ask for
+            // it and stay on Default, as they always did.
+            if (onRootLayer) host.layer = prefab.layer;
+
+            for (var i = 0; i < boxes.Count; i++)
             {
-                var box = host.AddComponent<BoxCollider>();
-                box.center = new Vector3(
+                var parts = boxes[i];
+                var centre = new Vector3(
                     float.Parse(parts[1], culture),
                     float.Parse(parts[2], culture),
                     float.Parse(parts[3], culture));
-                box.size = new Vector3(
+                var size = new Vector3(
                     float.Parse(parts[4], culture),
                     float.Parse(parts[5], culture),
                     float.Parse(parts[6], culture));
+
+                if (!onRootLayer)
+                {
+                    var plain = host.AddComponent<BoxCollider>();
+                    plain.center = centre;
+                    plain.size = size;
+                    continue;
+                }
+
+                var rotation = Quaternion.identity;
+                if (parts.Length >= 11)
+                    rotation = new Quaternion(
+                        float.Parse(parts[7], culture), float.Parse(parts[8], culture),
+                        float.Parse(parts[9], culture), float.Parse(parts[10], culture));
+
+                var holder = new GameObject("box_" + i + "_" + names[i].Replace(' ', '_'));
+                holder.transform.SetParent(host.transform, false);
+                holder.layer = prefab.layer;
+                holder.transform.localPosition = centre;
+                holder.transform.localRotation = rotation;
+                holder.AddComponent<BoxCollider>().size = size;
             }
 
             StowRuntime.Log.LogInfo("Post collision: " + boxes.Count + " boxes.");

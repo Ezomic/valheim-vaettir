@@ -494,7 +494,7 @@ namespace Stow
             // the jib visibly house the heartwood they cost.
             //
             // Only the jib wears the workbench skins (bench planks, the stonecutter's metal,
-            // rubble, the village weave, fern fronds). The rail and the perch are still the
+            // rubble, the village weave). The rail and the perch are still the
             // earlier models, drawn for the earlier donors.
             if (!PostModel.Apply(clone, def.ModelFile, def.PrefabName + "_visual",
                                  def.Heartwood, def.Kind == UpgradeKind.Jib))
