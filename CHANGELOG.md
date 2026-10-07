@@ -3,6 +3,54 @@
 Notable changes to Vaettir. Format follows [Keep a Changelog](https://keepachangelog.com),
 and the mod uses [semantic versioning](https://semver.org).
 
+## [1.7.0] - 2026-10-08
+
+### Added
+
+- **The hod jib stands on its own and shows its reach (LHM-77).** It no longer looks for the nearest
+  stowing post. Its circle, `HodRange` across, is drawn on the ground while you place one (green when
+  it would join a network, blue when it would stand alone) and on built jibs while you hold the
+  hammer within twice that distance or look at one. A jib built with its centre inside another's
+  circle joins it, and that chains: a row of jibs, each on the edge of the last, covers the union of
+  their circles. A bench is served by the chests in its own network, and separate networks never
+  mix. The build menu and hover text no longer mention a post, and the jib loses the upgrade star.
+  Jibs already standing beside a post keep working.
+- **The hammer builds out of the chests in a jib's reach (LHM-76).** Within `HodRange` of a jib the
+  build menu greys pieces by pack plus chests, the requirement panel shows `have/need +chest`, and
+  placing spends your pack first and the chests after, with the same boss rule and chest exclusions
+  as the bench. A chest another player's game owns is asked rather than written to: the click asks
+  and is refused with the `BuildFetchMessage` text, and the next click builds. New host rule
+  `BuildFromChests` (true). Away from every jib it is vanilla. It switches itself off when
+  AzuCraftyBoxes, CraftFromContainers or Storage Core is installed. Repair costs no material in the
+  game, so it is unchanged.
+- Console readouts for the jib scenarios, all read-only: `hod ring`, `hod skin`, `hod bounds` (one
+  line per collision box with its part, centre, size and rotation), `hod cost <piece>` and
+  `hod build`. `hodbuild on|off` is the one that writes (`BuildFromChests`) and is a cheat command
+  like `hodkey`, reached through Devkit's `mod` step.
+- Scenarios `vaettir-jib-chain`, `-networks`, `-hammer`, `-limits`, `-ring`, `-skin` and
+  `-collider`, and `scenarios/jib.playlist` with the order to run them in.
+  `vaettir-holds-button-clear-of-cells` now walks to each chest first, because the window shuts
+  beyond 4 m.
+
+### Changed
+
+- **The hod jib is the roost cage (LHM-77).** A tall mast with a railed platform, a hoist boom and
+  basket on a cord, and a woven cage on top that shows the heartwood through its weave, crowned with
+  prongs. About 3.3 m high, where the old jib was 1.56 m. The prefab name `hod_jib` is unchanged, so
+  a jib already standing keeps working and only changes look. Its collision is fifteen oriented boxes,
+  one per physical part, instead of one box wrapped round the arm; cords, rails and prong tines are
+  not solid, and the basket is. The build menu icon is re-rendered.
+- The jib has no fern, no stone feet and no iron plates. Each leg is cut flat so it sits flush on
+  level ground (the old model was sunk 13 cm into it), and cord lashings replace the plates. The
+  pulley is built into the end of the hoist boom, with the rope hanging vertical from its lowest
+  point to a knot over a basket centred under the wheel. On a slope the flat feet leave a gap under
+  the downhill side.
+- The jib's wood is the workbench's own planks, iron is the stonecutter bench's metal, and wicker and
+  cord are the village container weave. Each material is borrowed whole, never with its texture
+  swapped, and borrowed again in every world because Valheim 1.0 destroys them at logout. A group
+  whose donor is missing falls back to the workbench planks and says so once in the log. The post,
+  rail and perch are unchanged.
+
 ## [1.6.5] - 2026-10-06
 
 ### Fixed
