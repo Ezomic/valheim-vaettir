@@ -5,6 +5,28 @@ and the mod uses [semantic versioning](https://semver.org).
 
 ## [Unreleased]
 
+### Changed
+
+- **The hod jib is now the roost cage (LHM-77).** A tall mast with a railed platform, a hoist boom
+  and basket on a cord, and a woven cage on top that shows the heartwood through its weave and is
+  crowned with prongs and a fern fan. About 3.3 m high, where the old jib was 1.56 m. The prefab
+  name `hod_jib` is unchanged, so a jib already standing keeps working and only changes look. Its
+  collision is six boxes measured off the mesh (footing, mast, deck, boom, basket, cage) instead of
+  one box wrapped round the arm. The build menu icon is re-rendered.
+- **Workbench skins for the jib.** Its wood is the workbench's own planks (`Workbench_mat`), placed
+  per part at the bench's density of about 40 texels a metre; iron is the stonecutter bench's metal,
+  stone is the dark rubble of a stone wall, wicker and cord are the village container weave, moss and
+  fronds are patches of the fiddlehead sheet. Each material is borrowed whole, never with its texture
+  swapped. A group whose donor is missing falls back to the workbench planks and says so once in the
+  log. The materials are borrowed again in every world, because Valheim 1.0 destroys them at logout.
+  The post, rail and perch are unchanged.
+
+### Removed
+
+- `Hod/VariantMode` and the comparison jibs `hod_jib_vb1`, `hod_jib_vb2` and `hod_jib_vb3`. They
+  never shipped, but they exist in any world where the setting was on: their prefab names no longer
+  resolve there, so what was built from them is discarded on the next load.
+
 ### Added
 
 - **The hod jib stands on its own and has a reach you can see (LHM-77).** It no longer looks up

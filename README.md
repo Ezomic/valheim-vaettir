@@ -156,6 +156,10 @@ rail beside it. Break the rail and build it again to apply a new number.
 
 ### The bench service
 
+The hod jib is a roost cage on a mast: a railed platform, a hoist boom with a basket, and a woven
+cage on top that shows the heartwood. It wears the workbench's own wood, the stonecutter's metal and
+the village container weave, borrowed from the game's materials rather than drawn.
+
 The hod jib is the one that changes how crafting behaves, so it has the most to say about
 itself.
 

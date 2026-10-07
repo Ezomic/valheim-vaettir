@@ -28,6 +28,7 @@
   <ItemGroup>
     <Reference Include="assembly_valheim"><HintPath>$(ManagedDir)\assembly_valheim.dll</HintPath><Private>false</Private></Reference>
     <Reference Include="assembly_utils"><HintPath>$(ManagedDir)\assembly_utils.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="SoftReferenceableAssets"><HintPath>$(ManagedDir)\SoftReferenceableAssets.dll</HintPath><Private>false</Private></Reference>
     <!-- Localization lives here, not in assembly_valheim. -->
     <Reference Include="assembly_guiutils"><HintPath>$(ManagedDir)\assembly_guiutils.dll</HintPath><Private>false</Private></Reference>
     <Reference Include="UnityEngine"><HintPath>$(ManagedDir)\UnityEngine.dll</HintPath><Private>false</Private></Reference>
@@ -90,12 +91,6 @@
       <GroveAssets Include="$(MSBuildProjectDirectory)\assets\*.obj;$(MSBuildProjectDirectory)\assets\*.col;$(MSBuildProjectDirectory)\assets\*.png" />
     </ItemGroup>
     <Copy SourceFiles="@(GroveAssets)" DestinationFolder="$(DeployDir)" ContinueOnError="true" />
-    <!-- Hod/VariantMode comparison models. Deploy only: package.ps1 reads the top-level
-         asset globs above and never recurses, so these stay out of the zip on purpose. -->
-    <ItemGroup>
-      <GroveVariantAssets Include="$(MSBuildProjectDirectory)/assets/variants/hod_solo_b?.obj;$(MSBuildProjectDirectory)/assets/variants/hod_solo_b?.col" />
-    </ItemGroup>
-    <Copy SourceFiles="@(GroveVariantAssets)" DestinationFolder="$(DeployDir)" ContinueOnError="true" />
   </Target>
 
 </Project>

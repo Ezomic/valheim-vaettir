@@ -104,15 +104,8 @@ namespace Stow
         /// </summary>
         public int Attempts;
 
-        /// <summary>
-        /// Name and model for a comparison variant, which has no config entries of its own.
-        /// Null on the three real pieces, which read Name and Model from the cfg.
-        /// </summary>
-        public string FixedName;
-        public string FixedModel;
-
-        public string DisplayName { get { return FixedName ?? Name.Value; } }
-        public string ModelFile { get { return FixedModel ?? Model.Value; } }
+        public string DisplayName { get { return Name.Value; } }
+        public string ModelFile { get { return Model.Value; } }
     }
 
     /// <summary>
@@ -175,25 +168,6 @@ namespace Stow
         };
 
         public static readonly List<UpgradeDef> All = new List<UpgradeDef> { Rail, Perch, Jib };
-
-        private static UpgradeDef JibVariant(string suffix, string title)
-        {
-            return new UpgradeDef
-            {
-                PrefabName = "hod_jib_v" + suffix,
-                Kind = UpgradeKind.Jib,
-                Heartwood = true,
-                Blurb = Jib.Blurb,
-                Effect = Jib.Effect,
-                FixedName = title,
-                FixedModel = "hod_solo_" + suffix + ".obj",
-            };
-        }
-
-        /// <summary>Comparison jibs, filled by Bind only when Hod/VariantMode is on.</summary>
-        public static readonly List<UpgradeDef> Variants = new List<UpgradeDef>();
-
-        public static ConfigEntry<bool> VariantMode;
 
         public static UpgradeDef For(UpgradeKind kind)
         {
@@ -392,30 +366,6 @@ namespace Stow
             Jib.Model = config.Bind("Upgrades", "JibModel", "hod_jib.obj",
                 "The hand-built mesh the hod jib wears.");
 
-            VariantMode = config.Bind("Hod", "VariantMode", false,
-                "DEV ONLY. Adds three extra jibs to the hammer, one per candidate model "
-                + "(b1 twig nest, b2 burl hollow, b3 roost cage), so the designs can stand "
-                + "in a row in game. Each is a full jib: same cost, same network, same reach "
-                + "ring.\n"
-                + "DESTRUCTIVE WHEN TURNED OFF. The three are real pieces with real ZDOs "
-                + "(hod_jib_vb1, hod_jib_vb2, hod_jib_vb3), and their prefab names stop "
-                + "resolving the moment this is off, so ZNetScene discards everything built "
-                + "from them, silently and permanently. Build them in a disposable world.\n"
-                + "Personal, not a host rule: it is applied on this machine only.");
-
-            if (VariantMode.Value)
-            {
-                foreach (var suffix in new[] { "b1", "b2", "b3" })
-                {
-                    var title = suffix == "b1" ? "Jib B1 (twig nest)"
-                              : suffix == "b2" ? "Jib B2 (burl hollow)"
-                              : "Jib B3 (roost cage)";
-                    var def = JibVariant(suffix, title);
-                    def.Cost = Jib.Cost;
-                    Variants.Add(def);
-                    All.Add(def);
-                }
-            }
         }
 
         // ------------------------------------------------------------------ the link
@@ -479,9 +429,6 @@ namespace Stow
         public static readonly System.Func<GameObject> BuildRail = () => Build(Rail);
         public static readonly System.Func<GameObject> BuildPerch = () => Build(Perch);
         public static readonly System.Func<GameObject> BuildJib = () => Build(Jib);
-        public static readonly System.Func<GameObject> BuildVariant1 = () => Build(Variants[0]);
-        public static readonly System.Func<GameObject> BuildVariant2 = () => Build(Variants[1]);
-        public static readonly System.Func<GameObject> BuildVariant3 = () => Build(Variants[2]);
 
         private static GameObject Build(UpgradeDef def)
         {
@@ -545,8 +492,12 @@ namespace Stow
             // for the .col sidecar - and, for the two that carry a `core` group, light the
             // heartwood and hang the halo on it. That last argument is why the perch and
             // the jib visibly house the heartwood they cost.
+            //
+            // Only the jib wears the workbench skins (bench planks, the stonecutter's metal,
+            // rubble, the village weave, fern fronds). The rail and the perch are still the
+            // earlier models, drawn for the earlier donors.
             if (!PostModel.Apply(clone, def.ModelFile, def.PrefabName + "_visual",
-                                 def.Heartwood))
+                                 def.Heartwood, def.Kind == UpgradeKind.Jib))
             {
                 StowRuntime.Log.LogWarning(
                     def.PrefabName + " is wearing the donor chest's own body - "
