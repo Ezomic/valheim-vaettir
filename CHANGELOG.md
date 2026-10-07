@@ -19,6 +19,8 @@ and the mod uses [semantic versioning](https://semver.org).
 
 ### Fixed
 
+- **The Holds button no longer lands on a chest slot in a wide chest.** In a six column chest with a long name the room beside Place stacks is taken by the title, and the fallback under the last row did not fit inside the window, so the button was pushed back up onto the bottom right cell. It now hangs just under the window's bottom edge instead, or over the top edge if that would leave the screen. LHM-75.
+
 - **The hod jib did not serve what a trader sells.** The Cured squirrel hamstring from the Bog
   Witch stayed in the chest at a bench that needed it. The cause was not the recipe derivation
   the ticket suspected: `BiomeOverrides` shipped with `CuredSquirrelHamstring:mistlands`, a pin
