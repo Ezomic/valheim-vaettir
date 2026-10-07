@@ -1,4 +1,16 @@
 # box  centre x y z  size x y z  qx qy qz qw
-box 0.000 0.060 0.000 0.400 0.120 0.400 0 0 0 1
-box 0.000 0.830 0.000 0.160 1.460 0.160 0 0 0 1
-box -0.400 1.180 0.000 0.720 0.740 0.300 0 0 0 1
+# Measured off hod_jib.obj by connected part (LHM-77). The mast leans, so its box is the
+# bounds of both timbers; the arm is the hoist boom and the basket, not the empty air
+# between them, which the old single arm box wrapped.
+# footing and buttress feet
+box 0.000 0.060 0.140 1.400 0.380 0.680 0 0 0 1
+# mast, both timbers
+box -0.040 1.400 0.000 0.380 2.400 0.400 0 0 0 1
+# platform deck
+box -0.030 1.620 0.000 1.260 0.100 1.220 0 0 0 1
+# hoist boom
+box -0.550 2.390 0.000 1.340 0.380 0.160 0 0 0 1
+# basket on its cord
+box -1.180 1.140 0.000 0.500 0.340 0.500 0 0 0 1
+# the nest cage
+box -0.055 2.810 0.000 1.020 0.920 1.000 0 0 0 1

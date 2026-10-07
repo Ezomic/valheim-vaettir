@@ -32,7 +32,26 @@ namespace Grove
             if (_index == null) BuildIndex();
 
             GameObject found;
-            return _index.TryGetValue(name, out found) ? found : null;
+            if (!_index.TryGetValue(name, out found)) return null;
+
+            // Destroyed when the bundle it came from was unloaded at logout. Unity's == is
+            // what sees that; the dictionary only holds the stale reference.
+            if (found == null)
+            {
+                _index = null;
+                return Find(name);
+            }
+
+            return found;
+        }
+
+        /// <summary>
+        /// Forgets the index. It maps names to prefabs found in a world, and a prefab found
+        /// in one world is gone by the next.
+        /// </summary>
+        public static void Invalidate()
+        {
+            _index = null;
         }
 
         private static void BuildIndex()

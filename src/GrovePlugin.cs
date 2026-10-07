@@ -86,6 +86,11 @@ namespace Grove
             // discarded rather than errored.
             Step("keep its prefabs registered", TickPrefabs);
 
+            // After the prefabs exist and before any piece is instantiated from them: a
+            // world's first zone load builds pieces from what is here, so a skin left
+            // pointing at the last world's destroyed material would be copied into all of them.
+            Step("re-skin the jib for this world", RefreshSkins);
+
             // Thicket keeps its own registry because it registers a piece per plant off a
             // config roster, which Prefabs.Keep does not model. A planted seedling is
             // exactly as easy to lose to a missing prefab as a heartwood in an inventory.
@@ -102,6 +107,7 @@ namespace Grove
         // these does any work: binding a delegate to a static method neither calls it nor
         // reflects on anything, which is the thing a type initialiser must never do.
         private static readonly Action TickPrefabs = Prefabs.Tick;
+        private static readonly Action RefreshSkins = Stow.PostModel.Refresh;
         private static readonly Action RegisterPlants = () => Thicket.WildPlants.Register();
         private static readonly Action RegisterBonemealRecipe =
             () => BonemealPrefab.RegisterRecipe();
@@ -155,6 +161,10 @@ namespace Grove
         private void Awake()
         {
             Log = Logger;
+
+            // Before anything can touch a soft reference: the flag is read once, when the
+            // loader is built. It is what lets the jib borrow the village container weave.
+            SoftAssets.MakeEverythingLoadable();
 
             // One config file, one Harmony instance, one registration with Core. The post
             // was a second plugin until the merge and is now a part of this one; binding
@@ -239,17 +249,6 @@ namespace Grove
                          buildTool: upgradeTool);
             Prefabs.Keep(Stow.PostUpgrades.Jib.PrefabName, Stow.PostUpgrades.BuildJib,
                          buildTool: upgradeTool);
-
-            // Hod/VariantMode: three comparison jibs, declared only while it is on.
-            if (Stow.PostUpgrades.VariantMode.Value && Stow.PostUpgrades.Variants.Count == 3)
-            {
-                Prefabs.Keep(Stow.PostUpgrades.Variants[0].PrefabName,
-                             Stow.PostUpgrades.BuildVariant1, buildTool: upgradeTool);
-                Prefabs.Keep(Stow.PostUpgrades.Variants[1].PrefabName,
-                             Stow.PostUpgrades.BuildVariant2, buildTool: upgradeTool);
-                Prefabs.Keep(Stow.PostUpgrades.Variants[2].PrefabName,
-                             Stow.PostUpgrades.BuildVariant3, buildTool: upgradeTool);
-            }
 
             // ---- past this line a failure costs a feature, never a world ----
 
@@ -508,7 +507,7 @@ namespace Grove
             // Everything else in the Upgrades section - the costs, the range that decides
             // which post a piece serves, the names, the models - stays synced, because both
             // ends have to agree about a piece that exists in the world.
-            Suite.Local(Stow.PostUpgrades.ShowLink, Stow.PostUpgrades.VariantMode);
+            Suite.Local(Stow.PostUpgrades.ShowLink);
 
             // The bench service's five display settings, on the same argument. What is drawn
             // on one player's requirement line, what a refused craft says to them, and whether
