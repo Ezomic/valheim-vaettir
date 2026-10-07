@@ -1,0 +1,188 @@
+# Vaettir: jibs chain, and a bench is served by the chests of its own network only (LHM-77).
+#
+# A jib's circle is HodRange (20m). Two jibs belong to one network when one's centre is inside the
+# other's circle, and a network reaches the union of its circles. This file builds that out of three
+# jibs and two chests and asks a workbench under a roof, through the real crafting panel, whether it
+# is served. Every "no" has a "yes" beside it that differs in one thing, and the one thing is named.
+#
+# Forward is the line through everything, right is the branch; metres from the mark, Eikthyr down:
+#   chest A    (-24, 0)   inside jib A's circle only (A is 12m away, B is 28m)
+#   jib A      (-12, 0)
+#   jib B      (  4, 0)   16m from A, so A's circle holds B's centre: one network, A+B
+#   bench      ( 22, 0.1) 18m from B and 34m from A: in the network only because of B
+#   jib C      ( -4, 22)  23m from both A and B: a network of its own
+#   chest C    ( -8, 25)  5m from C, 25m from A and 28m from B: C's network alone reaches it
+# Everything is inside the 30m the stage levels.
+#
+# THE SEQUENCE, each probe an `use` of the bench and a `craftable Bow` (wood 10, scraps 8):
+#  1. Only A and C stand. Chest C is stocked, chest A is empty. The bench is 34m from both: no. (Control
+#     for everything below: the shed, the roof, the bench and the recipe are all in place, so the
+#     later yes cannot be about those.)
+#  2. B is built. The bench is in network A+B now, and that network's only chest is empty; the
+#     stocked chest belongs to C. Still no: separate networks never mix.
+#  3. Chest A is stocked. Yes, and a real craft: a bow in the pack, exactly 10 wood and 8 scraps out
+#     of chest A, and chest C untouched. The bench is served by B and the chest by A, through the chain.
+#  4. B comes down. Chest A still holds enough for a second bow (the craft left 10 and 8), so a no here
+#     is the chain breaking and nothing else.
+#  5. B is built again. Yes again: the network heals.
+# `hod build` is read at the start of 2 and 4 for the topology (jibs=3 nets=2 with B up, jibs=2 nets=2
+# without), so the layout itself is pinned and not assumed.
+#
+# MANUAL CHECKS, which this cannot do:
+#  1. Look at jib B. Want: the hover says it is linked with 1 other jib, reaching 20m each; before
+#     the chain it says it stands alone.
+#  2. Hold the Hammer near A and B. Want: both gold rings, overlapping, B's centre inside A's.
+#  3. Craft at the bench with the crafting panel open. Want: the chest's wood is added to your count
+#     on the requirement line, and drops by 10 after the craft.
+# NOT TESTED here: a bench served from a chest the player does not own (vaettir-jib-remote-chest).
+
+clear
+give Hammer:1,Hoe:1
+give FineWood:250,BronzeNails:40,IronNails:52,Chain:4,GroveHeartwood:6
+give Wood:100,LeatherScraps:60,Stone:40
+god
+ghost
+
+biome Meadows
+wait 3
+stage
+landed
+mark
+
+unkey defeated_eikthyr
+wait 1
+key defeated_eikthyr
+wait 2
+
+console hod build
+printed shut=no yields=none yes
+printed gate=open yes
+
+# C and its chest first, and stocked while it is the only chest, so `stock` cannot pick another.
+place hod_jib -4 22
+wait 4
+place piece_chest_wood -8 25
+wait 3
+claim piece_chest_wood
+wait 1
+stock piece_chest_wood Wood:100,LeatherScraps:50 30
+
+# The shelter and bench, captured from one built by hand (see vaettir-jib-gate.txt) and carried 17.4m
+# forward so the bench lands at (22, 0.1). Lowest pieces first, so nothing is placed on something that
+# is not there yet.
+place wood_beam 20.6 1.0 5 0.01
+place wood_beam 20.8 -1.0 -174 0.00
+place wood_floor 21.6 1.1 -174 0.02
+place wood_floor 21.8 -0.9 -174 0.03
+place wood_beam 21.5 2.1 -84 0.00
+place wood_beam 21.9 -1.9 -84 0.03
+place wood_beam 22.6 1.2 -174 0.00
+place wood_beam 22.8 -0.8 -174 0.06
+place piece_workbench 22.0 0.1 -174 0.10
+place wood_pole2 20.5 2.0 5 1.04
+place wood_pole2 20.9 -2.0 5 1.00
+place woodwall 21.5 2.1 96 1.00
+place woodwall 21.9 -1.9 -84 1.03
+place woodwall 22.6 1.2 5 1.00
+place woodwall 22.8 -0.8 5 1.06
+place wood_pole2 22.5 2.2 5 1.01
+place wood_pole2 22.9 -1.8 5 1.07
+place wood_roof_ocorner_45 21.6 1.1 5 2.02
+place wood_roof_ocorner_45 21.8 -0.9 -84 2.03
+place wood_beam 21.5 2.1 95 2.00
+place wood_beam 21.9 -1.9 -84 2.03
+place wood_beam 22.6 1.2 5 2.00
+place wood_beam 22.8 -0.8 5 2.06
+place wood_beam_45 20.6 1.0 -174 3.01
+place wood_beam_45 20.8 -1.0 6 3.00
+wait 2
+
+# A and its chest, which stays empty for now. The mark is 24m from this chest and 26m from C's, so it
+# is the nearest one to every step that stands at the mark.
+place hod_jib -12 0
+wait 4
+place piece_chest_wood -24 0
+wait 3
+claim piece_chest_wood
+wait 1
+strip Wood,LeatherScraps
+wait 1
+
+# ---- 1. A and C only: the bench is out of both circles
+console hod build
+printed jibs=2 nets=2 yes
+goto piece_workbench
+wait 1
+use piece_workbench
+wait 1
+craftable Bow no
+close
+landed
+back
+landed
+
+# ---- 2. B joins A: the bench is in the network, and the network's chest is empty
+place hod_jib 4 0
+wait 4
+console hod build
+printed jibs=3 nets=2 yes
+goto piece_workbench
+wait 1
+use piece_workbench
+wait 1
+craftable Bow no
+close
+landed
+back
+landed
+
+# ---- 3. chest A stocked: served through B, and a real craft
+stock piece_chest_wood Wood:20,LeatherScraps:16 30
+wait 1
+goto piece_workbench
+wait 1
+use piece_workbench
+wait 1
+craftable Bow yes
+craft Bow
+wait 6
+carrying Bow 1
+close
+landed
+back
+landed
+holds piece_chest_wood Wood 10 30
+holds piece_chest_wood LeatherScraps 8 30
+move -4 25
+landed
+holds piece_chest_wood Wood 100 8
+holds piece_chest_wood LeatherScraps 50 8
+back
+landed
+
+# ---- 4. B down: the chain is broken and A's chest, still full enough for a bow, is out of reach
+break hod_jib 8
+wait 3
+console hod build
+printed jibs=2 nets=2 yes
+goto piece_workbench
+wait 1
+use piece_workbench
+wait 1
+craftable Bow no
+close
+landed
+back
+landed
+
+# ---- 5. B built again: the network heals
+place hod_jib 4 0
+wait 4
+goto piece_workbench
+wait 1
+use piece_workbench
+wait 1
+craftable Bow yes
+close
+landed
+back

@@ -1,0 +1,14 @@
+# The hod jib scenarios, in the order to run them (LHM-76, LHM-77).
+# Copy these lines into BepInEx\scenarios\playlist.txt, in place of the vaettir-jib-* lines already
+# there. This file is not a .txt on purpose: Devkit lists every .txt in a scenario folder as a
+# scenario, and a playlist is not one.
+#
+# Cheapest and least invasive first. skin only reads, so it runs before anything is built. The two
+# that wait on a bench or a shed come last because they take the longest.
+vaettir-jib-skin
+vaettir-jib-collider
+vaettir-jib-ring
+vaettir-jib-hammer
+vaettir-jib-limits
+vaettir-jib-networks
+vaettir-jib-chain

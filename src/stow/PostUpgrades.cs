@@ -26,7 +26,7 @@ namespace Stow
         /// <summary>Spirit perch - a second courier flies from the post.</summary>
         Perch = 1,
 
-        /// <summary>Hod jib - the crafting panel reaches the chests around the post.</summary>
+        /// <summary>Hod jib - a free-standing reach that lets the crafting panel and the hammer use nearby chests.</summary>
         Jib = 2,
     }
 
@@ -103,6 +103,9 @@ namespace Stow
         /// by Invalidate, because a second world is a second chance for the name to exist.
         /// </summary>
         public int Attempts;
+
+        public string DisplayName { get { return Name.Value; } }
+        public string ModelFile { get { return Model.Value; } }
     }
 
     /// <summary>
@@ -157,13 +160,14 @@ namespace Stow
             // broken" from "nothing in that chest comes from a biome you have earned" - and
             // the first thing they would do is take it down again. One clause up front is
             // cheaper than the bug report.
-            Blurb = "Stowing post improvement. A heartwood on an arm, over the bench. A "
-                    + "crafting station near the post can count the chests around it - but "
-                    + "only for materials from a biome whose boss is dead.",
-            Effect = "a bench near the post crafts from its chests",
+            Blurb = "A heartwood on an arm, over a hoist. A crafting station or a build site "
+                    + "within its reach can count the chests within its reach - but only for "
+                    + "materials from a biome whose boss is dead. A jib built on the edge of "
+                    + "another's reach joins it and extends the reach.",
+            Effect = "benches and builders in reach use the chests in reach",
         };
 
-        public static readonly UpgradeDef[] All = { Rail, Perch, Jib };
+        public static readonly List<UpgradeDef> All = new List<UpgradeDef> { Rail, Perch, Jib };
 
         public static UpgradeDef For(UpgradeKind kind)
         {
@@ -361,6 +365,7 @@ namespace Stow
 
             Jib.Model = config.Bind("Upgrades", "JibModel", "hod_jib.obj",
                 "The hand-built mesh the hod jib wears.");
+
         }
 
         // ------------------------------------------------------------------ the link
@@ -381,21 +386,6 @@ namespace Stow
         public static bool Has(StowPost post, UpgradeKind kind)
         {
             return PostUpgrade.Has(post, kind);
-        }
-
-        /// <summary>
-        /// The nearest post within <paramref name="range"/> of a point that carries this
-        /// upgrade, or null.
-        ///
-        /// This is the question the bench service asks - "is the station I am standing at
-        /// within reach of a post with a jib" - and it is asked of the POST rather than of
-        /// the player on purpose. The post is the fixed thing: a range measured from the
-        /// player moves as they shuffle and turns a bench that worked a moment ago into one
-        /// that does not.
-        /// </summary>
-        public static StowPost ServingPost(Vector3 point, UpgradeKind kind, float range)
-        {
-            return PostUpgrade.ServingPost(point, kind, range);
         }
 
         // ------------------------------------------------------------------ building
@@ -473,7 +463,7 @@ namespace Stow
             var piece = clone.GetComponent<Piece>();
             if (piece != null)
             {
-                piece.m_name = def.Name.Value;
+                piece.m_name = def.DisplayName;
                 piece.m_description = def.Blurb;
 
                 // The same tab as the post itself. An upgrade in a different category from
@@ -484,7 +474,7 @@ namespace Stow
                 // The star in the corner of the build-menu slot. It is a flag rather than
                 // art: Hud builds each slot from a prefab carrying an "upgrade" child and
                 // does m_upgrade.SetActive(piece.m_isUpgrade).
-                piece.m_isUpgrade = true;
+                piece.m_isUpgrade = def.Kind != UpgradeKind.Jib;
 
                 ApplyCost(def, piece);
 
@@ -492,7 +482,7 @@ namespace Stow
                 // all three as wooden chests - the one picture guaranteed to make a player
                 // scroll past. Left as the donor's on failure rather than blanked: a wrong
                 // picture is bad and an empty slot is worse.
-                var icon = Icons.Load(Icons.For(def.Model.Value), def.PrefabName);
+                var icon = Icons.Load(Icons.For(def.ModelFile), def.PrefabName);
                 if (icon != null) piece.m_icon = icon;
             }
 
@@ -502,12 +492,16 @@ namespace Stow
             // for the .col sidecar - and, for the two that carry a `core` group, light the
             // heartwood and hang the halo on it. That last argument is why the perch and
             // the jib visibly house the heartwood they cost.
-            if (!PostModel.Apply(clone, def.Model.Value, def.PrefabName + "_visual",
-                                 def.Heartwood))
+            //
+            // Only the jib wears the workbench skins (bench planks, the stonecutter's metal,
+            // rubble, the village weave). The rail and the perch are still the
+            // earlier models, drawn for the earlier donors.
+            if (!PostModel.Apply(clone, def.ModelFile, def.PrefabName + "_visual",
+                                 def.Heartwood, def.Kind == UpgradeKind.Jib))
             {
                 StowRuntime.Log.LogWarning(
                     def.PrefabName + " is wearing the donor chest's own body - "
-                    + def.Model.Value + " was not found beside the dll.");
+                    + def.ModelFile + " was not found beside the dll.");
             }
 
             var scale = Mathf.Max(0.05f, Scale.Value);
@@ -757,7 +751,7 @@ namespace Stow
         /// feature answering the same question opposite ways is also how one of them ends up
         /// being the one nobody re-reads.
         /// </summary>
-        private bool Placed
+        internal bool Placed
         {
             get
             {
@@ -880,34 +874,20 @@ namespace Stow
         }
 
         /// <summary>
-        /// The nearest post within range of a point that carries this upgrade.
-        ///
-        /// Walked from the upgrades rather than from the posts, which is the cheaper
-        /// direction: an upgrade already knows its post, so this is one pass over a handful
-        /// of pieces with no searching inside it.
+        /// Every hod jib in the world, split into the ones standing in it and the placement
+        /// ghost. The one question HodNetwork asks of this class: the jib stopped being a post
+        /// upgrade when LHM-77 gave it a reach of its own, so it reads positions, not posts.
         /// </summary>
-        public static StowPost ServingPost(Vector3 point, UpgradeKind kind, float range)
+        public static void CollectJibs(List<PostUpgrade> placed, List<PostUpgrade> ghosts)
         {
-            StowPost best = null;
-            var bestSq = range * range;
-
             for (var i = 0; i < All.Count; i++)
             {
                 var upgrade = All[i];
-                if (upgrade == null || !upgrade.Placed) continue;
-                if (upgrade.m_kind != (int)kind) continue;
+                if (upgrade == null || upgrade.m_kind != (int)UpgradeKind.Jib) continue;
 
-                var post = upgrade.Post;
-                if (post == null) continue;
-
-                var distance = (post.transform.position - point).sqrMagnitude;
-                if (distance > bestSq) continue;
-
-                bestSq = distance;
-                best = post;
+                if (upgrade.Placed) placed.Add(upgrade);
+                else ghosts.Add(upgrade);
             }
-
-            return best;
         }
 
         /// <summary>
@@ -1113,6 +1093,13 @@ namespace Stow
         /// </summary>
         public string GetHoverText()
         {
+            if (Kind == UpgradeKind.Jib)
+            {
+                var jibDef = PostUpgrades.For(Kind);
+                return Localization.instance.Localize(Hod.HodNetwork.HoverText(
+                    this, GetHoverName(), jibDef != null ? jibDef.Effect : ""));
+            }
+
             var post = Post;
             PokeEffect(post);
 

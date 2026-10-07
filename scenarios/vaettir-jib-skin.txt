@@ -1,0 +1,52 @@
+# Vaettir: every material group of the hod jib found its donor in this world (LHM-77).
+#
+# The jib is skinned with materials borrowed whole from vanilla prefabs, one per OBJ group, and the
+# failure mode is silent by design: a group whose own donor is missing wears the workbench planks
+# instead, so the jib still renders and nothing looks broken. The warning that says so is written
+# once per session, long before a scenario runs. `hod skin` reads the state instead: for the newest
+# standing hod_jib model it prints one line per group, then a summary.
+#
+#   group=<name> status=<ok|fallback|classic|glow|missing> donor=<prefab> via=<prefab|asset|classic>
+#   summary: standing=yes groups=N ok=N glow=N fallback=N missing=N dead=N
+#
+# status=ok is the group's own donor. fallback is the planks standing in for a missing donor. glow is
+# the heartwood group, deliberately not a donor skin. dead counts renderer slots whose material has
+# been destroyed under them, which is what a soft-reference bundle unloaded at logout does.
+#
+# The group that matters most is wicker (and cord with it): its donor, the village container sheet
+# on fi_vil_container_basket02_closed, belongs to a prop nobody has loaded in an ordinary world, so
+# the material is loaded straight from the game's bundles (via=asset) and held by a soft reference.
+# That is the one path that could fail while every other group is fine, and it fails to the planks.
+#
+# Groups in hod_jib.obj: wood, bark, iron, cord, wicker, core. Three groups are gone on purpose
+# (Robbin, 2026-10-07): frond (the fern fan), stone (the rubble feet) and the iron plates, so the iron
+# group is now only the pulley's wheel and axle. The two lines below that say "no" fail if a rebuilt
+# model brings frond or stone back. The skin table also knows moss, but this model has no moss
+# group, so there is no line to pin for it; if one is added this file should gain one.
+#
+# MANUAL CHECKS, which this cannot do (it reads the resolved donors, not how the jib looks):
+#  1. Look at a standing jib in daylight. Want: wooden planks, a grey iron wheel in the boom end,
+#     golden woven basket and cord, and a glowing heartwood. No fern, no stone feet, no iron plates on
+#     the mast. No magenta, no white.
+#  2. Leave to the main menu and load the world again, then run this file once more. Want: the same
+#     result, dead=0 (the materials are borrowed again for the new world).
+#  3. Compare the basket with a village container in a Meadows or Black Forest village. Want: the
+#     same golden weave.
+#
+# Nothing is built, so the ground is left alone.
+#! nostage
+console hod skin
+printed standing=yes yes
+printed fallback=0 missing=0 dead=0 yes
+printed status=fallback no
+printed status=missing no
+printed status=classic no
+printed live=no no
+printed group=wood status=ok donor=piece_workbench yes
+printed group=bark status=ok donor=piece_workbench yes
+printed group=iron status=ok donor=piece_stonecutter yes
+printed group=stone no
+printed group=cord status=ok donor=fi_vil_container_basket02_closed yes
+printed group=wicker status=ok donor=fi_vil_container_basket02_closed yes
+printed group=frond no
+printed group=core status=glow yes

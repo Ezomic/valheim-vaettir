@@ -5,8 +5,69 @@ and the mod uses [semantic versioning](https://semver.org).
 
 ## [Unreleased]
 
+### Changed
+
+- **The hod jib is now the roost cage (LHM-77).** A tall mast with a railed platform, a hoist boom
+  and basket on a cord, and a woven cage on top that shows the heartwood through its weave and is
+  crowned with prongs. About 3.3 m high, where the old jib was 1.56 m. The prefab
+  name `hod_jib` is unchanged, so a jib already standing keeps working and only changes look. Its
+  collision is fifteen oriented boxes, one per physical part (the leaning mast timbers and
+  buttresses are turned boxes, the cage an octagon of two tiers), instead of one box wrapped round
+  the arm; cords, rails and prong tines are not solid, and the basket is, since it hangs at 0.98 m.
+  The build menu icon is re-rendered.
+- **The jib has no fern, no stone feet and no iron plates.** The fern fan on the cage is gone. The
+  legs end on the ground by themselves, cut flat so each foot sits flush on level ground (the old
+  model was sunk 13 cm into it), and the flat iron plates on the mast are replaced by cord lashings.
+  The pulley is built into the end of the hoist boom: two wooden cheeks run up the beam's sides, the
+  iron wheel turns between them on an axle on the beam's centreline, and the rope hangs exactly
+  vertical from its lowest point to a knot over the basket, which is centred under the wheel. Iron is
+  now only the wheel and its axle. On a slope the flat feet leave a gap under the downhill side.
+- **Workbench skins for the jib.** Its wood is the workbench's own planks (`Workbench_mat`), placed
+  per part at the bench's density of about 40 texels a metre; iron (the pulley) is the stonecutter bench's metal,
+  wicker and cord are the village container weave. Each material is borrowed whole, never with its texture
+  swapped. A group whose donor is missing falls back to the workbench planks and says so once in the
+  log. The materials are borrowed again in every world, because Valheim 1.0 destroys them at logout.
+  The post, rail and perch are unchanged.
+
+### Removed
+
+- `Hod/VariantMode` and the comparison jibs `hod_jib_vb1`, `hod_jib_vb2` and `hod_jib_vb3`. They
+  never shipped, but they exist in any world where the setting was on: their prefab names no longer
+  resolve there, so what was built from them is discarded on the next load.
+
 ### Added
 
+- **The hod jib stands on its own and has a reach you can see (LHM-77).** It no longer looks up
+  the nearest stowing post. Its circle, `HodRange` across, is drawn on the ground while you place
+  one (green when it would join a network, blue when it would stand alone) and on built jibs while
+  you hold the hammer within twice that distance or look at one. A jib built with its centre
+  inside another's circle joins it, and that chains, so a row of jibs each on the edge of the last
+  covers the union of their circles. A bench is served by the chests in the same network and
+  separate networks never mix. Jibs already built beside a post keep working, and the prefab name
+  is unchanged. The build menu text and hover text no longer talk about a post, and the jib loses
+  the upgrade star. The existing scenarios that place a post and a jib still apply. Built, not run
+  in game.
+- **The hammer uses the chests in a jib's reach (LHM-76).** Standing within `HodRange` of a jib, the
+  build menu greys pieces by pack plus chests, the requirement panel shows `have/need +chest`, and
+  placing spends your pack first and the chests after, with the boss rule and chest exclusions the
+  bench uses. A chest another player's game owns is asked rather than written to: the click asks
+  and is refused with `BuildFetchMessage`, and the next click builds. New host rule
+  `BuildFromChests` (true). Away from every jib it is vanilla. It switches itself off when
+  AzuCraftyBoxes, CraftFromContainers or Storage Core is installed. Repair costs no material in the
+  game, so it is unchanged. Built, not run in game.
+- Scenarios for the jib (LHM-76, LHM-77), none of them run in game yet: `vaettir-jib-chain` (a bench
+  served through a chain of two jibs and a real craft, a third jib's network kept apart, the middle
+  jib broken and rebuilt), `vaettir-jib-networks` (the same with the hammer, which also puts a probe
+  in the third jib's circle), `vaettir-jib-hammer` (the chest pays, pack first, out of reach, gate
+  closed, `BuildFromChests` off), `vaettir-jib-limits` (a chest outside the circle, the jib gone),
+  `vaettir-jib-ring` (the ghost ring is green joining and blue alone), `vaettir-jib-skin` (every
+  material group found its donor, none fell back) and `vaettir-jib-collider` (fifteen boxes, grounded
+  within 5 cm, the top within 5 cm of the mesh's, no box centre outside the mesh, a footprint at most
+  15 percent over the mesh's). `scenarios/jib.playlist` lists them in the order
+  to run them.
+- Console readouts for those scenarios, all read-only: `hod ring`, `hod skin`, `hod bounds` (one line a collision box, with its part, centre, size and
+  rotation), `hod cost <piece>` and `hod build`. `hodbuild on|off` is the one command that writes anything
+  (`BuildFromChests`), a cheat command like `hodkey`, reached by Devkit's `mod` step.
 - **The planting grid's six keys are on Core's Settings page (LHM-51)**: pin, seeds up, seeds down,
   row or circle, grid free and grid turn. It is the page in the compendium that lists a player's own
   settings and rebinds a key by pressing it. Without Core nothing changes. Built, not run in game.

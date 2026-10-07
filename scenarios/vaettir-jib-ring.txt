@@ -1,0 +1,90 @@
+# Vaettir: the jib's reach ring is drawn, green when the jib being placed would join a network and
+# blue when it would stand alone (LHM-77).
+#
+# `hod ring` reads the END of the pipeline, not the decision: how many reach rings are drawn right
+# now (their line renderers enabled) counted by the colour they were last painted, plus how many jib
+# ghosts are active and how many networks stand. joins is the green ghost ring, alone the blue one,
+# built the gold ring on a standing jib. points=72 is the ring's resolution, material=yes that a
+# shader could be borrowed at all (no shader means nothing is ever drawn, whatever the counts say).
+#
+# The ghost is a real placement ghost: the Hammer is out with hod_jib selected and the camera is
+# aimed (`face`) at a chest standing on the spot, so Player.UpdatePlacementGhost puts it there and
+# HodRing.Tick reads it. Three states, each differing from the last in one thing:
+#  1. No jib anywhere: the ghost has nothing to join. alone=1 joins=0 built=0 nets=0.
+#  2. A jib 16m behind the spot: the ghost joins it. joins=1 alone=0, and the jib's own gold ring
+#     is drawn with it (built=1), because a joining ghost draws the whole network it would join.
+#  3. The spot 24m from that jib, the same ghost: alone=1 joins=0 again, so the colour followed the
+#     distance and not the first state's leftovers. built=1 still, the jib being within twice its
+#     reach of the player with a build tool out.
+#
+# Geometry, metres forward/right of the mark: first spot (6, 0); the jib (-10, 0), 16m from it and
+# inside HodRange (20); the second spot (14, 0), 24m from the jib. The player stands at the mark for
+# the first two states and 8m ahead of it for the third, so the spot is 6m away and in placing range.
+#
+# MANUAL CHECKS, which this cannot do (the counts say a ring is drawn, not how it looks):
+#  1. Hold the Hammer, select the Hod jib and aim at open ground with no jib near. Want: one blue
+#     ring on the ground, 20m across, following the ghost.
+#  2. Aim within 20m of a standing jib. Want: the ring turns green, and the jib's gold ring appears.
+#  3. Look at the ring from the side. Want: it hugs the ground, no gaps or jumps over slopes.
+#  4. Look at a standing jib with the Hammer away. Want: its ring shows for a second on hover.
+#  5. Place a third jib at the edge of a ring. Want: the hover text says linked, and the rings of
+#     both jibs are drawn.
+
+clear
+give Hammer:1,Hoe:1
+give FineWood:250,BronzeNails:40,IronNails:52,Chain:4,GroveHeartwood:6
+give Wood:100,Stone:40
+god
+ghost
+
+biome Meadows
+wait 3
+stage
+landed
+mark
+
+# The Hod jib is listed in the hammer only for a character that knows the workbench station, and a
+# station is learned by building one or standing within a few metres of one. A fixture bench beside
+# the mark does it. Not asserted: the next `tool` step fails with the reason if it did not.
+place piece_workbench 2 -3
+wait 3
+console hod build
+printed shut=no yes
+
+# ---- 1. nothing to join
+place piece_chest_wood 6 0
+wait 3
+tool Hammer hod_jib
+face piece_chest_wood
+wait 2
+console hod ring
+printed material=yes yes
+printed built=0 joins=0 alone=1 other=0 yes
+printed ghosts=1 nets=0 yes
+printed points=72 yes
+
+# ---- 2. a jib in reach of the spot
+place hod_jib -10 0
+wait 4
+face piece_chest_wood
+wait 2
+console hod ring
+printed built=1 joins=1 alone=0 other=0 yes
+printed ghosts=1 nets=1 yes
+printed points=72 yes
+
+# ---- 3. the spot out of its reach. The chest is the aim point, so it moves with the spot.
+break piece_chest_wood 10
+place piece_chest_wood 14 0
+wait 3
+landed
+move 8 0
+landed
+face piece_chest_wood
+wait 2
+console hod ring
+printed built=1 joins=0 alone=1 other=0 yes
+printed ghosts=1 nets=1 yes
+
+landed
+back

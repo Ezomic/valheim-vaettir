@@ -19,11 +19,11 @@ plant transplanting and a bonemeal recipe are here too.
   and a spirit flies them to the chests that asked for them.
 - **Chest rules.** A `Holds…` button in every chest window. Chests hold groups (ore, fuel,
   seeds, building materials) or single items, and can refuse things.
-- **Post upgrades.** Three pieces you build on the ground beside a post, the way a chopping
+- **Post upgrades.** Two pieces you build on the ground beside a post, the way a chopping
   block stands beside a workbench. A **creel rail** makes it hold what a reinforced chest holds
-  and carry 20 items a trip, a
-  **spirit perch** flies a second spirit, and a **hod jib** lets a crafting station near the
-  post build out of the chests around it.
+  and carry 20 items a trip, and a **spirit perch** flies a second spirit.
+- **Hod jib.** A piece that stands on its own and lets crafting stations and the hammer use the
+  chests within its reach. Jibs built on each other's edge extend the reach.
 - **Planting grid.** From Farming 10 the cultivator's ghost snaps to a lattice so hand-placed
   beds come out in rows. A ring shows whether a sapling will actually have room.
 - **Area harvest.** From Farming 15, Shift+E on a ripe crop picks its neighbours too, reaching
@@ -117,8 +117,9 @@ open by anyone, on a cart or a ship, and other stowing posts.
 
 ## Post upgrades
 
-Three pieces, on the hammer's Furniture tab beside the post itself, each built **on the ground
-within 5m of a stowing post**. That is not a new idea to learn: a chopping block stands beside
+Three pieces, on the hammer's Furniture tab beside the post itself. The rail and the perch are
+each built **on the ground within 5m of a stowing post**, and the hod jib needs no post at all
+(see the bench service below). That is not a new idea to learn: a chopping block stands beside
 a workbench and this works the same way, down to the run of motes - the game's own
 station-extension effect, borrowed rather than imitated - that tells you which post a piece is
 feeding when you look at it. Each one serves the **nearest** post in range and exactly one
@@ -129,7 +130,7 @@ than quietly doing nothing.
 | --- | --- | --- |
 | **Creel rail** | 25 fine wood, 10 iron nails, 8 leather scraps | The post holds 6x4 instead of 6x2 - exactly a reinforced chest - and its spirit carries 20 items a trip instead of 10 |
 | **Spirit perch** | 1 heartwood, 25 fine wood, 6 iron nails, 6 silver | Two spirits fly from the post instead of one |
-| **Hod jib** | 1 heartwood, 35 fine wood, 10 iron nails, 2 chain | A crafting station within 20m of the post can build out of the chests around that post |
+| **Hod jib** | 1 heartwood, 35 fine wood, 10 iron nails, 2 chain | Stands alone. Crafting stations and the hammer within 20m of it use the chests within 20m of it. See below |
 
 The rail asks for no heartwood on purpose - it is joinery, and it is the one upgrade you should
 be able to build the same evening you build the post. The other two each house a heartwood and
@@ -155,28 +156,55 @@ rail beside it. Break the rail and build it again to apply a new number.
 
 ### The bench service
 
+The hod jib is a roost cage on a mast: a railed platform, a hoist boom with a basket, and a woven
+cage on top that shows the heartwood. It wears the workbench's own wood, the stonecutter's metal and
+the village container weave, borrowed from the game's materials rather than drawn.
+
 The hod jib is the one that changes how crafting behaves, so it has the most to say about
 itself.
 
-While you are standing at a crafting station that is within `HodRange` (20m) of a post carrying
-a jib, the crafting panel counts the material in the chests around **that post** as well as
-what is in your pack, and crafting spends out of them. A requirement line shows what you are
-carrying against what the recipe costs, then what the chests add in blue: `24/40 +169` is 24
-wood in your pack, 40 needed and 169 more in the chests. A material the chests hold none of
-keeps the game's plain number. There is no keybind and no panel; it is the crafting window you
-already use.
+While you are standing at a crafting station that is within `HodRange` (20m) of a jib, the
+crafting panel counts the material in the chests within reach of that jib as well as what is in
+your pack, and crafting spends out of them. A requirement line shows what you are carrying
+against what the recipe costs, then what the chests add in blue: `24/40 +169` is 24 wood in your
+pack, 40 needed and 169 more in the chests. A material the chests hold none of keeps the game's
+plain number. There is no keybind and no panel; it is the crafting window you already use.
+
+**The hammer works the same way.** Standing within `HodRange` of a jib, the build menu greys a
+piece by what your pack and the chests in reach can pay for, the requirement panel shows the same
+`have/need +chest` figure, and placing a piece spends your pack first and the chests after. Away
+from every jib, or with `BuildFromChests` off, building is vanilla. Repairing costs no material
+in the game, so it is unchanged. Which pieces the menu lists is unchanged too: a piece appears
+once you have carried each of its materials, so a material you have never held still hides it.
+When a piece's material sits in a chest another player's game owns, the first click asks for it
+and is refused with a short message, and the second click builds. In singleplayer, as host, or
+at chests you own, the first click builds.
+
+**A jib has a reach, and jibs chain.** Its circle is `HodRange` across and it is drawn on the
+ground while you place one, and on built jibs while you hold the hammer nearby or look at one.
+The ghost's ring is green when the jib would join a network and blue when it would stand alone.
+A jib built with its centre inside another's circle joins it, and that chains: a row of jibs, each
+on the edge of the last, is one network however long it runs, and it covers every circle in it.
+A bench or a builder inside the network is served by the chests inside the network. Separate
+networks never mix, so a spot covered by two of them is served by the nearer jib's network
+alone. A jib needs no stowing post; one built beside a post before this change works as before.
 
 Three things are deliberate and you will notice all of them:
 
-- **Range is measured from the post, not from you.** The post does not move, so the set of
+- **Range is measured from the jib, not from you.** The jib does not move, so the set of
   chests being counted is the same at the start of a craft and at the end of it whatever you do
-  with WASD in between, and a bench that worked a moment ago cannot stop working because you
-  took half a step. With no station selected the whole thing is shut.
+  with WASD in between. With no station selected the crafting side is shut. The hammer has no
+  station, so there you stand in for it, and your position is what is measured.
 - **Crafting is instant.** The material leaves the chest at the moment you craft. The spirit
   that then flies from the chest to the bench is **purely for show** - it is carrying nothing,
-  it cannot deliver anything, and the item was already made. Turn it off with `ShowFlight`.
-- **Benches only.** Not the hammer, not smelter or kiln fuel. Building from chests is a
-  different mod with a different answer; this one is the crafting panel.
+  it cannot deliver anything, and the item was already made. Turn it off with `ShowFlight`. The
+  hammer has no flight.
+- **Not smelters or kilns.** Fuel and ore stay as they are; this is the crafting panel and the
+  hammer.
+
+If AzuCraftyBoxes, CraftFromContainers or Storage Core is installed, the hammer side switches
+itself off for the session and says so in the log, so a piece is not paid for twice. Crafting
+keeps working as before.
 
 **The boss rule.** A material is only served out of a chest if the biome it comes from has had
 its boss killed: Eikthyr opens the Meadows, the Elder the Black Forest, Bonemass the Swamp and
@@ -406,19 +434,21 @@ not narrow a post that still has a rail beside it - break the rail and build it 
 
 ### [Hod]
 
-The bench service, which is the hod jib's effect.
+The jib's effect: the bench service and, since LHM-76, the hammer.
 
 | Key | Default | Effect |
 | --- | --- | --- |
 | `HodEnabled` | true | Off leaves the crafting panel counting only what you are carrying. The pieces stay buildable and stay standing |
-| `HodRange` | 20 | How far the service reaches, measured **from the post** that carries the jib. Both which benches it serves and which chests it counts |
+| `HodRange` | 20 | The radius of a jib's circle. Both which benches and builders it serves and which chests it counts, and how close two jibs must be to chain. Host rule |
+| `BuildFromChests` | true | Whether the hammer uses the chests in reach. Off is vanilla building. Host rule |
 | `BossBiomes` | `defeated_eikthyr:meadows, defeated_gdking:blackforest, defeated_bonemass:swamp, defeated_bonemass:ocean, …` and a Deep North row | Which global key opens which biome. Ocean rides Bonemass. A row starting with `@` names boss prefabs instead of a key, and the key is read off the first of them that carries one. The Deep North's row is written that way and names the Frozen King's three phases, because his key lives in the game's assets. Until it is found the Deep North stays shut. A file still on the old default, without that row, is moved to this once |
 | `AllowUnclassified` | true | Whether an item the mod cannot place in any biome may still be drawn from a chest |
 | `BiomeOverrides` | (a list of roots) | Corrects the derived biome for an item by hand. Everything made from an overridden root follows it. It beats `TraderBiomes` |
 | `TraderBiomes` | `Haldor:blackforest, BogWitch:swamp, Hildir:plains` | The biome each trader's stock is filed under. Read off the trader prefabs when a world loads |
 | `ShowChestTotals` | true | Add what the chests hold to the amount beside each requirement. Local to you |
 | `ChestTotalFormat` | `{have}/{need} <color=#88CCFF>+{chest}</color>` | How that total is written. A file still on the old default, `{need} <color=#88CCFF>(+{chest})</color>`, is moved to this once. Local to you |
-| `ShortMessage` | The chests could not supply it | Shown when a craft was allowed and the chests then could not supply it. Local to you |
+| `ShortMessage` | The chests could not supply it | Shown when a craft or a placement was allowed and the chests then could not supply it. Local to you |
+| `BuildFetchMessage` | Fetching it from the chests, place it again | Shown on a placement refused while the material is fetched from a chest another player owns. Local to you |
 | `ShowFlight` | true | Send a spirit from the chest to the bench on a craft. Carries nothing; purely for show. Local to you |
 | `RequestTimeout` | 5 | How long to wait for the owner of a chest to answer a withdrawal, in seconds |
 
@@ -545,7 +575,7 @@ saved in your own profile.
 **The post upgrades and the bench service.** `stow_rail`, `stow_perch` and `hod_jib` are three
 more registered prefabs, so the paragraph above applies to them in full: a client or a server
 without this version of Vaettir discards every one already built. `ShowLink`, `ShowFlight`,
-`ShowChestTotals`, `ChestTotalFormat` and `ShortMessage` are per-player and never imposed by
+`ShowChestTotals`, `ChestTotalFormat`, `ShortMessage` and `BuildFetchMessage` are per-player and never imposed by
 the host. Everything else in `[Upgrades]` and `[Hod]` stays the host's decision, including
 `RequestTimeout`, which is half of a protocol rather than a preference, and the costs and
 ranges, which are facts about pieces standing in a shared world.
@@ -676,6 +706,27 @@ Stow's and Furrow's history is in `archive/`, one git bundle each. See `archive/
 Why the seed counts kills instead of ticking a clock, why the heartwood is a home rather than a
 heart, why the sorting rules live on the chest, and why the spirit carries things instead of
 teleporting them: [DESIGN.md](DESIGN.md).
+
+## Scenarios
+
+`scenarios/` holds Devkit scenarios, replayed in game from F6 > Scenarios. The jib has seven, and
+`scenarios/jib.playlist` lists them in the order to run them (copy its lines into Devkit's
+`playlist.txt`, or pick them from the Vaettir tab). Each file's header says what it proves and lists
+the checks a scenario cannot make, such as how a ring looks.
+
+| File | Asks |
+| --- | --- |
+| `vaettir-jib-skin` | Every material group of the jib found its donor, and none fell back to the planks. |
+| `vaettir-jib-collider` | The collision stands on the ground and reaches the top of the model. |
+| `vaettir-jib-ring` | The reach ring is drawn, green when a new jib would join a network and blue when alone. |
+| `vaettir-jib-hammer` | The hammer is paid from the chests in reach, pack first, and from nothing else. |
+| `vaettir-jib-limits` | A chest outside the circle, or a jib that is gone, serves nothing. |
+| `vaettir-jib-networks` | Three jibs, two networks: chaining, a broken middle jib, and no leaking between networks. |
+| `vaettir-jib-chain` | The same chain through a real bench and a real craft. |
+
+They lean on read-only console readouts you can type yourself: `hod ring`, `hod skin`, `hod bounds`,
+`hod cost <piece>` and `hod build`. A scenario cannot press a key, reload the world, or stand a
+second player in the world, so those stay hand checks, listed in each header.
 
 ## Building
 

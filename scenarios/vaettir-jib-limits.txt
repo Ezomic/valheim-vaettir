@@ -1,17 +1,30 @@
-# Vaettir: what the hod jib refuses to do.
+# Vaettir: what the hod jib refuses to do (LHM-76, LHM-77).
 #
-# Plan steps 38 and 41. The jib serves a bench and deliberately does not serve the hammer -
-# "building still spends what is in your own pack" is a promise the devlog makes in plain
-# words, and a promise is the thing that quietly stops being true.
+# Until LHM-76 the jib served a bench and deliberately NOT the hammer, and this file asserted that
+# refusal. The hammer is served now (vaettir-jib-hammer.txt), so what is left is the other side of
+# the same line: the jib pays for a piece only out of a chest its reach holds, and only while it
+# stands. Each refusal has a positive that differs in one thing, so none of them can be a missing
+# bench or an empty pack:
+#  1. A chest 26m from the jib (outside its 20m circle) holds all the wood. The jib stands, the
+#     player is in its reach, the gate is open. `hod build` reads scope=open chests=0, and the wall
+#     is unbuildable. A second chest 4m from the jib is then stocked, and the same wall is buildable:
+#     the first chest was refused for where it stands, not for the wall or the pack.
+#  2. The jib comes down with that chest in reach and full: scope=shut, unbuildable. Wood in the pack
+#     turns it buildable, so the refusal was the jib.
 #
-# Eikthyr is dead throughout and the chest is full of wood, so every refusal here is the
-# jib declining rather than the gate being shut. Your own pack is emptied of wood first,
-# which is what makes the question meaningful at all.
+# `build ... no` is not used for the refused click: it passes only when the SPOT was refused, and the
+# refusal here is want of materials. `buildable` is the same Player.HaveRequirements test the click
+# makes, and the chest counts are checked unchanged.
 #
-# The `stage` after `biome` clears and levels thirty metres round you, so the flat ground, the ten
-# metres clear and the distance from other posts and chests this used to ask for are its job now.
-# It takes down EVERYTHING built there, and the world's own trees and rocks for good, so run it in
-# a test world and never near a real base.
+# Geometry, metres forward/right of the mark: jib (-8, 0); far chest (-8, 26), 26m from the jib and
+# 26m from the mark; near chest (-8, 4). The bench is at (2, -3), 3.6m from the mark, in range of the
+# wall's station test. Everything is inside the 30m the stage levels.
+#
+# MANUAL CHECKS, which this cannot do:
+#  1. Look at a jib with the Hammer out. Want: its ring on the ground, 20m across.
+#  2. Stand in the ring with the chest just outside it. Want: the wall is greyed.
+# The stage takes down EVERYTHING built within thirty metres and the world's own trees and rocks for
+# good, so run it in a test world and never near a real base.
 
 clear
 give Hammer:1,Hoe:1
@@ -20,50 +33,68 @@ give Wood:100,Stone:40
 god
 ghost
 
-# The Meadows, found rather than promised, because a suite run starts wherever the scenario
-# before it left you. On 2026-09-28 that was the Deep North, inside the Queen's entrance
-# utangard-queen-door-stays-sealed spawns, and ten Vaettir files failed on the place and not
-# on the mod: tilling refused as snow too deep, and the entrance's own pieces, cut through by
-# `wipe`, falling and dropping copper scrap. Already in the Meadows, this does not move you.
 biome Meadows
 wait 3
-
-# Cleared and levelled where `biome` left you: every piece, drop, tree and rock within thirty
-# metres taken down, and the ground levelled to the height under your feet. Devkit's automatic
-# stage before the first step ran where the file before left you, which is not here when `biome`
-# moved you. It replaces the `sweep` and `wipe 16` that stood here, doing both over more ground.
 stage
+landed
+mark
 
+mod hodbuild on
+unkey defeated_eikthyr
+wait 1
 key defeated_eikthyr
+wait 2
 
-# A workbench, because a wood wall needs one in range before it can be built at all.
-# Without it uildable woodwall no passes for the wrong reason - the same trap the
-# crafting steps fell into twice. It needs no roof: a roof gates crafting AT a station,
-# not building near one.
+console hod cost woodwall
+printed lines=1 Wood=2 end yes
+console hod build
+printed setting=on enabled=on shut=no yields=none yes
+printed gate=open yes
+
+# A wall needs a workbench in range before it can be built at all. Without one `buildable woodwall no`
+# passes for the wrong reason, which is the trap the crafting steps fell into twice.
 place piece_workbench 2 -3
 wait 2
-
-place stow_post 4 0
-wait 6
-place hod_jib 4 2
+place hod_jib -8 0
 wait 4
-place piece_chest_wood 6 3
-wait 2
 
-stock piece_chest_wood Wood:200,Stone:200
-
-# From here the chest holds everything and you hold nothing.
-strip Wood,Stone
+# ---- 1. the full chest outside the circle
+place piece_chest_wood -8 26
+wait 3
+claim piece_chest_wood
 wait 1
-
-# A wall costs wood. The chest has 200 of it, two metres away, under a working jib.
+stock piece_chest_wood Wood:20 30
+strip Wood
+wait 2
+console hod build
+printed scope=open chests=0 gate=open yes
 buildable woodwall no
+holds piece_chest_wood Wood 20 30
 
-# And a workbench, which is the piece you would most want it to pay for.
-buildable piece_workbench no
-
-# Put four wood back in your own pack and the same wall is buildable, which proves the
-# refusal above was about where the wood is rather than about the wall.
-give Wood:20
+# The near chest, stocked: the same wall is buildable, and it is the near chest that pays.
+place piece_chest_wood -8 4
+wait 3
+claim piece_chest_wood
+wait 1
+console hod build
+printed scope=open chests=1 yes
+stock piece_chest_wood Wood:20 12
 wait 1
 buildable woodwall yes
+holds piece_chest_wood Wood 20 30
+
+# ---- 2. the jib gone, both chests full
+break hod_jib 20
+wait 3
+console hod build
+printed scope=shut chests=0 yes
+buildable woodwall no
+give Wood:2
+wait 1
+buildable woodwall yes
+strip Wood
+wait 1
+buildable woodwall no
+
+landed
+back

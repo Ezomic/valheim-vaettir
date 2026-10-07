@@ -95,6 +95,57 @@ namespace Hod
         /// which live in that group - so leaving the service running would additionally mean
         /// a gate that never noticed a boss dying and a chest wall nobody could ask.
         /// </summary>
+        /// <summary>
+        /// Chest mods that also feed the hammer, matched on the plugin's GUID or name with
+        /// spaces removed. A substring match on purpose: GUIDs differ by author and version and
+        /// the failure being avoided is quiet (a piece paid for twice).
+        /// </summary>
+        private static readonly string[] BuildFromChestsMods =
+        {
+            "azucraftyboxes", "craftfromcontainers", "craftfromchests", "storagecore",
+        };
+
+        private static string _buildYield;
+        private static bool _buildYieldRead;
+
+        /// <summary>
+        /// Whether building from chests is held off because another mod already does it.
+        /// Read lazily, on the first build question: at Bind time the plugins loaded after this
+        /// one are not in the chainloader yet.
+        /// </summary>
+        public static bool BuildYields
+        {
+            get
+            {
+                if (_buildYieldRead) return _buildYield != null;
+                _buildYieldRead = true;
+
+                foreach (var info in Chainloader.PluginInfos.Values)
+                {
+                    var id = (info.Metadata.GUID + info.Metadata.Name).Replace(" ", "").ToLowerInvariant();
+                    foreach (var token in BuildFromChestsMods)
+                    {
+                        if (!id.Contains(token)) continue;
+
+                        _buildYield = info.Metadata.Name;
+                        GrovePlugin.Log.LogWarning(
+                            _buildYield + " is installed and also builds from chests, so Vaettir's "
+                            + "hammer service has switched itself off for this session rather than "
+                            + "pay a piece twice. Crafting at a bench is unaffected by this line.");
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+        }
+
+        /// <summary>The mod that makes the hammer step aside, or null. For the `hod build` readout.</summary>
+        public static string YieldsTo
+        {
+            get { return BuildYields ? _buildYield : null; }
+        }
+
         public static void LoseWorldHooks()
         {
             _worldHooksLost = true;
@@ -236,6 +287,7 @@ namespace Hod
         {
             HodWithdraw.Tick();
             HodShow.Tick();
+            HodRing.Tick();
 
             if (!HodGate.Dirty) return;
             HodGate.Dirty = false;
@@ -273,6 +325,8 @@ namespace Hod
             HodChests.Forget();
             HodWithdraw.Forget();
             HodScope.Forget();
+            HodNetwork.Forget();
+            HodRing.Forget();
             HodShow.Clear();
             HodRequirement.Forget();
 

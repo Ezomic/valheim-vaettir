@@ -1,4 +1,39 @@
-# box  centre x y z  size x y z  qx qy qz qw
-box 0.000 0.060 0.000 0.400 0.120 0.400 0 0 0 1
-box 0.000 0.830 0.000 0.160 1.460 0.160 0 0 0 1
-box -0.400 1.180 0.000 0.720 0.740 0.300 0 0 0 1
+# box  centre x y z  size x y z  qx qy qz qw   (Unity space, as the mesh)
+# Fitted by tools/jib/fit_col.py: one oriented box per physical part of hod_jib.obj, not
+# axis-aligned height bands. A rotated box becomes its own child object in the loader.
+# Cords, cleats, rails and prong tines carry no box on purpose: they are thinner than a hand or
+# out of reach, and a box round them is air a player bumps into. The basket hangs at 0.98 m,
+# below head height, so it is solid; the cords it hangs on are not.
+layer root
+meta footprint 1.900
+meta meshtop 3.270
+# mast timber
+box -0.103 1.280 0.003 2.552 0.360 0.156 0.49473 0.50521 0.50995 0.48985
+# mast timber
+box 0.047 1.293 -0.003 2.584 0.361 0.158 0.49899 0.50101 0.50251 0.49748
+# buttress left
+box -0.314 0.547 0.190 1.106 0.147 0.168 0.55476 0.43845 0.34331 0.61817
+# buttress right
+box 0.309 0.545 0.190 1.106 0.147 0.168 0.34244 0.61866 0.56058 0.43099
+# deck brace
+box -0.320 1.396 0.001 0.687 0.100 0.120 0.21376 0.67402 0.67091 0.22334
+# deck brace
+box 0.243 1.400 -0.004 0.684 0.100 0.120 0.67181 0.22060 0.21181 0.67464
+# deck
+box -0.044 1.618 -0.004 1.228 0.088 1.208 0.00000 0.00000 0.00000 1.00000
+# hoist boom
+box -0.553 2.387 0.001 1.325 0.110 0.130 0.05301 0.70512 0.70460 0.05948
+# boom brace
+box -0.485 2.161 0.002 0.841 0.080 0.090 0.17423 0.68531 0.68204 0.18662
+# basket
+box -1.133 1.138 0.003 0.477 0.334 0.469 0.00000 0.00000 0.00000 1.00000
+# cage lower
+box -0.055 2.543 0.003 0.811 0.389 0.811 0.00000 0.00000 0.00000 1.00000
+# cage lower
+box -0.055 2.543 0.003 0.811 0.389 0.811 0.00000 0.38268 0.00000 0.92388
+# cage upper
+box -0.055 2.857 0.003 0.577 0.239 0.577 0.00000 0.00000 0.00000 1.00000
+# cage upper
+box -0.055 2.857 0.003 0.577 0.239 0.577 0.00000 0.38268 0.00000 0.92388
+# prong crown
+box -0.061 3.123 0.023 0.748 0.293 0.748 0.00000 0.00000 0.00000 1.00000

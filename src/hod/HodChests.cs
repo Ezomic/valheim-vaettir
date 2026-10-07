@@ -117,32 +117,59 @@ namespace Hod
         private static int _collectedFrame = -1;
 
         /// <summary>
-        /// Every reachable chest around the serving post, gathered at most once a frame.
+        /// The network the cached list was gathered round. A bench question and a build question
+        /// can land in one frame with different networks, and a list keyed on the frame alone
+        /// would answer the second with the first one's chests.
+        /// </summary>
+        private static HodNet _collectedNet;
+
+        /// <summary>
+        /// Every reachable chest in the serving jib network's reach, gathered at most once a frame.
         ///
         /// The returned list is the live cache rather than a copy. Callers only read it, and
         /// handing out the same instance is precisely the guarantee that counting and
         /// consuming see the same chests in the same order.
         ///
-        /// <b>It takes no position.</b> The centre is <see cref="HodScope.Centre"/>, which is
-        /// the post carrying the hod jib and is itself resolved once a frame - see that class
-        /// for why the feature measures from a piece in the world rather than from the player.
-        /// An empty list when the scope is shut, rather than a search of the world origin.
+        /// <b>It takes no position.</b> The network is <see cref="HodScope.Net"/>, resolved
+        /// once a frame - see that class for why the feature measures from pieces in the world
+        /// rather than from the player. An empty list when the scope is shut.
         /// </summary>
         public static List<Container> Near()
         {
-            if (_collectedFrame == Time.frameCount) return Reachable;
+            var net = HodScope.Net;
+            if (_collectedFrame == Time.frameCount && ReferenceEquals(_collectedNet, net))
+                return Reachable;
 
             _collectedFrame = Time.frameCount;
+            _collectedNet = net;
+            _tallyDirty = true;
             Reachable.Clear();
 
             if (!HodConfig.Enabled.Value) return Reachable;
-            if (!HodScope.IsOpen) return Reachable;
+            if (net == null) return Reachable;
 
             var radius = Mathf.Max(0f, HodConfig.Range.Value);
             if (radius <= 0f) return Reachable;
 
             var mask = SearchMask();
-            var count = Physics.OverlapSphereNonAlloc(HodScope.Centre, radius, _hits, mask);
+
+            // The union of every member's circle, each jib asked in turn and a chest in two
+            // circles kept once. The members come in a fixed order out of HodNetwork's cached
+            // list, so the count and the spend walk the same chests in the same order.
+            for (var m = 0; m < net.Members.Count; m++)
+            {
+                var jib = net.Members[m];
+                if (jib == null) continue;
+
+                GatherAround(jib.transform.position, radius, mask);
+            }
+
+            return Reachable;
+        }
+
+        private static void GatherAround(Vector3 centre, float radius, int mask)
+        {
+            var count = Physics.OverlapSphereNonAlloc(centre, radius, _hits, mask);
 
             // Saturation is indistinguishable from "that was all of them", so it has to be
             // treated as an error rather than a result. Grow and ask again until the answer
@@ -150,16 +177,16 @@ namespace Hod
             while (count >= _hits.Length && _hits.Length < MaxHits)
             {
                 _hits = new Collider[Mathf.Min(_hits.Length * 2, MaxHits)];
-                count = Physics.OverlapSphereNonAlloc(HodScope.Centre, radius, _hits, mask);
+                count = Physics.OverlapSphereNonAlloc(centre, radius, _hits, mask);
             }
 
             if (count >= _hits.Length && !_warnedSaturated)
             {
                 _warnedSaturated = true;
                 GrovePlugin.LogOnce(
-                    "More than " + MaxHits + " colliders within " + radius + "m of a stowing "
-                    + "post with a hod jib; the chest search was truncated and some chests "
-                    + "will not be reached. Lower HodRange.");
+                    "More than " + MaxHits + " colliders within " + radius + "m of a hod jib; "
+                    + "the chest search was truncated and some chests will not be reached. "
+                    + "Lower HodRange.");
             }
 
             for (var i = 0; i < count; i++)
@@ -176,14 +203,13 @@ namespace Hod
 
                 Reachable.Add(container);
             }
-
-            return Reachable;
         }
 
         /// <summary>Drops the cache, so the next question rebuilds it. For a world change.</summary>
         public static void Forget()
         {
             _collectedFrame = -1;
+            _collectedNet = null;
             _talliedFrame = -1;
             Reachable.Clear();
             Totals.Clear();
@@ -266,7 +292,7 @@ namespace Hod
             // The stowing post itself is never one of its own chests, and this is the one
             // rule in the file that is Vaettir's rather than Hirsla's.
             //
-            // The post sits at the centre of the sphere by construction, so without this it
+            // A post stands inside the reach of a jib built beside it, so without this it
             // would be counted every time. That is not merely odd, it is the one place where
             // two halves of this mod would be reaching for the same stack: a post is a table
             // you put things ON so that a spirit can take them somewhere, and CarryRun holds
@@ -687,13 +713,16 @@ namespace Hod
 
         private static Dictionary<Slot, int> Tally()
         {
+            // Asked first, and every time: it is cached, and it is what notices that the post
+            // changed within a frame and marks the tally dirty. Checking the frame before asking
+            // would answer a build question with the bench's totals.
+            var chests = Near();
+
             if (_talliedFrame == Time.frameCount && !_tallyDirty) return Totals;
 
             _talliedFrame = Time.frameCount;
             _tallyDirty = false;
             Totals.Clear();
-
-            var chests = Near();
 
             for (var c = 0; c < chests.Count; c++)
             {
