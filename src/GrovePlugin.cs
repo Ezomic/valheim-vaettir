@@ -240,6 +240,17 @@ namespace Grove
             Prefabs.Keep(Stow.PostUpgrades.Jib.PrefabName, Stow.PostUpgrades.BuildJib,
                          buildTool: upgradeTool);
 
+            // Hod/VariantMode: three comparison jibs, declared only while it is on.
+            if (Stow.PostUpgrades.VariantMode.Value && Stow.PostUpgrades.Variants.Count == 3)
+            {
+                Prefabs.Keep(Stow.PostUpgrades.Variants[0].PrefabName,
+                             Stow.PostUpgrades.BuildVariant1, buildTool: upgradeTool);
+                Prefabs.Keep(Stow.PostUpgrades.Variants[1].PrefabName,
+                             Stow.PostUpgrades.BuildVariant2, buildTool: upgradeTool);
+                Prefabs.Keep(Stow.PostUpgrades.Variants[2].PrefabName,
+                             Stow.PostUpgrades.BuildVariant3, buildTool: upgradeTool);
+            }
+
             // ---- past this line a failure costs a feature, never a world ----
 
             // The wild plants bind their own rows, one per plant, so the defaults live
@@ -497,7 +508,7 @@ namespace Grove
             // Everything else in the Upgrades section - the costs, the range that decides
             // which post a piece serves, the names, the models - stays synced, because both
             // ends have to agree about a piece that exists in the world.
-            Suite.Local(Stow.PostUpgrades.ShowLink);
+            Suite.Local(Stow.PostUpgrades.ShowLink, Stow.PostUpgrades.VariantMode);
 
             // The bench service's five display settings, on the same argument. What is drawn
             // on one player's requirement line, what a refused craft says to them, and whether
