@@ -121,9 +121,14 @@ def fit():
     V, F, G = load(OBJ)
     rows = build_parts(V, F, G)
 
-    def pick(i, g, n):
-        r = rows[i]; assert r['g'] == g and r['n'] == n, (i, r['g'], r['n'], g, n)
-        return r['P']
+    def sel(g, n, pred):
+        found = [i for i, r in enumerate(rows) if r['g'] == g and r['n'] == n and pred(r['P'])]
+        return found
+
+    def one(g, n, pred, what):
+        found = sel(g, n, pred)
+        assert len(found) == 1, (what, found)
+        return found[0]
 
     def union(ids): return np.vstack([rows[i]['P'] for i in ids])
 
@@ -134,18 +139,32 @@ def fit():
         c, s = obb(P, R)
         boxes.append(dict(name=name, c=c, s=s, R=R))
 
-    add('mast timber', pick(15, 'wood', 36), rows[15]['axis'])
-    add('mast timber', pick(16, 'wood', 36), rows[16]['axis'])
-    add('buttress left', pick(3, 'wood', 36), rows[3]['axis'])
-    add('buttress right', pick(2, 'wood', 36), rows[2]['axis'])
-    add('deck brace', pick(11, 'wood', 44), rows[11]['axis'])
-    add('deck brace', pick(12, 'wood', 44), rows[12]['axis'])
-    for i in (17, 18, 19, 20, 21): pick(i, 'wood', 44)
-    add('deck', union([17, 18, 19, 20, 21]))
-    add('hoist boom', pick(37, 'wood', 44), rows[37]['axis'])
-    add('boom brace', pick(32, 'wood', 44), rows[32]['axis'])
-    pick(8, 'wicker', 72); pick(6, 'wicker', 32); pick(9, 'cord', 72)
-    add('basket', union([8, 6, 9]))
+    def timber(name, ids):
+        for i in ids: add(name, rows[i]['P'], rows[i]['axis'])
+
+    # Parts are found by what they are (group, triangle count, where they stand), not by their rank
+    # in a height sort, so a changed number of lashings does not shift every pick onto the wrong part.
+    timber('mast timber', sel('wood', 36, lambda P: P[:, 1].max() > 2.5))
+    assert len(sel('wood', 36, lambda P: P[:, 1].max() > 2.5)) == 2
+    left = sel('wood', 36, lambda P: P[:, 1].max() < 1.2 and P[:, 0].mean() < 0)
+    right = sel('wood', 36, lambda P: P[:, 1].max() < 1.2 and P[:, 0].mean() > 0)
+    assert len(left) == 1 and len(right) == 1
+    timber('buttress left', left); timber('buttress right', right)
+    braces = sel('wood', 44, lambda P: 1.1 < P[:, 1].min() < 1.2 and P[:, 1].max() < 1.7 and abs(P[:, 0].mean()) > 0.15
+                 and P[:, 0].max() - P[:, 0].min() > 0.55)
+    assert len(braces) == 2, braces
+    timber('deck brace', braces)
+    planks = sel('wood', 44, lambda P: 1.55 < P[:, 1].min() and P[:, 1].max() < 1.7 and P[:, 0].max() - P[:, 0].min() > 1.0)
+    assert len(planks) == 5, planks
+    add('deck', union(planks))
+    boom = one('wood', 44, lambda P: P[:, 0].min() < -1.1 and P[:, 1].min() > 2.2 and P[:, 0].max() - P[:, 0].min() > 1.0, 'boom')
+    timber('hoist boom', [boom])
+    brace = one('wood', 44, lambda P: P[:, 0].min() < -0.8 and 1.9 < P[:, 1].min() < 2.0, 'boom brace')
+    timber('boom brace', [brace])
+    bk = [one('wicker', 72, lambda P: P[:, 0].max() < -0.8, 'basket'),
+          one('wicker', 32, lambda P: P[:, 0].max() < -0.8, 'basket floor'),
+          one('cord', 72, lambda P: P[:, 0].max() < -0.8 and P[:, 1].max() < 1.4, 'basket rim')]
+    add('basket', union(bk))
 
     cage_ids = [i for i, r in enumerate(rows)
                 if r['g'] in ('wicker', 'cord', 'core') and r['P'][:, 1].min() >= 2.34
