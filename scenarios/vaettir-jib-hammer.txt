@@ -1,12 +1,44 @@
-# Vaettir: the hammer is served by the chests in a jib's reach (LHM-76).
+# Vaettir: the hammer is served by the chests in a jib's reach, and by nothing else (LHM-76).
 #
-# A wood wall costs 2 wood. The chest holds 200 and the pack none, so every plank placed comes
-# out of the chest, and the amounts are exact on purpose: "about right" cannot tell a spend from
-# a free build. Then the pack is paid first and the chest only the rest, the piece is refused
-# once the jib is gone, and a piece placed out of reach of any jib is refused too.
-# The click path is driven by `build`, which presses the place button through the real
-# Player.UpdatePlacement, not by calling the cost check.
-# Not yet run in game.
+# WHAT IT PROVES, in the order it runs. Each refusal has a positive beside it that differs in ONE
+# thing, so a "no" is the feature declining and never a missing bench, an empty pack or a shut gate.
+#  1. The facts the rest leans on are read off the game, not remembered: `hod cost woodwall` pins
+#     the price (Wood 2, one line), and `hod build` pins the state (BuildFromChests on, the jib
+#     feature not shut, no chest-building mod making the hammer step aside, the Meadows gate open).
+#     A wrong guess fails HERE with a sentence, instead of failing six steps on as a number.
+#  2. A chest holding wood, a pack holding none, a jib in reach: the menu's own test says yes, and a
+#     real click (`build`, which presses the place button through Player.UpdatePlacement) puts the
+#     wall up and takes exactly 2 wood out of the chest and none from the pack.
+#  3. Pack first: one wood carried, so the pack pays 1 and the chest 1. Then two carried, so the pack
+#     pays both and the chest nothing. The amounts are exact because "about right" cannot tell a
+#     spend from a free build.
+#  4. Out of reach: the player stands 32m from the jib, beside a bench of their own so the station is
+#     not the reason. `hod build` reads scope=shut chests=0, the wall is unbuildable, and one control
+#     (two wood in the pack) turns the same spot buildable, so the refusal was the scope.
+#  5. Gate closed: every boss key off and the gate recomputed, jib and chest in reach, chest full.
+#     `hod build` reads scope=open chests=1 gate=shut, and the wall is unbuildable. Opened again
+#     afterwards, so it is the gate and not the chest that decided.
+#  6. BuildFromChests off: same jib, same full chest, gate open. scope=shut, wall unbuildable; on
+#     again, buildable again.
+# The refused CLICK is not asserted: `build ... no` passes only when the SPOT was refused and fails
+# when the refusal is want of materials, which is the case here. `buildable` is the same test the
+# click makes (Player.HaveRequirements with CanBuild), and the chest count is checked unchanged.
+#
+# Geometry, in metres forward/right of the mark, Eikthyr down throughout:
+#   bench B1   (2, -3)    jib J (-8, 0)    chest (-8, 3)    player at the mark: 8m from J
+#   far bench  (26, 0)    the player stands at (24, 0), 32m from J
+# Everything stays inside the 30m the stage levels.
+#
+# MANUAL CHECKS, which this cannot do:
+#  1. Hold the Hammer near a jib with a chest of wood and nothing in your pack, open the build menu.
+#     Want: the wall is not greyed, and the requirement line shows your pack count plus the chest's.
+#  2. Place a wall with the mouse. Want: the build sound and the wall, and the chest is lighter.
+#  3. Stand on the far side of two jibs' reach with the same chest. Want: the wall is greyed.
+#  4. Another player's chest in reach (the paired scenarios cover the owner round trip).
+# NOT TESTED here: the conflicting-mod switch (needs Azu Craftyboxes or similar installed; `hod build`
+# prints yields=<name> when it is on, and this file pins yields=none so such a profile fails loudly),
+# and the refused click for a chest owned by somebody else.
+
 clear
 give Hammer:1,Hoe:1
 give FineWood:250,BronzeNails:40,IronNails:52,Chain:4,GroveHeartwood:6
@@ -15,65 +47,131 @@ god
 ghost
 
 # The Meadows, found rather than promised, because a suite run starts wherever the scenario
-# before it left you. On 2026-09-28 that was the Deep North, inside the Queen's entrance
-# utangard-queen-door-stays-sealed spawns, and ten Vaettir files failed on the place and not
-# on the mod: tilling refused as snow too deep, and the entrance's own pieces, cut through by
-# `wipe`, falling and dropping copper scrap. Already in the Meadows, this does not move you.
+# before it left you. See vaettir-jib-gate.txt.
 biome Meadows
 wait 3
 
-# Cleared and levelled where `biome` left you: every piece, drop, tree and rock within thirty
-# metres taken down, and the ground levelled to the height under your feet. Devkit's automatic
-# stage before the first step ran where the file before left you, which is not here when `biome`
-# moved you. It replaces the `sweep` and `wipe 16` that stood here, doing both over more ground.
+# Cleared and levelled where `biome` left you: every piece, drop, tree and rock within thirty metres
+# taken down, and the ground levelled to the height under your feet.
 stage
-
-key defeated_eikthyr
-
-place piece_workbench 2 -3
-wait 2
-place hod_jib 4 2
-wait 4
-place piece_chest_wood 6 3
-wait 2
-claim piece_chest_wood
-wait 2
-stock piece_chest_wood Wood:200,Stone:200
-strip Wood,Stone
-wait 1
+landed
 mark
 
-# The menu's own test says yes, and a click builds it out of the chest alone.
+# The switch on, whatever an earlier run left, and Eikthyr's key put back as a real add so the gate
+# recomputes from the list as it now stands.
+mod hodbuild on
+unkey defeated_eikthyr
+wait 1
+key defeated_eikthyr
+wait 2
+
+# ---- 1. pin what is assumed
+console hod cost woodwall
+printed lines=1 Wood=2 end yes
+console hod build
+printed setting=on enabled=on shut=no yields=none yes
+printed gate=open yes
+
+# The bench the wall needs in range, the jib, and the chest. The bench is a fixture and needs no roof:
+# a roof gates crafting AT a station, not building near one.
+place piece_workbench 2 -3
+wait 2
+place hod_jib -8 0
+wait 4
+place piece_chest_wood -8 3
+wait 3
+claim piece_chest_wood
+wait 1
+stock piece_chest_wood Wood:20
+strip Wood
+wait 2
+
+console hod build
+printed scope=open chests=1 yes
+
+# ---- 2. the chest alone pays
 buildable woodwall yes
 tool Hammer
 build woodwall 3 0 yes
 wait 2
-holds piece_chest_wood Wood 198
+holds piece_chest_wood Wood 18
 carrying Wood 0
 
-# One wood in the pack and the rest in the chest: pack first, then chest. The pack ends at 0 and
-# the chest gives 1, so 197 is left, not 196.
+# ---- 3. pack first, then chest
 give Wood:1
 wait 1
 build woodwall 3 3 yes
 wait 2
 carrying Wood 0
-holds piece_chest_wood Wood 197
+holds piece_chest_wood Wood 17
 
-# Out of every jib's reach the same wall is unbuildable: the workbench is out of range too, so
-# the piece used is the workbench, which needs no station.
-move 40 0
-wait 2
-buildable piece_workbench no
-back
+give Wood:2
 wait 1
+build woodwall 3 -3 yes
+wait 2
+carrying Wood 0
+holds piece_chest_wood Wood 17
 
-# And with the jib gone, nothing in reach serves the hammer.
-break hod_jib
+# ---- 4. the player out of every jib's reach, with a bench of their own
+landed
+move 24 0
+landed
+place piece_workbench 2 0
 wait 3
+console hod build
+printed scope=shut chests=0 yes
 buildable woodwall no
-build woodwall 3 -3 no
+give Wood:2
+wait 1
+buildable woodwall yes
+strip Wood
+wait 1
+buildable woodwall no
+landed
+back
+landed
 
-close
+# ---- 5. the gate closed with everything else in place. The gate recomputes on a key being ADDED and
+# not on one being taken away (HodWorld patches GlobalKeyAdd only), so the keys come off and a made-up
+# one goes on to make it look again.
+unkey defeated_eikthyr
+unkey defeated_gdking
+unkey defeated_bonemass
+unkey defeated_dragon
+unkey defeated_goblinking
+unkey defeated_queen
+unkey defeated_fader
+unkey hodrig_recompute
+wait 1
+key hodrig_recompute
+wait 2
+console hod build
+printed scope=open chests=1 gate=shut yes
+buildable woodwall no
+holds piece_chest_wood Wood 17
+carrying Wood 0
+
+# Opened again, by a real add: nothing else has changed, so the gate was what said no.
+key defeated_eikthyr
+wait 2
+console hod build
+printed scope=open chests=1 gate=open yes
+buildable woodwall yes
+
+# ---- 6. the switch
+mod hodbuild off
+console hod build
+printed setting=off yes
+printed scope=shut chests=0 gate=open yes
+buildable woodwall no
+holds piece_chest_wood Wood 17
+mod hodbuild on
+console hod build
+printed setting=on yes
+printed scope=open chests=1 yes
+buildable woodwall yes
+
+# The mod's own state is the one thing left behind: the switch is on, Eikthyr's key is set, and the
+# jib, the benches, the walls and the chest are taken down by the next scenario's stage.
 landed
 back

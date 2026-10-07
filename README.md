@@ -703,6 +703,27 @@ Why the seed counts kills instead of ticking a clock, why the heartwood is a hom
 heart, why the sorting rules live on the chest, and why the spirit carries things instead of
 teleporting them: [DESIGN.md](DESIGN.md).
 
+## Scenarios
+
+`scenarios/` holds Devkit scenarios, replayed in game from F6 > Scenarios. The jib has seven, and
+`scenarios/jib.playlist` lists them in the order to run them (copy its lines into Devkit's
+`playlist.txt`, or pick them from the Vaettir tab). Each file's header says what it proves and lists
+the checks a scenario cannot make, such as how a ring looks.
+
+| File | Asks |
+| --- | --- |
+| `vaettir-jib-skin` | Every material group of the jib found its donor, and none fell back to the planks. |
+| `vaettir-jib-collider` | The collision stands on the ground and reaches the top of the model. |
+| `vaettir-jib-ring` | The reach ring is drawn, green when a new jib would join a network and blue when alone. |
+| `vaettir-jib-hammer` | The hammer is paid from the chests in reach, pack first, and from nothing else. |
+| `vaettir-jib-limits` | A chest outside the circle, or a jib that is gone, serves nothing. |
+| `vaettir-jib-networks` | Three jibs, two networks: chaining, a broken middle jib, and no leaking between networks. |
+| `vaettir-jib-chain` | The same chain through a real bench and a real craft. |
+
+They lean on read-only console readouts you can type yourself: `hod ring`, `hod skin`, `hod bounds`,
+`hod cost <piece>` and `hod build`. A scenario cannot press a key, reload the world, or stand a
+second player in the world, so those stay hand checks, listed in each header.
+
 ## Building
 
 Target is net462 against the game's own managed assemblies, no NuGet. `ValheimDir` defaults to

@@ -258,7 +258,7 @@ namespace Stow
 
             // Taken before Remap: a re-skin in a later world starts from the OBJ's own UVs,
             // not from coordinates already squeezed into the last world's rects.
-            if (modern) Track(meshRenderer, model);
+            if (modern) Track(meshRenderer, model, visualName);
 
             // After SkinsFor, because that is what learns each group's atlas rectangle.
             Remap(model.Mesh, model.Groups, modern);
@@ -380,6 +380,7 @@ namespace Stow
             MetricRects.Clear();
             Stretch.Clear();
             TexPx.Clear();
+            Notes.Clear();
         }
 
         private static Material Borrow(string group, bool modern = false)
@@ -418,6 +419,13 @@ namespace Stow
 
                     Cache[key] = material;
                     Atlas[key] = UvRegion(renderer);
+                    if (modern)
+                        Notes[key] = new SkinNote
+                        {
+                            Donor = name, Material = material.name, Via = "classic",
+                            Status = string.Equals(group, GlowGroup, StringComparison.OrdinalIgnoreCase)
+                                ? "glow" : "classic",
+                        };
 
                     StowRuntime.Log.LogInfo(string.Format(
                         "Group '{0}' skinned with {1} from {2} (shader {3}), atlas {4}.",
@@ -427,6 +435,7 @@ namespace Stow
             }
 
             Cache[key] = null;
+            if (modern) Notes[key] = new SkinNote();
             return null;
         }
 
@@ -450,15 +459,16 @@ namespace Stow
             if (string.Equals(group, GlowGroup, StringComparison.OrdinalIgnoreCase)) return null;
 
             var own = SkinFor(group);
-            var material = TrySkin(group, own);
+            var material = TrySkin(group, own, false);
             if (material != null || own == WoodSkin) return material;
 
-            return TrySkin(group, WoodSkin);
+            return TrySkin(group, WoodSkin, true);
         }
 
-        private static Material TrySkin(string group, DonorSkin skin)
+        private static Material TrySkin(string group, DonorSkin skin, bool fallback)
         {
-            var material = FindSkinMaterial(skin);
+            string via;
+            var material = FindSkinMaterial(skin, out via);
 
             if (material == null)
             {
@@ -470,6 +480,11 @@ namespace Stow
             }
 
             var key = Key(group, true);
+            Notes[key] = new SkinNote
+            {
+                Donor = skin.Prefab, Material = material.name, Via = via,
+                Status = fallback ? "fallback" : "ok",
+            };
             Cache[key] = material;
             Atlas[key] = skin.Rects[0];
             MetricRects[key] = skin.Rects;
@@ -483,8 +498,9 @@ namespace Stow
             return material;
         }
 
-        private static Material FindSkinMaterial(DonorSkin skin)
+        private static Material FindSkinMaterial(DonorSkin skin, out string via)
         {
+            via = "none";
             var donor = PropIndex.Find(skin.Prefab);
 
             if (donor != null)
@@ -492,7 +508,10 @@ namespace Stow
                 foreach (var renderer in donor.GetComponentsInChildren<Renderer>(true))
                 {
                     var material = renderer.sharedMaterial;
-                    if (Matches(material, skin)) return material;
+                    if (!Matches(material, skin)) continue;
+
+                    via = "prefab";
+                    return material;
                 }
             }
 
@@ -501,10 +520,79 @@ namespace Stow
             if (skin.Asset != null)
             {
                 var direct = SoftAssets.LoadMaterial(skin.Asset);
-                if (Matches(direct, skin)) return direct;
+                if (Matches(direct, skin))
+                {
+                    via = "asset";
+                    return direct;
+                }
             }
 
             return null;
+        }
+
+        /// <summary>
+        /// What the `hod skin` readout prints: for the newest standing piece of that name, one
+        /// line per OBJ group saying which donor it was skinned from and how, then a summary.
+        /// A line holds name=value tokens with no spaces inside a token, in a fixed order, so
+        /// Devkit's `printed` can pin "group=wicker status=ok" as one substring.
+        ///
+        /// <b>status</b> is the part that matters. ok is the group's own donor. fallback is a
+        /// group whose own donor was missing in this world and which is wearing the workbench
+        /// planks instead: it renders, so nothing looks broken, and that is exactly why it is
+        /// reported. classic is the earlier donor list (only if the workbench was missing as
+        /// well), glow is the heartwood group, which is deliberately not a donor skin, and
+        /// missing is no material at all. live=no is a renderer slot whose material has been
+        /// destroyed under it, which is what a bundle unloaded at logout does.
+        /// </summary>
+        public static List<string> SkinReport(string name)
+        {
+            var lines = new List<string>();
+
+            Tracked tracked = null;
+            for (var i = Standing.Count - 1; i >= 0 && tracked == null; i--)
+                if (Standing[i].Renderer != null
+                    && string.Equals(Standing[i].Name, name, StringComparison.OrdinalIgnoreCase))
+                    tracked = Standing[i];
+
+            if (tracked == null)
+            {
+                lines.Add("hod skin piece=" + name + " standing=no groups=0");
+                return lines;
+            }
+
+            var materials = tracked.Renderer.sharedMaterials;
+            var ok = 0;
+            var glow = 0;
+            var fallback = 0;
+            var missing = 0;
+            var dead = 0;
+
+            for (var i = 0; i < tracked.Groups.Length; i++)
+            {
+                var group = tracked.Groups[i];
+                SkinNote note;
+                if (!Notes.TryGetValue(Key(group, true), out note)) note = new SkinNote();
+
+                var live = i < materials.Length && materials[i] != null;
+                if (!live) dead++;
+
+                switch (note.Status)
+                {
+                    case "ok": ok++; break;
+                    case "glow": glow++; break;
+                    case "missing": missing++; break;
+                    default: fallback++; break;
+                }
+
+                lines.Add("hod skin piece=" + name + " group=" + group + " status=" + note.Status
+                          + " donor=" + note.Donor + " via=" + note.Via + " material=" + note.Material
+                          + " live=" + (live ? "yes" : "no"));
+            }
+
+            lines.Add("hod skin piece=" + name + " standing=yes groups=" + tracked.Groups.Length
+                      + " ok=" + ok + " glow=" + glow + " fallback=" + fallback
+                      + " missing=" + missing + " dead=" + dead);
+            return lines;
         }
 
         private static bool Matches(Material material, DonorSkin skin)
@@ -523,6 +611,24 @@ namespace Stow
         }
 
         private static readonly HashSet<string> Said = new HashSet<string>();
+
+        /// <summary>
+        /// How each modern group was actually skinned in this world, for <see cref="SkinReport"/>.
+        /// The log says it once per session, which is no use to a scenario that runs a world
+        /// later; this is rebuilt with the cache and read on demand.
+        /// </summary>
+        private sealed class SkinNote
+        {
+            public string Donor = "none";
+            public string Material = "none";
+            public string Via = "none";
+
+            /// <summary>ok, fallback (wears the workbench planks), classic, glow or missing.</summary>
+            public string Status = "missing";
+        }
+
+        private static readonly Dictionary<string, SkinNote> Notes =
+            new Dictionary<string, SkinNote>(StringComparer.OrdinalIgnoreCase);
 
         private static void SayOnce(string line)
         {
@@ -552,6 +658,7 @@ namespace Stow
         /// </summary>
         private sealed class Tracked
         {
+            public string Name;
             public MeshRenderer Renderer;
             public Mesh Mesh;
             public string[] Groups;
@@ -564,10 +671,11 @@ namespace Stow
         /// <summary>Bumped by Invalidate, so a piece knows its skins were borrowed in an earlier world.</summary>
         private static int Epoch;
 
-        private static void Track(MeshRenderer renderer, ModelData model)
+        private static void Track(MeshRenderer renderer, ModelData model, string name)
         {
             Standing.Add(new Tracked
             {
+                Name = name,
                 Renderer = renderer,
                 Mesh = model.Mesh,
                 Groups = model.Groups,

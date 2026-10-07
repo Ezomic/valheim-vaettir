@@ -1,0 +1,52 @@
+# Vaettir: the jib's collision stands on the ground and reaches the top of its model (LHM-77).
+#
+# `hod bounds` reads the nearest standing jib: the union of its solid colliders against the ground
+# under it, and its mesh against the same ground, in metres.
+#
+#   gap     collider bottom minus ground       top     collider top minus ground
+#   meshtop mesh top minus ground              floating, buried, grounded, tops, tall   yes/no flags
+#
+# floating is a collider that starts more than 5cm ABOVE the ground, which lets a player walk under
+# the footing. buried is one that starts more than 20cm below it. tops=match is the collider's top
+# within 15cm of the mesh's, so a collider that stops short of the cage (the old single arm box did)
+# or runs past it is caught. tall is a top between 2.5m and 4.5m, so a model scaled to a toy or to a
+# tower is caught.
+#
+# THE FOOTING IS SUNK 13cm ON PURPOSE. The mesh and the footing box both reach -0.13 below the
+# origin, so a jib on a slope has no gap under its downhill foot. That makes the strict reading,
+# grounded (within 5cm either way), read no, and it is printed but NOT asserted: asserting it would
+# fail on a deliberate design. If the jib should sit exactly on the ground the model and its .col
+# move, not this file. What is asserted is the half that matters: nothing floats, nothing is buried
+# deeper than the footing, and the top is where the model's top is.
+#
+# On flat ground only. The stage levels thirty metres, which is what makes `gap` the model's own and
+# not a slope's. A slope is a hand check.
+#
+# MANUAL CHECKS, which this cannot do:
+#  1. Walk up to a jib and round it. Want: you are stopped at the footing, the mast and the basket,
+#     and not by empty air beside them.
+#  2. Jump onto the footing. Want: you stand on it, you do not sink.
+#  3. Build one on a slope. Want: no gap under the downhill foot.
+#  4. Look at the hover and the placement ghost. Want: the ghost sits on the ground, not above it.
+
+clear
+give Hammer:1,Hoe:1
+give FineWood:250,BronzeNails:40,IronNails:52,Chain:4,GroveHeartwood:6
+god
+ghost
+
+biome Meadows
+wait 3
+stage
+landed
+mark
+
+place hod_jib 6 0
+wait 4
+console hod bounds
+printed standing=yes colliders=6 yes
+printed floating=no buried=no yes
+printed tops=match tall=yes yes
+
+landed
+back

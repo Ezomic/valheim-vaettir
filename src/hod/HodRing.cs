@@ -228,6 +228,50 @@ namespace Hod
             return false;
         }
 
+        /// <summary>
+        /// What `hod ring` prints: the rings drawn as of the last Tick, counted by colour, and
+        /// the facts they are drawn from. One line of name=value tokens, in a fixed order.
+        ///
+        /// A ring is "drawn" when its line renderer is enabled, which is exactly what Tick sets
+        /// per frame and what the player sees, so this reads the end of the pipeline and not a
+        /// copy of the decision. joins is the green ghost ring (the jib being placed would join a
+        /// network), alone the blue one, built the gold ring on a standing jib. material=no means
+        /// no shader could be borrowed and nothing is ever drawn, whatever the counts say.
+        /// </summary>
+        public static string Describe()
+        {
+            var built = 0;
+            var joins = 0;
+            var alone = 0;
+            var other = 0;
+            var points = 0;
+
+            foreach (var ring in Pool)
+            {
+                if (ring.Line == null || !ring.Line.enabled) continue;
+
+                if (ring.Colour == Built) built++;
+                else if (ring.Colour == Joins) joins++;
+                else if (ring.Colour == Alone) alone++;
+                else other++;
+
+                points = ring.Line.positionCount;
+            }
+
+            var nets = HodNetwork.All.Count;
+            var ghosts = 0;
+            foreach (var ghost in HodNetwork.GhostJibs)
+                if (ghost != null && ghost.gameObject.activeInHierarchy) ghosts++;
+
+            var player = Player.m_localPlayer;
+
+            return "hod ring built=" + built + " joins=" + joins + " alone=" + alone + " other=" + other
+                   + " points=" + points + " ghosts=" + ghosts + " nets=" + nets
+                   + " radius=" + HodNetwork.Radius.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)
+                   + " placing=" + (player != null && player.InPlaceMode() ? "yes" : "no")
+                   + " material=" + (_material != null ? "yes" : "no");
+        }
+
         public static void Forget()
         {
             _hovered = null;
