@@ -47,9 +47,18 @@ and the mod uses [semantic versioning](https://semver.org).
   `BuildFromChests` (true). Away from every jib it is vanilla. It switches itself off when
   AzuCraftyBoxes, CraftFromContainers or Storage Core is installed. Repair costs no material in the
   game, so it is unchanged. Built, not run in game.
-- Scenarios `vaettir-jib-chain` and `vaettir-jib-hammer`. `vaettir-jib-limits` now asserts that the
-  hammer is served while the jib stands and not once it is broken, where it used to assert that it
-  was never served. Not yet run in game.
+- Scenarios for the jib (LHM-76, LHM-77), none of them run in game yet: `vaettir-jib-chain` (a bench
+  served through a chain of two jibs and a real craft, a third jib's network kept apart, the middle
+  jib broken and rebuilt), `vaettir-jib-networks` (the same with the hammer, which also puts a probe
+  in the third jib's circle), `vaettir-jib-hammer` (the chest pays, pack first, out of reach, gate
+  closed, `BuildFromChests` off), `vaettir-jib-limits` (a chest outside the circle, the jib gone),
+  `vaettir-jib-ring` (the ghost ring is green joining and blue alone), `vaettir-jib-skin` (every
+  material group found its donor, none fell back) and `vaettir-jib-collider` (the collision stands
+  on the ground and reaches the top of the model). `scenarios/jib.playlist` lists them in the order
+  to run them.
+- Console readouts for those scenarios, all read-only: `hod ring`, `hod skin`, `hod bounds`,
+  `hod cost <piece>` and `hod build`. `hodbuild on|off` is the one command that writes anything
+  (`BuildFromChests`), a cheat command like `hodkey`, reached by Devkit's `mod` step.
 - **The planting grid's six keys are on Core's Settings page (LHM-51)**: pin, seeds up, seeds down,
   row or circle, grid free and grid turn. It is the page in the compendium that lists a player's own
   settings and rebinds a key by pressing it. Without Core nothing changes. Built, not run in game.

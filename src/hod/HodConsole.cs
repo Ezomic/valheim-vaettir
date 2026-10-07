@@ -1,5 +1,9 @@
+using System.Collections.Generic;
+using System.Globalization;
 using Ezomic.Shared;
 using HarmonyLib;
+using Stow;
+using UnityEngine;
 
 namespace Hod
 {
@@ -67,8 +71,15 @@ namespace Hod
 
             new Terminal.ConsoleCommand("hod",
                 "item <prefab>: which biome the hod jib files a material under, and how many of it the "
-                + "chests around the post would hand to a craft. Use it at a station the jib serves",
+                + "chests around the post would hand to a craft. Use it at a station the jib serves. "
+                + "ring, skin, bounds, cost <piece> and build are read-only readouts for Devkit scenarios",
                 new Terminal.ConsoleEvent(OnCommand), isCheat: false);
+
+            // Failable, for the same reason as hodkey, and a cheat because it writes a setting.
+            new Terminal.ConsoleCommand("hodbuild",
+                "on|off: set BuildFromChests, so a scenario can prove the hammer is not served when it "
+                + "is off. Put it back on afterwards",
+                new Terminal.ConsoleEventFailable(OnBuildCommand), isCheat: true);
 
             // Failable, so a refusal reaches Devkit's `mod` step as a failed step rather than
             // as a line of text a scenario would have to think to check.
@@ -122,7 +133,15 @@ namespace Hod
                 return;
             }
 
-            if (args.Length < 3 || args[1].ToLowerInvariant() != "item")
+            var sub = args.Length >= 2 ? args[1].ToLowerInvariant() : "";
+
+            if (sub == "ring") { term.AddString(HodRing.Describe()); return; }
+            if (sub == "skin") { foreach (var line in PostModel.SkinReport("hod_jib_visual")) term.AddString(line); return; }
+            if (sub == "bounds") { term.AddString(Bounds()); return; }
+            if (sub == "build") { term.AddString(BuildState()); return; }
+            if (sub == "cost") { term.AddString(Cost(args.Length >= 3 ? args[2] : "")); return; }
+
+            if (args.Length < 3 || sub != "item")
             {
                 term.AddString("hod item <prefab>, for example hod item Wood, standing at a station a hod jib serves. "
                                + "hod traders says how many items each biome's traders sell.");
@@ -153,6 +172,178 @@ namespace Hod
             }
 
             term.AddString(Describe(prefab.name, drop.m_itemData.m_shared.m_name));
+        }
+
+        private static object OnBuildCommand(Terminal.ConsoleEventArgs args)
+        {
+            if (args.Length < 2) return "hodbuild on|off";
+
+            var mode = args[1].ToLowerInvariant();
+            if (mode != "on" && mode != "off") return "say on or off, not " + args[1];
+
+            HodConfig.BuildFromChests.Value = mode == "on";
+
+            var term = args.Context;
+            if (term != null) term.AddString("hodbuild BuildFromChests=" + mode);
+
+            return true;
+        }
+
+        /// <summary>
+        /// `hod build`: the hammer service as the placement click would see it, in one line.
+        ///
+        /// scope is asked as a BUILD question (HodScope.Building raised around it), because the
+        /// hammer measures from the player where a bench measures from its station, so the same
+        /// question asked bare answers about a bench. chests is how many chests that scope
+        /// reaches, gate is whether Wood may come out of a chest at all (the biome gate), yields
+        /// names the other mod that makes the hammer step aside, or none. A scenario pins
+        /// yields=none so that a profile carrying a chest-building mod fails loudly instead of
+        /// passing every refusal for that reason.
+        /// </summary>
+        private static string BuildState()
+        {
+            string scope;
+            int chests;
+
+            HodScope.Building++;
+            try
+            {
+                scope = HodScope.IsOpen ? "open" : "shut";
+                chests = HodChests.Near().Count;
+            }
+            finally
+            {
+                if (HodScope.Building > 0) HodScope.Building--;
+            }
+
+            var placed = new List<PostUpgrade>();
+            var ghosts = new List<PostUpgrade>();
+            PostUpgrade.CollectJibs(placed, ghosts);
+
+            return "hod build setting=" + (HodConfig.BuildFromChests.Value ? "on" : "off")
+                   + " enabled=" + (HodConfig.Enabled.Value ? "on" : "off")
+                   + " shut=" + (HodRuntime.Shut ? "yes" : "no")
+                   + " yields=" + (HodRuntime.YieldsTo ?? "none")
+                   + " scope=" + scope
+                   + " chests=" + chests
+                   + " gate=" + (HodGate.Allows("Wood") ? "open" : "shut")
+                   + " jibs=" + placed.Count
+                   + " nets=" + HodNetwork.All.Count;
+        }
+
+        /// <summary>
+        /// `hod cost &lt;piece&gt;`: what a build piece costs in this game, off its own
+        /// Piece.m_resources, so a scenario pins the price it assumed instead of trusting memory.
+        /// Item prefab names as keys (Wood=2), one token each, then end, so "Wood=2 end" cannot be
+        /// the front of "Wood=20".
+        /// </summary>
+        private static string Cost(string name)
+        {
+            if (name.Length == 0) return "hod cost: say which piece, for example hod cost woodwall";
+            if (ZNetScene.instance == null) return "hod cost: no world yet";
+
+            var prefab = ZNetScene.instance.GetPrefab(name);
+            Piece piece = prefab == null ? null : prefab.GetComponent<Piece>();
+            if (piece == null) return "hod cost: no piece called " + name;
+
+            var tokens = new System.Text.StringBuilder();
+            var lines = 0;
+
+            foreach (var requirement in piece.m_resources)
+            {
+                if (requirement == null || requirement.m_resItem == null || requirement.m_amount <= 0) continue;
+
+                lines++;
+                tokens.Append(' ').Append(requirement.m_resItem.gameObject.name).Append('=')
+                      .Append(requirement.m_amount.ToString(CultureInfo.InvariantCulture));
+            }
+
+            var station = piece.m_craftingStation == null ? "none" : piece.m_craftingStation.gameObject.name;
+
+            return "hod cost=" + name + " station=" + station + " lines=" + lines + tokens + " end";
+        }
+
+        /// <summary>
+        /// `hod bounds`: the collider and the mesh of the nearest standing jib against the ground
+        /// under it, in metres. The questions are whether it floats (a collider that starts above
+        /// the ground lets a player walk under the footing), whether it is buried deeper than its
+        /// footing is meant to be, and whether the collider top is where the mesh top is.
+        ///
+        /// The footing is modelled 0.13 below the origin on purpose (the .col box and the mesh
+        /// both reach -0.13), so that a jib on a slope has no gap under its downhill foot. So
+        /// buried means deeper than 0.20 and floating means higher than 0.05; a gap between
+        /// -0.20 and +0.05 is the model standing on the ground. grounded is the stricter reading,
+        /// within 0.05 either way, which the footing does not meet: it is printed so the
+        /// difference is visible rather than argued about.
+        ///
+        /// Trigger colliders are left out (the use area and the like), and only enabled ones count.
+        /// </summary>
+        private static string Bounds()
+        {
+            var player = Player.m_localPlayer;
+            if (player == null) return "hod bounds: no player";
+
+            var placed = new List<PostUpgrade>();
+            var ghosts = new List<PostUpgrade>();
+            PostUpgrade.CollectJibs(placed, ghosts);
+
+            PostUpgrade jib = null;
+            var nearest = float.MaxValue;
+            foreach (var candidate in placed)
+            {
+                if (candidate == null) continue;
+
+                var distance = (candidate.transform.position - player.transform.position).sqrMagnitude;
+                if (distance >= nearest) continue;
+
+                nearest = distance;
+                jib = candidate;
+            }
+
+            if (jib == null) return "hod bounds standing=no";
+
+            var colliders = 0;
+            var box = new UnityEngine.Bounds();
+            foreach (var collider in jib.GetComponentsInChildren<Collider>(false))
+            {
+                if (collider == null || !collider.enabled || collider.isTrigger) continue;
+
+                if (colliders == 0) box = collider.bounds;
+                else box.Encapsulate(collider.bounds);
+                colliders++;
+            }
+
+            if (colliders == 0) return "hod bounds standing=yes colliders=0";
+
+            var meshes = 0;
+            var look = new UnityEngine.Bounds();
+            foreach (var renderer in jib.GetComponentsInChildren<MeshRenderer>(false))
+            {
+                if (renderer == null) continue;
+
+                if (meshes == 0) look = renderer.bounds;
+                else look.Encapsulate(renderer.bounds);
+                meshes++;
+            }
+
+            float ground;
+            if (ZoneSystem.instance == null || !ZoneSystem.instance.GetGroundHeight(jib.transform.position, out ground))
+                return "hod bounds standing=yes colliders=" + colliders + " ground=unknown";
+
+            var gap = box.min.y - ground;
+            var top = box.max.y - ground;
+            var lookTop = meshes == 0 ? float.NaN : look.max.y - ground;
+            var invariant = CultureInfo.InvariantCulture;
+
+            return "hod bounds standing=yes colliders=" + colliders
+                   + " gap=" + gap.ToString("0.00", invariant)
+                   + " top=" + top.ToString("0.00", invariant)
+                   + " meshtop=" + lookTop.ToString("0.00", invariant)
+                   + " floating=" + (gap > 0.05f ? "yes" : "no")
+                   + " buried=" + (gap < -0.20f ? "yes" : "no")
+                   + " grounded=" + (Mathf.Abs(gap) <= 0.05f ? "yes" : "no")
+                   + " tops=" + (!float.IsNaN(lookTop) && Mathf.Abs(top - lookTop) <= 0.15f ? "match" : "differ")
+                   + " tall=" + (top >= 2.5f && top <= 4.5f ? "yes" : "no");
         }
 
         private static string Describe(string prefabName, string sharedName)

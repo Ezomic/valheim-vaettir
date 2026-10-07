@@ -1,0 +1,188 @@
+# Vaettir: jib networks reach their own chests and nobody else's (LHM-76, LHM-77).
+#
+# The companion of vaettir-jib-chain.txt, which does the chain through a real bench and a real craft.
+# This one asks the same question with the HAMMER, which needs no shed: while a build question is open
+# the scope measures from the player where a bench would measure from its station, so standing
+# somewhere is standing at a bench. That makes it cheap to ask from many places, and it is the way to
+# put a bench in the THIRD network's circle, which the chain file leaves out.
+#
+# `hod build` reads the scope as the hammer's question would see it: scope=open|shut, chests=N (how
+# many chests that scope reaches, stocked or not), and jibs=N nets=N for the topology. Reading chests
+# means the reach is asserted on its own, and then `buildable woodwall` asserts that the wood in them
+# is spent on, so a "no" cannot be an unreachable chest wearing the wrong label.
+#
+# Forward is the line through everything, right is the branch; metres from the mark, Eikthyr down:
+#   jib A    (-12, 0)   chest A (-24, 0), 12m from A and 28m from B
+#   jib B    (  4, 0)   16m from A: network A+B
+#   probe D  ( 20, 0)   16m from B and 32m from A: in the network only because of B. Bench at (22, 2).
+#   jib C    ( -4, 22)  23m from A and from B: a network of its own
+#   chest C  ( -8, 25)  5m from C, 25m from A and 28m from B
+#   probe E  ( -4, 25)  3m from C, 26m from A and from B. Bench at (-7, 26).
+# Everything is inside the 30m the stage levels. Both probes have a bench of their own in range, so
+# the wall's station test is met at both and never the reason for a no. The control for that is the
+# same at both: two wood in the pack turns the spot buildable.
+#
+# THE SEQUENCE:
+#  1. Topology: jibs=3 nets=2. Both chests empty. D reaches 1 chest (A, through B), E reaches 1
+#     (C). Wall unbuildable at both, buildable with wood in the pack.
+#  2. Chest A stocked. D: buildable (the chain: B serves the player, A's circle holds the chest).
+#     E: NOT buildable. The third jib's circle does not see the first network's chest.
+#  3. B taken down. D: scope=shut chests=0, unbuildable although chest A is full and the gate open;
+#     the pack control turns it buildable. The chain was the only thing that served D.
+#  4. B built again. D: scope=open chests=1, buildable. The network heals.
+#  5. Chest A emptied, chest C stocked. E: buildable (its own chest). D: NOT buildable. The second
+#     network's stock does not leak into the first.
+#
+# MANUAL CHECKS, which this cannot do:
+#  1. Build a third jib on the edge of the first network's ring. Want: its hover says linked, and the
+#     ring of the existing jibs turns green on the ghost while you place it.
+#  2. Take down the middle jib of a row of three. Want: the far one's hover says it stands alone.
+# NOT TESTED here: a chest owned by another player in a network (the paired scenarios).
+
+clear
+give Hammer:1,Hoe:1
+give FineWood:250,BronzeNails:40,IronNails:52,Chain:4,GroveHeartwood:6
+give Wood:100,Stone:40
+god
+ghost
+
+biome Meadows
+wait 3
+stage
+landed
+mark
+
+mod hodbuild on
+unkey defeated_eikthyr
+wait 1
+key defeated_eikthyr
+wait 2
+
+console hod cost woodwall
+printed lines=1 Wood=2 end yes
+console hod build
+printed setting=on enabled=on shut=no yields=none yes
+printed gate=open yes
+
+# The benches first: a wall needs one in range before it can be built at all, and they are fixtures
+# that need no roof, since a roof gates crafting AT a station and not building near one.
+place piece_workbench 22 2
+place piece_workbench -7 26
+wait 2
+
+place hod_jib -12 0
+wait 4
+place hod_jib 4 0
+wait 4
+place hod_jib -4 22
+wait 4
+place piece_chest_wood -24 0
+wait 3
+place piece_chest_wood -8 25
+wait 3
+strip Wood
+wait 1
+
+# ---- 1. topology, and both chests empty
+console hod build
+printed jibs=3 nets=2 yes
+
+landed
+move 20 0
+landed
+console hod build
+printed scope=open chests=1 yes
+buildable woodwall no
+give Wood:2
+wait 1
+buildable woodwall yes
+strip Wood
+wait 1
+back
+landed
+
+move -4 25
+landed
+console hod build
+printed scope=open chests=1 yes
+buildable woodwall no
+give Wood:2
+wait 1
+buildable woodwall yes
+strip Wood
+wait 1
+back
+landed
+
+# ---- 2. chest A stocked
+move -20 0
+landed
+claim piece_chest_wood
+wait 1
+stock piece_chest_wood Wood:20 8
+back
+landed
+
+move 20 0
+landed
+buildable woodwall yes
+back
+landed
+
+move -4 25
+landed
+buildable woodwall no
+back
+landed
+
+# ---- 3. B taken down, from probe D where it is the only jib in 20m
+move 20 0
+landed
+break hod_jib 20
+wait 3
+console hod build
+printed scope=shut chests=0 gate=open yes
+buildable woodwall no
+give Wood:2
+wait 1
+buildable woodwall yes
+strip Wood
+wait 1
+
+# ---- 4. B built again, 16m behind probe D
+place hod_jib -16 0
+wait 4
+console hod build
+printed jibs=3 nets=2 yes
+printed scope=open chests=1 yes
+buildable woodwall yes
+back
+landed
+
+# ---- 5. chest A emptied, chest C stocked
+move -20 0
+landed
+empty piece_chest_wood 8
+wait 1
+holds piece_chest_wood Wood 0 8
+back
+landed
+
+move -4 25
+landed
+claim piece_chest_wood
+wait 1
+stock piece_chest_wood Wood:20 8
+buildable woodwall yes
+back
+landed
+
+move 20 0
+landed
+buildable woodwall no
+give Wood:2
+wait 1
+buildable woodwall yes
+strip Wood
+wait 1
+back

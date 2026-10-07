@@ -140,6 +140,12 @@ namespace Hod
             }
         }
 
+        /// <summary>The mod that makes the hammer step aside, or null. For the `hod build` readout.</summary>
+        public static string YieldsTo
+        {
+            get { return BuildYields ? _buildYield : null; }
+        }
+
         public static void LoseWorldHooks()
         {
             _worldHooksLost = true;
