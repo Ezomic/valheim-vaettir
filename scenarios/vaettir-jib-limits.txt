@@ -1,12 +1,13 @@
 # Vaettir: what the hod jib refuses to do.
 #
-# Plan steps 38 and 41. The jib serves a bench and deliberately does not serve the hammer -
-# "building still spends what is in your own pack" is a promise the devlog makes in plain
-# words, and a promise is the thing that quietly stops being true.
+# Plan steps 38 and 41. Until LHM-76 the jib served a bench and deliberately NOT the hammer, and
+# this file asserted the refusal. The hammer is served now (see vaettir-jib-hammer), so what is
+# left here is the other side of the same line: the jib reaches a build site only while the
+# chest is in its network, and what it will not do is pay for a piece out of a chest it does not
+# reach. Not yet run in game since that change.
 #
-# Eikthyr is dead throughout and the chest is full of wood, so every refusal here is the
-# jib declining rather than the gate being shut. Your own pack is emptied of wood first,
-# which is what makes the question meaningful at all.
+# Eikthyr is dead throughout and the chest is full of wood. Your own pack is emptied of wood
+# first, which is what makes the question meaningful at all.
 #
 # The `stage` after `biome` clears and levels thirty metres round you, so the flat ground, the ten
 # metres clear and the distance from other posts and chests this used to ask for are its job now.
@@ -56,14 +57,17 @@ stock piece_chest_wood Wood:200,Stone:200
 strip Wood,Stone
 wait 1
 
-# A wall costs wood. The chest has 200 of it, two metres away, under a working jib.
+# A wall costs wood. The chest has 200 of it, two metres away, under a working jib, so the
+# hammer sees it.
+buildable woodwall yes
+
+# Take the jib down and the same wall, the same chest and the same empty pack are unbuildable.
+break hod_jib
+wait 3
 buildable woodwall no
 
-# And a workbench, which is the piece you would most want it to pay for.
-buildable piece_workbench no
-
-# Put four wood back in your own pack and the same wall is buildable, which proves the
-# refusal above was about where the wood is rather than about the wall.
+# Put wood back in your own pack and it is buildable again, which proves the refusal above was
+# about the jib and not about the wall.
 give Wood:20
 wait 1
 buildable woodwall yes

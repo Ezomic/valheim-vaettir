@@ -7,6 +7,27 @@ and the mod uses [semantic versioning](https://semver.org).
 
 ### Added
 
+- **The hod jib stands on its own and has a reach you can see (LHM-77).** It no longer looks up
+  the nearest stowing post. Its circle, `HodRange` across, is drawn on the ground while you place
+  one (green when it would join a network, blue when it would stand alone) and on built jibs while
+  you hold the hammer within twice that distance or look at one. A jib built with its centre
+  inside another's circle joins it, and that chains, so a row of jibs each on the edge of the last
+  covers the union of their circles. A bench is served by the chests in the same network and
+  separate networks never mix. Jibs already built beside a post keep working, and the prefab name
+  is unchanged. The build menu text and hover text no longer talk about a post, and the jib loses
+  the upgrade star. The existing scenarios that place a post and a jib still apply. Built, not run
+  in game.
+- **The hammer uses the chests in a jib's reach (LHM-76).** Standing within `HodRange` of a jib, the
+  build menu greys pieces by pack plus chests, the requirement panel shows `have/need +chest`, and
+  placing spends your pack first and the chests after, with the boss rule and chest exclusions the
+  bench uses. A chest another player's game owns is asked rather than written to: the click asks
+  and is refused with `BuildFetchMessage`, and the next click builds. New host rule
+  `BuildFromChests` (true). Away from every jib it is vanilla. It switches itself off when
+  AzuCraftyBoxes, CraftFromContainers or Storage Core is installed. Repair costs no material in the
+  game, so it is unchanged. Built, not run in game.
+- Scenarios `vaettir-jib-chain` and `vaettir-jib-hammer`. `vaettir-jib-limits` now asserts that the
+  hammer is served while the jib stands and not once it is broken, where it used to assert that it
+  was never served. Not yet run in game.
 - **The planting grid's six keys are on Core's Settings page (LHM-51)**: pin, seeds up, seeds down,
   row or circle, grid free and grid turn. It is the page in the compendium that lists a player's own
   settings and rebinds a key by pressing it. Without Core nothing changes. Built, not run in game.

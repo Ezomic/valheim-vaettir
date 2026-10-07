@@ -115,6 +115,15 @@ namespace Hod
             var pack = player.GetInventory();
             var name = req.m_resItem.m_itemData.m_shared.m_name;
 
+            // The hammer's panel counts at any quality, which is what vanilla's own build
+            // check does (CountItems with no quality), so the two figures are the whole pile.
+            if (HodScope.Building > 0)
+            {
+                have = HodCrafting.CarriedOnly(pack, name, -1, true);
+                chest = HodChests.CountAllowed(name, -1, true);
+                return;
+            }
+
             have = 0;
             chest = 0;
             var best = -1;

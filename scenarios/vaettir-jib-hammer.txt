@@ -1,0 +1,79 @@
+# Vaettir: the hammer is served by the chests in a jib's reach (LHM-76).
+#
+# A wood wall costs 2 wood. The chest holds 200 and the pack none, so every plank placed comes
+# out of the chest, and the amounts are exact on purpose: "about right" cannot tell a spend from
+# a free build. Then the pack is paid first and the chest only the rest, the piece is refused
+# once the jib is gone, and a piece placed out of reach of any jib is refused too.
+# The click path is driven by `build`, which presses the place button through the real
+# Player.UpdatePlacement, not by calling the cost check.
+# Not yet run in game.
+clear
+give Hammer:1,Hoe:1
+give FineWood:250,BronzeNails:40,IronNails:52,Chain:4,GroveHeartwood:6
+give Wood:100,Stone:40
+god
+ghost
+
+# The Meadows, found rather than promised, because a suite run starts wherever the scenario
+# before it left you. On 2026-09-28 that was the Deep North, inside the Queen's entrance
+# utangard-queen-door-stays-sealed spawns, and ten Vaettir files failed on the place and not
+# on the mod: tilling refused as snow too deep, and the entrance's own pieces, cut through by
+# `wipe`, falling and dropping copper scrap. Already in the Meadows, this does not move you.
+biome Meadows
+wait 3
+
+# Cleared and levelled where `biome` left you: every piece, drop, tree and rock within thirty
+# metres taken down, and the ground levelled to the height under your feet. Devkit's automatic
+# stage before the first step ran where the file before left you, which is not here when `biome`
+# moved you. It replaces the `sweep` and `wipe 16` that stood here, doing both over more ground.
+stage
+
+key defeated_eikthyr
+
+place piece_workbench 2 -3
+wait 2
+place hod_jib 4 2
+wait 4
+place piece_chest_wood 6 3
+wait 2
+claim piece_chest_wood
+wait 2
+stock piece_chest_wood Wood:200,Stone:200
+strip Wood,Stone
+wait 1
+mark
+
+# The menu's own test says yes, and a click builds it out of the chest alone.
+buildable woodwall yes
+tool Hammer
+build woodwall 3 0 yes
+wait 2
+holds piece_chest_wood Wood 198
+carrying Wood 0
+
+# One wood in the pack and the rest in the chest: pack first, then chest. The pack ends at 0 and
+# the chest gives 1, so 197 is left, not 196.
+give Wood:1
+wait 1
+build woodwall 3 3 yes
+wait 2
+carrying Wood 0
+holds piece_chest_wood Wood 197
+
+# Out of every jib's reach the same wall is unbuildable: the workbench is out of range too, so
+# the piece used is the workbench, which needs no station.
+move 40 0
+wait 2
+buildable piece_workbench no
+back
+wait 1
+
+# And with the jib gone, nothing in reach serves the hammer.
+break hod_jib
+wait 3
+buildable woodwall no
+build woodwall 3 -3 no
+
+close
+landed
+back
