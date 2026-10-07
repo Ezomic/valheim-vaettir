@@ -210,4 +210,5 @@ def main():
     print("JIBRENDER done", out)
 
 
-main()
+if __name__ == "__main__":
+    main()
