@@ -105,13 +105,16 @@ wait 2
 carrying Wood 0
 holds piece_chest_wood Wood 17
 
-# Not at 3 -3: the workbench stands at 2 -3, a wall is two metres wide, and the first run (2026-10-07)
-# could not put the ghost on the spot ("best 195cm off, last on collider"). Nothing was built, the two
-# wood stayed in the pack, and the failures that followed (carrying 2, and a buildable that was only
-# true because of that wood) were that one bad spot, not a double take.
+# Not at 3 -3, and not at 3 -7 either. The workbench stands at 2 -3 and a wall is two metres wide, so 3 -3
+# overlapped it ("best 195cm off, last on collider"). 3 -7 stood clear of it, but the placement ray from
+# the player to that spot passes the workbench's collider ("best 363cm off, last on collider"). Both times
+# nothing was built, the two wood stayed in the pack, and the failures that followed (carrying 2, and a
+# buildable that was only true because of that wood) were that one bad spot, not a double take. -3 6 is
+# 6.7m away on the far side from the bench, with the chest and the jib behind the player and nothing
+# between the player and the spot.
 give Wood:2
 wait 1
-build woodwall 3 -7 yes
+build woodwall -3 6 yes
 wait 2
 carrying Wood 0
 holds piece_chest_wood Wood 17
