@@ -105,9 +105,13 @@ wait 2
 carrying Wood 0
 holds piece_chest_wood Wood 17
 
+# Not at 3 -3: the workbench stands at 2 -3, a wall is two metres wide, and the first run (2026-10-07)
+# could not put the ghost on the spot ("best 195cm off, last on collider"). Nothing was built, the two
+# wood stayed in the pack, and the failures that followed (carrying 2, and a buildable that was only
+# true because of that wood) were that one bad spot, not a double take.
 give Wood:2
 wait 1
-build woodwall 3 -3 yes
+build woodwall 3 -7 yes
 wait 2
 carrying Wood 0
 holds piece_chest_wood Wood 17
