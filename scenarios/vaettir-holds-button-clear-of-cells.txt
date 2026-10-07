@@ -25,6 +25,13 @@
 #    is a good place. The `button=x,y,w,h` token is in the output for the log.
 #  - The stowing post, where the button is hidden on purpose.
 #
+# WHY EACH `use` IS PRECEDED BY A `goto`. The chests stand five to six metres from where the stage
+# leaves you, and InventoryGui.UpdateContainer closes any container further than m_autoCloseDistance
+# (4m) from the player, on the first frame it is open. The first run of this file (2026-10-07) opened
+# every chest from there: `use` reported "interacted", the window shut itself at once, and `stow holds`
+# found a hidden button and zero cells four times. That is the game's own rule, not a fault of the
+# button, so the scenario walks to each chest the way a player has to.
+#
 # HOW TO RUN IT. Singleplayer, in a test world, on own-profile. The stage takes down everything built
 # within thirty metres, so never near a real base.
 #
@@ -48,6 +55,8 @@ wait 3
 
 # ---- 1. the smallest chest, a Private chest.
 
+goto piece_chest_private
+wait 1
 use piece_chest_private
 wait 2
 console stow holds
@@ -60,6 +69,8 @@ wait 1
 
 # ---- 2. the wood chest.
 
+goto piece_chest_wood
+wait 1
 use piece_chest_wood
 wait 2
 console stow holds
@@ -72,6 +83,8 @@ wait 1
 
 # ---- 3. the Reinforced chest, the one in the screenshot.
 
+goto piece_chest
+wait 1
 use piece_chest
 wait 2
 console stow holds
@@ -84,6 +97,8 @@ wait 1
 
 # ---- 4. the Blackmetal chest, the widest.
 
+goto piece_chest_blackmetal
+wait 1
 use piece_chest_blackmetal
 wait 2
 console stow holds
