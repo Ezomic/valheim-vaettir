@@ -35,6 +35,7 @@ namespace Hod
 
         public static ConfigEntry<string> BossBiomes;
         public static ConfigEntry<bool> AllowUnclassified;
+        public static ConfigEntry<bool> BossGate;
         public static ConfigEntry<string> BiomeOverrides;
         public static ConfigEntry<string> TraderBiomes;
 
@@ -124,6 +125,13 @@ namespace Hod
                 + "ShortMessage line is shown instead.");
 
             // ---------------------------------------------------------------- the gate
+
+            BossGate = config.Bind("Hod", "BossGate", false,
+                "Whether a biome's materials stay out of the jib's reach until its boss is dead "
+                + "(the BossBiomes rows below). Off, the jib hands over any material from any "
+                + "chest in range from the start. On puts the old rule back: before Eikthyr "
+                + "it does nothing, and each boss opens its biome's items.\n"
+                + "A host rule, so on a server it is the server's value that counts.");
 
             // The whole argument of the feature, and the same shape as Yoke's
             // ProgressionTiers minus the multiplier - it is the same question asked for a

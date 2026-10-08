@@ -3,6 +3,15 @@
 Notable changes to Vaettir. Format follows [Keep a Changelog](https://keepachangelog.com),
 and the mod uses [semantic versioning](https://semver.org).
 
+## [1.7.2] - 2026-10-09
+
+### Changed
+
+- **The hod jib no longer needs boss kills.** Any material in any chest in range is in reach from
+  the start, where before each biome's items opened only once its boss was dead. The old rule is
+  still there behind `BossGate` (a host rule, off by default): set it to `true` and Eikthyr opens
+  the Meadows again, and so on up to the Frozen King. Built and not yet played.
+
 ## [1.7.1] - 2026-10-08
 
 ### Changed

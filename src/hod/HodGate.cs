@@ -144,6 +144,8 @@ namespace Hod
         {
             if (!HodConfig.Enabled.Value) return false;
 
+            if (!HodConfig.BossGate.Value) return true;
+
             // A half-built index answers "no biome" for every item in the game, and that
             // would then be decided by AllowUnclassified - a setting about the handful of
             // items no table can reach, being asked a question it was never written for. So
@@ -227,7 +229,7 @@ namespace Hod
             if (item.m_dropPrefab == null)
             {
                 if (!HodConfig.Enabled.Value) return false;
-                return HodConfig.AllowUnclassified.Value;
+                return !HodConfig.BossGate.Value || HodConfig.AllowUnclassified.Value;
             }
 
             return Allows(item.m_dropPrefab.name);
