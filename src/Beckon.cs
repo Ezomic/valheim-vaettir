@@ -504,11 +504,13 @@ namespace Grove
                     m_prefab = prefab,
                     m_weight = weight,
 
-                    // One star only. Levelling is what a nest does over a whole night in a
-                    // biome you chose to live in; here it would mean a two-star brute
-                    // arriving on a piece with 500 health because you were unlucky.
+                    // The game's own nest roll, kept as vanilla has it. This was pinned to
+                    // level 1 (no stars) to stop a brute arriving on a 500-health piece, and a
+                    // sapling that never rolls a star is not "a raid", it is a queue; the
+                    // reasoning went the other way once Vandi made stars a reward. Level 1 is no
+                    // stars, 2 is one, 3 is two.
                     m_minLevel = 1,
-                    m_maxLevel = 1
+                    m_maxLevel = Mathf.Max(1, GroveConfig.BeckonMaxLevel.Value)
                 });
             }
 
@@ -688,6 +690,27 @@ namespace Grove
             point = Vector3.zero;
             __result = false;
             return false;
+        }
+    }
+}
+
+namespace Grove
+{
+    /// <summary>
+    /// A sapling's star roll goes through <c>SpawnSystem.GetLevelUpChance</c>, the static every
+    /// other spawn in the game asks. SpawnArea has a private copy of the same sum that nothing
+    /// else can see, so a mod that raises the shared roll (Vandi) would reach every spawn
+    /// except a nest's. Asking the shared one for our own areas only keeps the number identical
+    /// to vanilla's and lets that mod's raise land here too. Every other SpawnArea is untouched.
+    /// </summary>
+    [HarmonyPatch(typeof(SpawnArea), nameof(SpawnArea.GetLevelUpChance))]
+    internal static class BeckonStars
+    {
+        private static void Postfix(SpawnArea __instance, ref float __result)
+        {
+            if (__instance == null || !__instance.TryGetComponent<Beckon>(out _)) return;
+
+            __result = SpawnSystem.GetLevelUpChance(__instance.transform.position, __instance.m_levelupChance);
         }
     }
 }

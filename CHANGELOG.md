@@ -3,6 +3,16 @@
 Notable changes to Vaettir. Format follows [Keep a Changelog](https://keepachangelog.com),
 and the mod uses [semantic versioning](https://semver.org).
 
+## [1.7.1] - 2026-10-08
+
+### Changed
+
+- **The ancient sapling's creatures can be starred.** It used to call every greydwarf at level 1, so
+  none ever carried a star. They now roll the game's own nest chance, up to two stars, and the roll
+  is the shared one every other spawn uses, so the world's star setting and the biome apply and
+  Vandi's raise reaches the sapling too. `BeckonMaxLevel` (3 by default: 1 is no stars, 2 one, 3 two)
+  sets the ceiling, and 1 puts it back to never starred. Built and not yet played.
+
 ## [1.7.0] - 2026-10-08
 
 ### Added

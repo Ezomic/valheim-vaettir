@@ -51,6 +51,7 @@ namespace Grove
         public static ConfigEntry<float> BeckonArea;
         public static ConfigEntry<int> BeckonMaxNear;
         public static ConfigEntry<int> BeckonMaxTotal;
+        public static ConfigEntry<int> BeckonMaxLevel;
 
         public static ConfigEntry<float> BloodNeeded;
         public static ConfigEntry<float> FeedRange;
@@ -460,6 +461,12 @@ namespace Grove
                 "Most it will have alive in the wider area. The ceiling that stops a "
                 + "sapling left alone from being the reason a whole zone is full of "
                 + "greydwarfs - it is a raid on a clearing, and a raid ends.");
+
+            BeckonMaxLevel = config.Bind("Sapling", "BeckonMaxLevel", 3,
+                "The highest level a called creature can roll: 1 is no stars, 2 one star, 3 two "
+                + "stars. The chance is the game's own nest roll, so it follows the world's "
+                + "star setting and the biome, and Vandi raises it in a biome whose boss you have "
+                + "killed. 1 puts it back to never starred, which is what it did before 1.7.1.");
 
             // ---------------------------------------------------------- feeding
 
