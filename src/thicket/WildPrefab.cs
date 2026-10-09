@@ -303,6 +303,7 @@ namespace Thicket
 
             component.m_biome = plant.Biomes;
             component.m_tolerateCold = plant.TolerateCold;
+            component.m_tolerateHeat = plant.TolerateHeat;
 
             // Wild ground, by the call that was made: no tilling. A hedge along a path
             // without turning the path to dirt is the point of it.

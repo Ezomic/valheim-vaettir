@@ -48,8 +48,12 @@ namespace Grove
         ///     every other source, and the Bog Witch sells the hamstring, so a swamp item
         ///     stayed in the chest until the Queen fell. BiomeOverrides is synced, so it is
         ///     the host's file that decides on a server, as with move 1.
+        /// 5 - Thicket's rungs from Thistle up are ten Farming levels apart (35, 45, 55, 65,
+        ///     75): cloudberry moved 60 to 55, to make room for the smoke puff at 65 and the
+        ///     lingonberry at 75. Blue mushrooms are not in the game and keep their row. Each
+        ///     row is synced, so it is the host's file that decides on a server.
         /// </summary>
-        internal const int Current = 4;
+        internal const int Current = 5;
 
         internal static ConfigEntry<int> Revision;
 
@@ -100,7 +104,17 @@ namespace Grove
                         "CuredSquirrelHamstring:mistlands, TurretBoltBone:mistlands"));
             }
 
+            if (Revision.Value < 5)
+            {
+                MovedRow("Cloudberry", "60 | thicket_uprooted_cloudberry:1 | Plains | 240-420");
+            }
+
             Revision.Value = Current;
+        }
+
+        private static void MovedRow(string id, string was)
+        {
+            Moved(Thicket.ThicketConfig.RowEntry(id), was);
         }
 
         /// <summary>

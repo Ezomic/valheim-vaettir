@@ -109,6 +109,12 @@ namespace Thicket
             return entry;
         }
 
+        public static ConfigEntry<string> RowEntry(string id)
+        {
+            ConfigEntry<string> entry;
+            return Rows.TryGetValue(id, out entry) ? entry : null;
+        }
+
         public static string RowFor(string id)
         {
             ConfigEntry<string> entry;

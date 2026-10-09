@@ -3,6 +3,24 @@
 Notable changes to Vaettir. Format follows [Keep a Changelog](https://keepachangelog.com),
 and the mod uses [semantic versioning](https://semver.org).
 
+## [1.7.3] - 2026-10-09
+
+### Added
+
+- **Two more plants to transplant: the Ashlands' smoke puffs (Farming 65) and the Deep North's
+  lingonberry bush (Farming 75).** Both can now be dug up with the Harvester and planted elsewhere,
+  and the Deep North bush is the one a player reported missing. Smoke puffs are set to survive the
+  Ashlands heat, which the game otherwise reports as too hot for any plant.
+
+### Changed
+
+- **The Transplant ladder is ten levels apart from Thistle up.** Cloudberry moves from 60 to 55. A
+  saved config that still holds the old default is moved once; one you edited is left alone. Blue
+  mushrooms are not in the game, so the Mountain has no rung and the row is kept only so nothing
+  already placed is lost.
+- **A new Transplant icon:** a bundle of roots tied with cord under a leaf crown. Built and not yet
+  played.
+
 ## [1.7.2] - 2026-10-09
 
 ### Changed

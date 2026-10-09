@@ -286,8 +286,9 @@ Each plant has a Farming level and a biome list:
 | Blueberry bush | 25 | Black Forest |
 | Thistle | 35 | Black Forest, Swamp |
 | Yellow mushrooms | 45 | Black Forest |
-| Cloudberry bush | 60 | Plains |
-| Blue mushrooms | 75 | Mountain |
+| Cloudberry bush | 55 | Plains |
+| Smoke puffs | 65 | Ashlands |
+| Lingonberry bush | 75 | Deep North |
 
 Yellow mushrooms are a burial chamber crop and `Plant` refuses anything under a roof, so they
 can only be farmed in the forest above the crypt.

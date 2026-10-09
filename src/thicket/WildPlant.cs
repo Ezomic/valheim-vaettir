@@ -67,6 +67,13 @@ namespace Thicket
         /// </summary>
         public bool TolerateCold;
 
+        /// <summary>
+        /// The heat counterpart. Plant.UpdateHealth answers TooHot for anything in the Ashlands
+        /// unless this is set or a shield covers it, so without it a smoke puff could be
+        /// planted and would never grow, with the hover text saying so and nothing else.
+        /// </summary>
+        public bool TolerateHeat;
+
         public string DefaultRow;
         public string Note;
 
@@ -304,7 +311,7 @@ namespace Thicket
                     Form = Shape.Bush,
                     Model = "thicket_bush.obj",
                     Icon = "thicket_cloudberry.png",
-                    DefaultRow = "60 | thicket_uprooted_cloudberry:1 | Plains | 240-420",
+                    DefaultRow = "55 | thicket_uprooted_cloudberry:1 | Plains | 240-420",
                     Note = "Late, and Plains only. Cloudberries are most of what makes the "
                            + "Plains worth farming in, and a Meadows cloudberry patch would "
                            + "quietly delete that reason."
@@ -321,9 +328,44 @@ namespace Thicket
                     Icon = "thicket_mushroom_blue.png",
                     TolerateCold = true,
                     DefaultRow = "75 | thicket_uprooted_mushroom_blue:1 | Mountain | 90-180",
-                    Note = "Last, and the only one that needs the cold tolerance: the "
+                    Note = "Cut from the game, so there is nothing wild to dig up and this "
+                           + "row is never reached in play (checked 2026-10-09 against the "
+                           + "community's reports; the prefab still exists for the console). "
+                           + "Kept registered so a seedling somebody did place is not lost. "
+                           + "Was last, and the only one that needs the cold tolerance: the "
                            + "mountain is refused by Plant outright otherwise, and a plant "
                            + "that can never be healthy can never grow."
+                },
+                new WildPlant
+                {
+                    Id = "Lingonberry",
+                    PieceName = "thicket_lingonberry",
+                    ItemName = "thicket_uprooted_lingonberry",
+                    Title = "Lingonberry bush",
+                    Grown = "LingonberryBush",
+                    Form = Shape.Bush,
+                    Model = "thicket_bush.obj",
+                    Icon = "thicket_lingonberry.png",
+                    TolerateCold = true,
+                    DefaultRow = "75 | thicket_uprooted_lingonberry:1 | DeepNorth | 240-420",
+                    Note = "The Deep North's own bush, so the last rung. It needs the cold "
+                           + "tolerance for the same reason the blue mushroom does: Plant "
+                           + "refuses the Deep North outright otherwise."
+                },
+                new WildPlant
+                {
+                    Id = "SmokePuff",
+                    PieceName = "thicket_smokepuff",
+                    ItemName = "thicket_uprooted_smokepuff",
+                    Title = "Smoke puffs",
+                    Grown = "Pickable_SmokePuff",
+                    Form = Shape.Mushroom,
+                    Model = "thicket_mushroom.obj",
+                    Icon = "thicket_smokepuff.png",
+                    TolerateHeat = true,
+                    DefaultRow = "65 | thicket_uprooted_smokepuff:1 | Ashlands | 90-180",
+                    Note = "The Ashlands' own ground plant, one rung below the Deep North's. "
+                           + "Grown like the mushrooms, which it is shaped like."
                 }
             };
         }
