@@ -3,6 +3,14 @@
 Notable changes to Vaettir. Format follows [Keep a Changelog](https://keepachangelog.com),
 and the mod uses [semantic versioning](https://semver.org).
 
+## [1.7.4] - 2026-10-18
+
+### Changed
+
+- **A new bonemeal icon.** The old one showed black triangles where faces turned away from its one
+  light. The sack is now painted under a sky and a warm ground light, with crevice dirt and edge
+  wear. Nothing else changes.
+
 ## [1.7.3] - 2026-10-09
 
 ### Added
